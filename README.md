@@ -24,7 +24,7 @@ pip3 install -r requirements.txt
 
 ### 创建配置文件（防止更新后被覆盖）
 ```shell
-cp config.yaml.bak config.yaml
+cp config.bak.yaml config.yaml
 ```
 
 ### 修改配置文件
