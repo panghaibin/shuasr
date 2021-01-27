@@ -65,9 +65,9 @@ vim /etc/crontab
 
 ## TODO
 
--[ ] 完善在校每日两报的上报
+- [ ] 完善在校每日两报的上报
 
--[ ] 自动判断是否为上报时间上报
+- [ ] 自动判断是否为上报时间上报
 
 ## Thanks
 [BlueFisher/SHU-selfreport](https://github.com/BlueFisher/SHU-selfreport)
