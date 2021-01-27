@@ -313,7 +313,8 @@ def check_env(config_path, logs_path):
     try:
         users = getUsers(config_path)
         for username in users:
-            int(username)
+            if len(username) != 8:
+                return False
         logs = getLogs(logs_path)
         saveLogs(logs_path, logs)
     except Exception as e:
