@@ -35,33 +35,7 @@ python3 main.py sckey
 ```
 
 #### 方法二：手动修改配置文件 
-##### 创建配置文件（防止更新后被覆盖）
-```shell
-cp config.bak.yaml config.yaml
-```
-
-##### 修改配置文件
-```shell
-vim config.yaml
-# 也可用其它编辑器
-```
-
-格式如下
-
-```yaml
-sckey: ""
-
-users:
-  "id_card_num_here1":
-    - "password_here"
-    # 校区设置（未完善，置空或设置为0）
-    - 0
-  "id_card_num_here2":
-    - "password_here"
-    - ~
-```
-
-以上两种方法二选一即可
+修改目录下`config.bak.yaml`文件名为`config.yaml`，按照文件所写格式修改填写。
 
 ### 启动
 ```shell
