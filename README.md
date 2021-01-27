@@ -11,10 +11,12 @@ Shanghai University Auto SelfReport
 - ~~兼容每日一报/每日两报~~（挖坑待填）
 
 ## 使用
-### 下载
+### 下载/更新
 ```shell
 git clone https://github.com/panghaibin/shuasr.git
 cd shuasr
+# 更新
+git pull
 ```
 
 ### 安装依赖
