@@ -253,6 +253,8 @@ def getReportForm(session, report_type, url, campus_id):
         }
         return report_form
 
+    return False
+
 
 def reportSingle(username, password, campus_id):
     session = login(username, password)
