@@ -24,17 +24,30 @@ git pull
 pip3 install -r requirements.txt
 ```
 
-### 创建配置文件（防止更新后被覆盖）
+### 添加用户，设置SCKey
+
+#### 方法一：命令行下添加
+```shell
+# 添加用户
+python3 main.py add
+# 设置SCKey
+python3 main.py sckey
+```
+
+#### 方法二：手动修改配置文件 
+##### 创建配置文件（防止更新后被覆盖）
 ```shell
 cp config.bak.yaml config.yaml
 ```
 
-### 修改配置文件
+##### 修改配置文件
 ```shell
 vim config.yaml
 # 也可用其它编辑器
 ```
+
 格式如下
+
 ```yaml
 sckey: ""
 
@@ -47,6 +60,8 @@ users:
     - "password_here"
     - ~
 ```
+
+以上两种方法二选一即可
 
 ### 启动
 ```shell
@@ -77,7 +92,7 @@ crontab /etc/crontab
 
 - [ ] 自动判断是否为上报时间上报
 
-- [ ] 使用命令行添加用户
+- [x] ~~使用命令行添加用户~~
 
 ## Thanks
 [BlueFisher/SHU-selfreport](https://github.com/BlueFisher/SHU-selfreport)
