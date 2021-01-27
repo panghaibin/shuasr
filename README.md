@@ -6,7 +6,7 @@ Shanghai University Auto SelfReport
 上海大学健康之路自动上报
 
 ## 特色
-- 接入Server酱接口，适合一人为多人上报的情况，上报结果仅发送给一人。使用前请前往 http://sc.ftqq.com/3.version 申请sckey。
+- 接入Server酱接口，适合一人为多人上报的情况，上报结果仅发送给一人。使用前请前往 [Server酱官网](http://sc.ftqq.com/3.version) 申请sckey。
 - 自动获取上次填报地址进行上报（已对上海/非上海进行处理）
 - ~~兼容每日一报/每日两报~~（挖坑待填）
 
@@ -19,7 +19,7 @@ cd shuasr
 
 ### 安装依赖
 ```shell
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 ### 创建配置文件（防止更新后被覆盖）
@@ -48,7 +48,7 @@ users:
 
 ### 启动
 ```shell
-python main.py
+python3 main.py
 ```
 
 启动后将自动上报一次，随后退出，建议配合Crontab定时启动（见下）
@@ -61,6 +61,12 @@ vim /etc/crontab
 ```
 # 每天7:30运行一次
 30 7 * * * root /usr/bin/python3 /root/shusar/main.py
+```
+
+保存并退出后
+
+```shell
+crontab /etc/crontab
 ```
 
 ## TODO
