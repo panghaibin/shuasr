@@ -1,0 +1,10 @@
+sckey: ""
+
+users:
+  "id_card_num_here":
+    - "password_here"
+    # 校区设置
+    - 0
+  "id_card_num_here":
+    - "password_here"
+    - ~

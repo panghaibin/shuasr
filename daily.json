@@ -1,0 +1,397 @@
+{
+  "p1_BaoSRQ": {
+    "Text": "2021-01-26"
+  },
+  "p1_DangQSTZK": {
+    "F_Items": [
+      [
+        "良好",
+        "良好（体温不高于37.3）",
+        1
+      ],
+      [
+        "不适",
+        "不适",
+        1
+      ]
+    ],
+    "SelectedValue": "良好"
+  },
+  "p1_ZhengZhuang": {
+    "Hidden": true,
+    "F_Items": [
+      [
+        "感冒",
+        "感冒",
+        1
+      ],
+      [
+        "咳嗽",
+        "咳嗽",
+        1
+      ],
+      [
+        "发热",
+        "发热",
+        1
+      ]
+    ],
+    "SelectedValueArray": []
+  },
+  "p1_QiuZZT": {
+    "F_Items": [],
+    "SelectedValueArray": []
+  },
+  "p1_JiuYKN": {
+    "F_Items": [],
+    "SelectedValueArray": []
+  },
+  "p1_JiuYYX": {
+    "Required": false,
+    "F_Items": [],
+    "SelectedValueArray": []
+  },
+  "p1_JiuYZD": {
+    "F_Items": [],
+    "SelectedValueArray": []
+  },
+  "p1_JiuYZL": {
+    "F_Items": [],
+    "SelectedValueArray": []
+  },
+  "p1_GuoNei": {
+    "F_Items": [
+      [
+        "国内",
+        "国内",
+        1
+      ],
+      [
+        "国外",
+        "国外",
+        1
+      ]
+    ],
+    "SelectedValue": "国内"
+  },
+  "p1_ddlGuoJia": {
+    "DataTextField": "ZhongWen",
+    "DataValueField": "ZhongWen",
+    "SelectedValueArray": [
+      "-1"
+    ]
+  },
+  "p1_ShiFSH": {
+    "Required": true,
+    "Hidden": false,
+    "SelectedValue": "否",
+    "F_Items": [
+      [
+        "是",
+        "在上海",
+        1
+      ],
+      [
+        "否",
+        "不在上海",
+        1
+      ]
+    ]
+  },
+  "p1_ShiFZX": {
+    "F_Items": [
+      [
+        "是",
+        "住校",
+        1
+      ],
+      [
+        "否",
+        "不住校",
+        1
+      ]
+    ],
+    "SelectedValue": null
+  },
+  "p1_ddlSheng": {
+    "Hidden": false,
+    "F_Items": [
+      [
+        "",
+        "",
+        1,
+        "",
+        ""
+      ]
+    ],
+    "SelectedValueArray": [
+      ""
+    ]
+  },
+  "p1_ddlShi": {
+    "Hidden": false,
+    "Enabled": true,
+    "F_Items": [
+      [
+        "",
+        "",
+        1,
+        "",
+        ""
+      ]
+    ],
+    "SelectedValueArray": [
+      ""
+    ]
+  },
+  "p1_ddlXian": {
+    "Hidden": false,
+    "Enabled": true,
+    "F_Items": [
+      [
+        "",
+        "",
+        1,
+        "",
+        ""
+      ]
+    ],
+    "SelectedValueArray": [
+      ""
+    ]
+  },
+  "p1_XiangXDZ": {
+    "Hidden": false,
+    "Label": "国内详细地址（省市区县无需重复填写）",
+    "Text": ""
+  },
+  "p1_ContentPanel1_ZhongGFXDQ": {
+  },
+  "p1_ContentPanel1": {
+    "IFrameAttributes": {}
+  },
+  "p1_FengXDQDL": {
+    "Label": "01月12日至01月26日是否在<span style='color:red;'>中高风险地区</span>逗留",
+    "SelectedValue": "否",
+    "F_Items": [
+      [
+        "是",
+        "是",
+        1
+      ],
+      [
+        "否",
+        "否",
+        1
+      ]
+    ]
+  },
+  "p1_TongZWDLH": {
+    "Required": false,
+    "Hidden": true,
+    "Label": "上海同住人员是否有01月12日至01月26日来自<span style='color:red;'>中高风险地区</span>的人",
+    "F_Items": [
+      [
+        "是",
+        "是",
+        1
+      ],
+      [
+        "否",
+        "否",
+        1
+      ]
+    ],
+    "SelectedValue": null
+  },
+  "p1_CengFWH": {
+    "Label": "01月12日至01月26日是否在<span style='color:red;'>中高风险地区</span>逗留过",
+    "F_Items": [
+      [
+        "是",
+        "是",
+        1
+      ],
+      [
+        "否",
+        "否",
+        1
+      ]
+    ],
+    "SelectedValue": "否"
+  },
+  "p1_CengFWH_RiQi": {
+    "Hidden": true
+  },
+  "p1_CengFWH_BeiZhu": {
+    "Hidden": true
+  },
+  "p1_JieChu": {
+    "Label": "01月12日至01月26日是否与来自<span style='color:red;'>中高风险地区</span>发热人员密切接触",
+    "SelectedValue": "否",
+    "F_Items": [
+      [
+        "是",
+        "是",
+        1
+      ],
+      [
+        "否",
+        "否",
+        1
+      ]
+    ]
+  },
+  "p1_JieChu_RiQi": {
+    "Hidden": true
+  },
+  "p1_JieChu_BeiZhu": {
+    "Hidden": true
+  },
+  "p1_TuJWH": {
+    "Label": "01月12日至01月26日是否乘坐公共交通途径<span style='color:red;'>中高风险地区</span>",
+    "SelectedValue": "否",
+    "F_Items": [
+      [
+        "是",
+        "是",
+        1
+      ],
+      [
+        "否",
+        "否",
+        1
+      ]
+    ]
+  },
+  "p1_TuJWH_RiQi": {
+    "Hidden": true
+  },
+  "p1_TuJWH_BeiZhu": {
+    "Hidden": true
+  },
+  "p1_QueZHZJC": {
+    "F_Items": [
+      [
+        "是",
+        "是",
+        1,
+        "",
+        ""
+      ],
+      [
+        "否",
+        "否",
+        1,
+        "",
+        ""
+      ]
+    ],
+    "SelectedValueArray": [
+      "否"
+    ]
+  },
+  "p1_DangRGL": {
+    "SelectedValue": "否",
+    "F_Items": [
+      [
+        "是",
+        "是",
+        1
+      ],
+      [
+        "否",
+        "否",
+        1
+      ]
+    ]
+  },
+  "p1_GeLSM": {
+    "Hidden": true,
+    "IFrameAttributes": {}
+  },
+  "p1_GeLFS": {
+    "Required": false,
+    "Hidden": true,
+    "F_Items": [
+      [
+        "居家隔离",
+        "居家隔离",
+        1
+      ],
+      [
+        "集中隔离",
+        "集中隔离",
+        1
+      ]
+    ],
+    "SelectedValue": null
+  },
+  "p1_GeLDZ": {
+    "Hidden": true
+  },
+  "p1_FanXRQ": {
+    "Hidden": true
+  },
+  "p1_WeiFHYY": {
+    "Hidden": true
+  },
+  "p1_ShangHJZD": {
+    "Hidden": true
+  },
+  "p1_DaoXQLYGJ": {
+    "Text": "无"
+  },
+  "p1_DaoXQLYCS": {
+    "Text": "无"
+  },
+  "p1_JiaRen": {
+    "Label": "01月12日至01月26日家人是否有发热等症状"
+  },
+  "p1_JiaRen_BeiZhu": {
+    "Hidden": true
+  },
+  "p1_SuiSM": {
+    "Required": true,
+    "SelectedValue": "绿色",
+    "F_Items": [
+      [
+        "红色",
+        "红色",
+        1
+      ],
+      [
+        "黄色",
+        "黄色",
+        1
+      ],
+      [
+        "绿色",
+        "绿色",
+        1
+      ]
+    ]
+  },
+  "p1_LvMa14Days": {
+    "Required": true,
+    "SelectedValue": "是",
+    "F_Items": [
+      [
+        "是",
+        "是",
+        1
+      ],
+      [
+        "否",
+        "否",
+        1
+      ]
+    ]
+  },
+  "p1_ctl00_btnReturn": {
+    "OnClientClick": "document.location.href='/Default.aspx';return;"
+  },
+  "p1": {
+    "IFrameAttributes": {}
+  }
+}
