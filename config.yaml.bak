@@ -1,10 +1,11 @@
+# 前往 http://sc.ftqq.com/3.version 获取sckey
 sckey: ""
 
 users:
-  "id_card_num_here":
+  "id_card_num_here1":
     - "password_here"
-    # 校区设置
+    # 校区设置（未完善，置空或设置为0）
     - 0
-  "id_card_num_here":
+  "id_card_num_here2":
     - "password_here"
     - ~
