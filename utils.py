@@ -302,7 +302,7 @@ def reportUsers(config_path, logs_path):
     for username in users:
         report_result = reportSingle(username, users[username][0])
         logs = updateLogs(logs, report_time, username, report_result)
-        time.sleep(5)
+        time.sleep(60)
 
     saveLogs(logs_path, logs)
 
