@@ -98,92 +98,93 @@ def generateFState(origin_json, post_day, province, city, county, address, is_in
     return fstate
 
 
-def getDailyReportForm(session, url):
-    get_times = 0
-    while True:
-        try:
-            index = session.get(url=url)
-            if index.status_code == 200:
-                break
-        except Exception as e:
-            print(e)
-        get_times += 1
-        if get_times > 10:
-            return False
-        time.sleep(60)
-    html = index.text
+def getReportForm(session, report_type, url):
+    if report_type == 0:
+        get_times = 0
+        while True:
+            try:
+                index = session.get(url=url)
+                if index.status_code == 200:
+                    break
+            except Exception as e:
+                print(e)
+            get_times += 1
+            if get_times > 10:
+                return False
+            time.sleep(60)
+        html = index.text
 
-    view_state = re.search('id="__VIEWSTATE" value="(.*?)" /', html).group(1)
-    view_state_generator = re.search('id="__VIEWSTATEGENERATOR" value="(.*?)" /', html).group(1)
-    post_day = re.search('f4_state={"Text":"(.*?)"}', html).group(1)
-    province = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f23=', html).group(1)
-    city = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f24=', html).group(1)
-    county = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f25=', html).group(1)
-    address = re.search('"Text":"(((?!"Text":").)*)"};var f26=', html).group(1)
-    is_in_shanghai = '是' if province == '上海' else '否'
-    # temperature = str(round(random.uniform(36.3, 36.7), 1))
+        view_state = re.search('id="__VIEWSTATE" value="(.*?)" /', html).group(1)
+        view_state_generator = re.search('id="__VIEWSTATEGENERATOR" value="(.*?)" /', html).group(1)
+        post_day = re.search('f4_state={"Text":"(.*?)"}', html).group(1)
+        province = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f23=', html).group(1)
+        city = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f24=', html).group(1)
+        county = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f25=', html).group(1)
+        address = re.search('"Text":"(((?!"Text":").)*)"};var f26=', html).group(1)
+        is_in_shanghai = '是' if province == '上海' else '否'
+        # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
-    fstate = generateFState(abs_path + '/daily.json', post_day, province, city, county, address, is_in_shanghai)
+        fstate = generateFState(abs_path + '/once.json', post_day, province, city, county, address, is_in_shanghai)
 
-    daily_post = {
-        '__EVENTTARGET': 'p1$ctl00$btnSubmit',
-        '__EVENTARGUMENT': '',
-        '__VIEWSTATE': view_state,
-        '__VIEWSTATEGENERATOR': view_state_generator,
-        'p1$ChengNuo': 'p1_ChengNuo',
-        'p1$BaoSRQ': post_day,
-        'p1$DangQSTZK': '良好',
-        'p1$TiWen': '',
-        'p1$JiuYe_ShouJHM': '',
-        'p1$JiuYe_Email': '',
-        'p1$JiuYe_Wechat': '',
-        'p1$QiuZZT': '',
-        'p1$JiuYKN': '',
-        'p1$JiuYSJ': '',
-        'p1$GuoNei': '国内',
-        'p1$ddlGuoJia$Value': '-1',
-        'p1$ddlGuoJia': '选择国家',
-        'p1$ShiFSH': is_in_shanghai,
-        'p1$ShiFZX': '否',
-        'p1$ddlSheng$Value': province,
-        'p1$ddlSheng': province,
-        'p1$ddlShi$Value': city,
-        'p1$ddlShi': city,
-        'p1$ddlXian$Value': county,
-        'p1$ddlXian': county,
-        'p1$XiangXDZ': address,
-        'p1$FengXDQDL': '否',
-        'p1$TongZWDLH': '否',
-        'p1$CengFWH': '否',
-        'p1$CengFWH_RiQi': '',
-        'p1$CengFWH_BeiZhu': '',
-        'p1$JieChu': '否',
-        'p1$JieChu_RiQi': '',
-        'p1$JieChu_BeiZhu': '',
-        'p1$TuJWH': '否',
-        'p1$TuJWH_RiQi': '',
-        'p1$TuJWH_BeiZhu': '',
-        'p1$QueZHZJC$Value': '否',
-        'p1$QueZHZJC': '否',
-        'p1$DangRGL': '否',
-        'p1$GeLDZ': '',
-        'p1$FanXRQ': '',
-        'p1$WeiFHYY': '',
-        'p1$ShangHJZD': '',
-        'p1$DaoXQLYGJ': '无',
-        'p1$DaoXQLYCS': '无',
-        'p1$JiaRen_BeiZhu': '',
-        'p1$SuiSM': '绿色',
-        'p1$LvMa14Days': '是',
-        'p1$Address2': '',
-        'F_TARGET': 'p1_ctl00_btnSubmit',
-        'p1_ContentPanel1_Collapsed': 'true',
-        'p1_GeLSM_Collapsed': 'false',
-        'p1_Collapsed': 'false',
-        'F_STATE': fstate,
-    }
+        report_form = {
+            '__EVENTTARGET': 'p1$ctl00$btnSubmit',
+            '__EVENTARGUMENT': '',
+            '__VIEWSTATE': view_state,
+            '__VIEWSTATEGENERATOR': view_state_generator,
+            'p1$ChengNuo': 'p1_ChengNuo',
+            'p1$BaoSRQ': post_day,
+            'p1$DangQSTZK': '良好',
+            'p1$TiWen': '',
+            'p1$JiuYe_ShouJHM': '',
+            'p1$JiuYe_Email': '',
+            'p1$JiuYe_Wechat': '',
+            'p1$QiuZZT': '',
+            'p1$JiuYKN': '',
+            'p1$JiuYSJ': '',
+            'p1$GuoNei': '国内',
+            'p1$ddlGuoJia$Value': '-1',
+            'p1$ddlGuoJia': '选择国家',
+            'p1$ShiFSH': is_in_shanghai,
+            'p1$ShiFZX': '否',
+            'p1$ddlSheng$Value': province,
+            'p1$ddlSheng': province,
+            'p1$ddlShi$Value': city,
+            'p1$ddlShi': city,
+            'p1$ddlXian$Value': county,
+            'p1$ddlXian': county,
+            'p1$XiangXDZ': address,
+            'p1$FengXDQDL': '否',
+            'p1$TongZWDLH': '否',
+            'p1$CengFWH': '否',
+            'p1$CengFWH_RiQi': '',
+            'p1$CengFWH_BeiZhu': '',
+            'p1$JieChu': '否',
+            'p1$JieChu_RiQi': '',
+            'p1$JieChu_BeiZhu': '',
+            'p1$TuJWH': '否',
+            'p1$TuJWH_RiQi': '',
+            'p1$TuJWH_BeiZhu': '',
+            'p1$QueZHZJC$Value': '否',
+            'p1$QueZHZJC': '否',
+            'p1$DangRGL': '否',
+            'p1$GeLDZ': '',
+            'p1$FanXRQ': '',
+            'p1$WeiFHYY': '',
+            'p1$ShangHJZD': '',
+            'p1$DaoXQLYGJ': '无',
+            'p1$DaoXQLYCS': '无',
+            'p1$JiaRen_BeiZhu': '',
+            'p1$SuiSM': '绿色',
+            'p1$LvMa14Days': '是',
+            'p1$Address2': '',
+            'F_TARGET': 'p1_ctl00_btnSubmit',
+            'p1_ContentPanel1_Collapsed': 'true',
+            'p1_GeLSM_Collapsed': 'false',
+            'p1_Collapsed': 'false',
+            'F_STATE': fstate,
+        }
 
-    return daily_post
+        return report_form
 
 
 def reportSingle(username, password):
@@ -199,7 +200,7 @@ def reportSingle(username, password):
     if not url:
         return False
 
-    form = getDailyReportForm(session, url)
+    form = getReportForm(session, report_type, url)
     if not form:
         return False
 
