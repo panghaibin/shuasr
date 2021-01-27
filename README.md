@@ -75,5 +75,7 @@ crontab /etc/crontab
 
 - [ ] 自动判断是否为上报时间上报
 
+- [ ] 使用命令行添加用户
+
 ## Thanks
 [BlueFisher/SHU-selfreport](https://github.com/BlueFisher/SHU-selfreport)
