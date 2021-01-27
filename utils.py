@@ -69,7 +69,8 @@ def getReportUrl(report_type):
         return False
 
 
-def generateFState(origin_json, post_day, province, city, county, address, is_in_shanghai):
+def generateFState(origin_json, post_day=None, province=None, city=None, county=None, address=None, is_in_shanghai=None,
+                   temperature=None, campus=None):
     try:
         with open(origin_json, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
@@ -77,46 +78,56 @@ def generateFState(origin_json, post_day, province, city, county, address, is_in
         print(e)
         return False
 
-    json_data['p1_BaoSRQ']['Text'] = post_day
+    if campus is None:
+        json_data['p1_BaoSRQ']['Text'] = post_day
 
-    json_data['p1_ddlSheng']['SelectedValueArray'][0] = province
-    json_data['p1_ddlSheng']['F_Items'][0][0] = province
-    json_data['p1_ddlSheng']['F_Items'][0][1] = province
+        json_data['p1_ddlSheng']['SelectedValueArray'][0] = province
+        json_data['p1_ddlSheng']['F_Items'][0][0] = province
+        json_data['p1_ddlSheng']['F_Items'][0][1] = province
 
-    json_data['p1_ddlShi']['SelectedValueArray'][0] = city
-    json_data['p1_ddlShi']['F_Items'][0][0] = city
-    json_data['p1_ddlShi']['F_Items'][0][1] = city
+        json_data['p1_ddlShi']['SelectedValueArray'][0] = city
+        json_data['p1_ddlShi']['F_Items'][0][0] = city
+        json_data['p1_ddlShi']['F_Items'][0][1] = city
 
-    json_data['p1_ddlXian']['SelectedValueArray'][0] = county
-    json_data['p1_ddlXian']['F_Items'][0][0] = county
-    json_data['p1_ddlXian']['F_Items'][0][1] = county
+        json_data['p1_ddlXian']['SelectedValueArray'][0] = county
+        json_data['p1_ddlXian']['F_Items'][0][0] = county
+        json_data['p1_ddlXian']['F_Items'][0][1] = county
 
-    json_data['p1_XiangXDZ']['Text'] = address
-    json_data['p1_ShiFSH']['SelectedValue'] = is_in_shanghai
+        json_data['p1_XiangXDZ']['Text'] = address
+        json_data['p1_ShiFSH']['SelectedValue'] = is_in_shanghai
 
-    fstate = base64.b64encode(json.dumps(json_data).encode("utf-8")).decode("utf-8")
+        fstate = base64.b64encode(json.dumps(json_data).encode("utf-8")).decode("utf-8")
+    else:
+        json_data['p1_BaoSRQ']['Text'] = post_day
+        json_data['p1_TiWen']['Text'] = temperature
+        json_data['p1_ZaiXiao']['SelectedValue'] = campus
+        json_data['p1_ddlXian']['SelectedValueArray'][0] = county
+        json_data['p1_XiangXDZ']['Text'] = address
+
+        fstate = base64.b64encode(json.dumps(json_data).encode("utf-8")).decode("utf-8")
     return fstate
 
 
-def getReportForm(session, report_type, url):
-    if report_type == 0:
-        get_times = 0
-        while True:
-            try:
-                index = session.get(url=url)
-                if index.status_code == 200:
-                    break
-            except Exception as e:
-                print(e)
-            get_times += 1
-            if get_times > 10:
-                return False
-            time.sleep(60)
-        html = index.text
+def getReportForm(session, report_type, url, campus_id):
+    get_times = 0
+    while True:
+        try:
+            index = session.get(url=url)
+            if index.status_code == 200:
+                break
+        except Exception as e:
+            print(e)
+        get_times += 1
+        if get_times > 10:
+            return False
+        time.sleep(60)
+    html = index.text
 
-        view_state = re.search('id="__VIEWSTATE" value="(.*?)" /', html).group(1)
-        view_state_generator = re.search('id="__VIEWSTATEGENERATOR" value="(.*?)" /', html).group(1)
-        post_day = re.search('f4_state={"Text":"(.*?)"}', html).group(1)
+    view_state = re.search('id="__VIEWSTATE" value="(.*?)" /', html).group(1)
+    view_state_generator = re.search('id="__VIEWSTATEGENERATOR" value="(.*?)" /', html).group(1)
+    post_day = re.search('f4_state={"Text":"(.*?)"}', html).group(1)
+
+    if report_type == 0 and campus_id == 0:
         province = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f23=', html).group(1)
         city = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f24=', html).group(1)
         county = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f25=', html).group(1)
@@ -124,7 +135,8 @@ def getReportForm(session, report_type, url):
         is_in_shanghai = '是' if province == '上海' else '否'
         # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
-        fstate = generateFState(abs_path + '/once.json', post_day, province, city, county, address, is_in_shanghai)
+        fstate = generateFState(abs_path + '/once.json', post_day=post_day, province=province, city=city,
+                                county=county, address=address, is_in_shanghai=is_in_shanghai)
 
         report_form = {
             '__EVENTTARGET': 'p1$ctl00$btnSubmit',
@@ -183,11 +195,66 @@ def getReportForm(session, report_type, url):
             'p1_Collapsed': 'false',
             'F_STATE': fstate,
         }
+        return report_form
 
+    if report_type in [1, 2] and campus_id in [1, 2, 3]:
+        campus_info = [{'campus': '宝山', 'county': '宝山区', 'address': '上海大学宝山校区'},
+                       {'campus': '嘉定', 'county': '嘉定区', 'address': '上海大学嘉定校区'},
+                       {'campus': '延长', 'county': '静安区', 'address': '上海大学延长校区'}]
+        temperature = str(round(random.uniform(36.3, 36.7), 1))
+        campus = campus_info[campus_id - 1]['campus']
+        county = campus_info[campus_id - 1]['county']
+        address = campus_info[campus_id - 1]['address']
+
+        fstate = generateFState(abs_path + '/twice.json', post_day=post_day, temperature=temperature, campus=campus,
+                                county=county, address=address)
+
+        report_form = {
+            '__EVENTTARGET': 'p1$ctl00$btnSubmit',
+            '__EVENTARGUMENT': '',
+            '__VIEWSTATE': view_state,
+            '__VIEWSTATEGENERATOR': view_state_generator,
+            'p1$ChengNuo': 'p1_ChengNuo',
+            'p1$BaoSRQ': post_day,
+            'p1$DangQSTZK': '良好',
+            'p1$TiWen': temperature,
+            'p1$ZaiXiao': campus,
+            'p1$ddlSheng$Value': '上海',
+            'p1$ddlSheng': '上海',
+            'p1$ddlShi$Value': '上海市',
+            'p1$ddlShi': '上海市',
+            'p1$ddlXian$Value': county,
+            'p1$ddlXian': county,
+            'p1$FengXDQDL': '否',
+            'p1$TongZWDLH': '否',
+            'p1$XiangXDZ': address,
+            'p1$QueZHZJC$Value': '否',
+            'p1$QueZHZJC': '否',
+            'p1$DangRGL': '否',
+            'p1$GeLDZ': '',
+            'p1$CengFWH': '否',
+            'p1$CengFWH_RiQi': '',
+            'p1$CengFWH_BeiZhu': '',
+            'p1$JieChu': '否',
+            'p1$JieChu_RiQi': '',
+            'p1$JieChu_BeiZhu': '',
+            'p1$TuJWH': '否',
+            'p1$TuJWH_RiQi': '',
+            'p1$TuJWH_BeiZhu': '',
+            'p1$JiaRen_BeiZhu': '',
+            'p1$SuiSM': '绿色',
+            'p1$LvMa14Days': '是',
+            # 'p1$ShiFJC': ['早餐', '午餐', '晚餐'],
+            'p1$Address2': '',
+            'F_TARGET': 'p1_ctl00_btnSubmit',
+            'p1_GeLSM_Collapsed': 'false',
+            'p1_Collapsed': 'false',
+            'F_STATE': fstate
+        }
         return report_form
 
 
-def reportSingle(username, password):
+def reportSingle(username, password, campus_id):
     session = login(username, password)
     if not session:
         return False
@@ -200,7 +267,7 @@ def reportSingle(username, password):
     if not url:
         return False
 
-    form = getReportForm(session, report_type, url)
+    form = getReportForm(session, report_type, url, campus_id)
     if not form:
         return False
 
@@ -210,6 +277,24 @@ def reportSingle(username, password):
     else:
         print(report_result.text)
         return False
+
+
+def reportUsers(config_path, logs_path):
+    users = getUsers(config_path)
+    if not users:
+        return False
+
+    logs = getLogs(logs_path)
+    report_time = getTime().strftime("%Y-%m-%d %H:%M:%S")
+
+    for username in users:
+        report_result = reportSingle(username, users[username][0], users[username][1])
+        logs = updateLogs(logs, report_time, username, report_result)
+        time.sleep(60)
+
+    saveLogs(logs_path, logs)
+
+    return True
 
 
 def getUsers(path):
@@ -296,24 +381,6 @@ def sendLogs(logs_path, config_path):
     sc_msg = scSend(title, desp, sckey)
     if sc_msg['errmsg'] != 'success':
         return False
-    return True
-
-
-def reportUsers(config_path, logs_path):
-    users = getUsers(config_path)
-    if not users:
-        return False
-
-    logs = getLogs(logs_path)
-    report_time = getTime().strftime("%Y-%m-%d %H:%M:%S")
-
-    for username in users:
-        report_result = reportSingle(username, users[username][0])
-        logs = updateLogs(logs, report_time, username, report_result)
-        time.sleep(60)
-
-    saveLogs(logs_path, logs)
-
     return True
 
 
