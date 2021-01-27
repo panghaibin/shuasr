@@ -399,7 +399,7 @@ def addUser(config_path):
 
 def main(config_path, logs_path):
     if not checkEnv(config_path, logs_path):
-        print("请检查是否已正确修改配置文件，确保config.yaml与logs.json可读写")
+        print("请检查是否已添加用户，确保config.yaml与logs.json可读写")
         print("运行 python3 main.py add 添加用户，运行 python3 main sckey 修改sckey")
         return False
     report_result = reportUsers(config_path, logs_path)
