@@ -478,4 +478,4 @@ def main(config_path, logs_path):
     send_result = sendLogs(logs_path, config_path)
     if not send_result:
         print("Logs 发送失败，可能未配置key")
-    print("填报成功")
+    # print("填报成功")
