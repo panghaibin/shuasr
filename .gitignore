@@ -1,5 +1,6 @@
 # 项目文件
 config.yaml
+test.py
 # Pycharm
 .idea/
 # Byte-compiled / optimized / DLL files
