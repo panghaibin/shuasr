@@ -1,8 +1,20 @@
 # -*- coding: UTF-8 -*-
-from utils import main, abs_path
+import sys
+
+from utils import main, abs_path, addUser, setSCKey
 
 
 if __name__ == '__main__':
     config = abs_path + '/config.yaml'
     logs = abs_path + '/logs.json'
-    main(config, logs)
+    if len(sys.argv) == 1:
+        main(config, logs)
+    elif len(sys.argv) == 2:
+        if sys.argv[1] == 'add':
+            addUser(config)
+        elif sys.argv[1] == 'sckey':
+            setSCKey(config)
+        else:
+            print('未定义的参数：%s' % sys.argv[1])
+    else:
+        print('未定义的参数')

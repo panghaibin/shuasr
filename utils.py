@@ -18,7 +18,7 @@ def getTime():
     return t
 
 
-def login(username, password):
+def login(username, password, try_once=False):
     index_url = "https://selfreport.shu.edu.cn/Default.aspx"
     form_data = {
         'username': username,
@@ -39,11 +39,13 @@ def login(username, password):
         except Exception as e:
             print(e)
 
+        if try_once:
+            return False
         login_times += 1
         if login_times > 10:
             print('尝试登录次数过多')
             return False
-        time.sleep(60)
+        time.sleep(30)
 
 
 def getReportType(session):
@@ -190,7 +192,7 @@ def reportSingle(username, password):
         return False
 
     report_type = getReportType(session)
-    if report_type != 0 != 1 != 2:
+    if report_type not in [0, 1, 2]:
         return False
 
     url = getReportUrl(report_type)
@@ -212,6 +214,12 @@ def reportSingle(username, password):
 def getUsers(path):
     with open(path, 'r', encoding='utf-8') as f:
         return yaml.load(f, Loader=yaml.FullLoader)['users']
+
+
+def getSCKey(config_path):
+    config = open(config_path, encoding='utf-8').read()
+    sckey = yaml.load(config, Loader=yaml.FullLoader).get('sckey', None)
+    return sckey
 
 
 def scSend(title, desp, key):
@@ -258,8 +266,7 @@ def saveLogs(logs_path, logs):
 
 
 def sendLogs(logs_path, config_path):
-    config = open(config_path, encoding='utf-8').read()
-    sckey = yaml.load(config, Loader=yaml.FullLoader).get('sckey', None)
+    sckey = getSCKey(config_path)
     if sckey is None:
         print("未配置sckey")
         return False
@@ -309,7 +316,7 @@ def reportUsers(config_path, logs_path):
     return True
 
 
-def check_env(config_path, logs_path):
+def checkEnv(config_path, logs_path):
     try:
         users = getUsers(config_path)
         for username in users:
@@ -323,9 +330,77 @@ def check_env(config_path, logs_path):
     return True
 
 
+def initConfig(config_path):
+    if not os.path.exists(config_path):
+        try:
+            with open(config_path, 'w') as f:
+                config = {'sckey': '', 'users': {}}
+                yaml.dump(config, f)
+        except Exception as e:
+            print(e)
+            return False
+    return True
+
+
+def setSCKey(config_path):
+    if not initConfig(config_path):
+        return False
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    print('当前sckey：%s' % config['sckey'])
+    sckey = input('输入新的sckey：')
+    config['sckey'] = sckey
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    return True
+
+
+def addUser(config_path):
+    while True:
+        username = input('学号：')
+        if len(username) == 8:
+            break
+        print('学号应为8位，请重新输入')
+
+    password = input('密码：')
+    if not login(username, password, try_once=True):
+        print('学号或密码错误，请重新输入')
+        return False
+
+    while True:
+        campus = input('输入校区，宝山1/嘉定2/延长3/不在校0：')
+        try:
+            campus = int(campus)
+        except Exception as e:
+            print(e)
+            print('输入有误，请重新输入')
+            continue
+        if campus not in [0, 1, 2, 3]:
+            print('输入有误，请重新输入')
+        else:
+            break
+    new_user = {username: [password, campus]}
+
+    if not initConfig(config_path):
+        return False
+
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    for username in list(config['users'].keys()):
+        if len(username) != 8:
+            config['users'].pop(username)
+
+    config['users'].update(new_user)
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+
+    return True
+
+
 def main(config_path, logs_path):
-    if not check_env(config_path, logs_path):
+    if not checkEnv(config_path, logs_path):
         print("请检查是否已正确修改配置文件，确保config.yaml与logs.json可读写")
+        print("运行 python3 main.py add 添加用户，运行 python3 main sckey 修改sckey")
         return False
     report_result = reportUsers(config_path, logs_path)
     if not report_result:
