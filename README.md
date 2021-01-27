@@ -64,11 +64,21 @@ crontab /etc/crontab
 
 ## TODO
 
-- [x] ~~完善在校每日两报的上报~~
-
 - [ ] 自动判断是否为上报时间上报
 
+- [ ] 增加多线程支持，以便抢排名(?)
+
+- [x] ~~完善在校每日两报的上报~~
+
 - [x] ~~使用命令行添加用户~~
+
+## 说明
+
+本项目在 2020 年初用 PHP 编写~~（为了抢排名第一）~~，返校后为了帮室友上报把源代码改得面目全非~~（传说中的屎山）（又不是不能用）~~。寒假离校后受下列开源项目启发，用 Python3 对 PHP 编写的源代码进行了重写重构。
+
+本项目仅供学习交流之用，请勿用于非法用途。请遵守当地防疫守则。
+
+**Take care of yourself, and be well!**
 
 ## Thanks
 [BlueFisher/SHU-selfreport](https://github.com/BlueFisher/SHU-selfreport)
