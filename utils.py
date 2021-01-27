@@ -309,7 +309,23 @@ def reportUsers(config_path, logs_path):
     return True
 
 
+def check_env(config_path, logs_path):
+    try:
+        users = getUsers(config_path)
+        for username in users:
+            int(username)
+        logs = getLogs(logs_path)
+        saveLogs(logs_path, logs)
+    except Exception as e:
+        print(e)
+        return False
+    return True
+
+
 def main(config_path, logs_path):
+    if not check_env(config_path, logs_path):
+        print("请检查是否已正确修改配置文件，确保config.yaml与logs.json可读写")
+        return False
     report_result = reportUsers(config_path, logs_path)
     if not report_result:
         print("填报失败，尝试重试")
