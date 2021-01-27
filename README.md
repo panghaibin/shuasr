@@ -62,7 +62,7 @@ vim /etc/crontab
 根据实际情况添加如下内容
 ```
 # 每天7:30运行一次，请注意服务器时间
-30 7 * * * root /usr/bin/python3 /root/shusar/main.py
+30 7 * * * root /usr/bin/python3 /root/shuasr/main.py
 ```
 
 保存并退出后
