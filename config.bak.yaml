@@ -4,8 +4,8 @@ sckey: ""
 users:
   "id_card_num_here1":
     - "password_here"
-    # 校区设置（未完善，置空或设置为0）
+    # 校区设置（宝山1/嘉定2/延长3/不在校0）
     - 0
   "id_card_num_here2":
     - "password_here"
-    - ~
+    - 3
