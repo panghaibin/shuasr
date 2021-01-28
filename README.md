@@ -16,6 +16,8 @@ Shanghai University Auto SelfReport
 
     ![抢排名](https://p.ananas.chaoxing.com/star3/origin/b2e4280c8f422ca595e4f17bb63cadc4.jpg)
   
+  （若图片无法加载请 [点击此处查看](https://p.ananas.chaoxing.com/star3/origin/b2e4280c8f422ca595e4f17bb63cadc4.jpg) ）
+
 ## 使用
 ### 下载/更新
 ```shell
