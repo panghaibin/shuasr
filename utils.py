@@ -48,6 +48,7 @@ def login(username, password, try_once=False):
         time.sleep(30)
 
 
+# 一报：0 两报上午：1 两报下午：2
 def getReportType(session):
     index = session.get(url='https://selfreport.shu.edu.cn/')
     if '每日一报' in index.text:
@@ -108,7 +109,7 @@ def generateFState(origin_json, post_day=None, province=None, city=None, county=
     return fstate
 
 
-def getReportForm(session, report_type, url, campus_id):
+def getReportForm(session, report_type, url, post_day, campus_id):
     get_times = 0
     while True:
         try:
@@ -125,7 +126,7 @@ def getReportForm(session, report_type, url, campus_id):
 
     view_state = re.search('id="__VIEWSTATE" value="(.*?)" /', html).group(1)
     view_state_generator = re.search('id="__VIEWSTATEGENERATOR" value="(.*?)" /', html).group(1)
-    post_day = re.search('f4_state={"Text":"(.*?)"}', html).group(1)
+    # post_day = re.search('f4_state={"Text":"(.*?)"}', html).group(1)
 
     if report_type == 0 and campus_id == 0:
         province = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f23=', html).group(1)
@@ -256,7 +257,7 @@ def getReportForm(session, report_type, url, campus_id):
     return False
 
 
-def reportSingle(username, password, campus_id):
+def reportSingle(username, password, post_day, campus_id):
     session = login(username, password)
     if not session:
         return False
@@ -269,7 +270,7 @@ def reportSingle(username, password, campus_id):
     if not url:
         return False
 
-    form = getReportForm(session, report_type, url, campus_id)
+    form = getReportForm(session, report_type, url, post_day, campus_id)
     if not form:
         return False
 
@@ -281,27 +282,45 @@ def reportSingle(username, password, campus_id):
         return False
 
 
-def reportUsers(config_path, logs_path):
-    users = getUsers(config_path)
+def getUsers(config_path, report_type):
+    with open(config_path, 'r', encoding='utf-8') as f:
+        users = yaml.load(f, Loader=yaml.FullLoader)['users']
+    if report_type is None:
+        return users
+    elif report_type == 0:
+        filter_users = {}
+        for username in users:
+            if users[username][1] == 0:
+                filter_users.update({username: users[username]})
+        return filter_users
+    elif report_type in [1, 2]:
+        filter_users = {}
+        for username in users:
+            if users[username][1] in [1, 2, 3]:
+                filter_users.update({username: users[username]})
+        return filter_users
+    print(f'错误的report_type: {report_type}')
+    return False
+
+
+# 上报所有指定report_type的用户并退出
+def reportUsers(config_path, logs_path, report_type, post_day):
+    if report_type is not None or report_type not in [0, 1, 2]:
+        return False
+    users = getUsers(config_path, report_type)
     if not users:
         return False
-
     logs = getLogs(logs_path)
-    report_time = getTime().strftime("%Y-%m-%d %H:%M:%S")
+    if not logs:
+        return False
 
+    logs_time = getTime().strftime("%Y-%m-%d %H:%M:%S")
     for username in users:
-        report_result = reportSingle(username, users[username][0], users[username][1])
-        logs = updateLogs(logs, report_time, username, report_result)
-        time.sleep(60)
-
+        report_result = reportSingle(username, users[username][0], post_day, users[username][1])
+        logs = updateLogs(logs, logs_time, username, report_result)
+        time.sleep(30)
     saveLogs(logs_path, logs)
-
     return True
-
-
-def getUsers(path):
-    with open(path, 'r', encoding='utf-8') as f:
-        return yaml.load(f, Loader=yaml.FullLoader)['users']
 
 
 def getSCKey(config_path):
@@ -317,13 +336,21 @@ def scSend(title, desp, key):
 
 
 def getLogs(logs_path, newest=False):
-    with open(logs_path, 'r', encoding='utf-8') as f:
-        logs = json.load(f)
+    try:
+        with open(logs_path, 'r', encoding='utf-8') as f:
+            logs = json.load(f)
+    except Exception as e:
+        print(e)
+        return False
     if not newest:
         return logs
     else:
-        report_time = max(logs.keys())
-        return {report_time: logs[report_time]}
+        try:
+            report_time = max(logs.keys())
+            return {report_time: logs[report_time]}
+        except Exception as e:
+            print(e)
+            return False
 
 
 def updateLogs(logs, report_time, username, status):
@@ -388,7 +415,7 @@ def sendLogs(logs_path, config_path):
 
 def checkEnv(config_path, logs_path):
     try:
-        users = getUsers(config_path)
+        users = getUsers(config_path, None)
         for username in users:
             if users[username][1] not in [0, 1, 2, 3]:
                 print('校区设置错误')
@@ -476,7 +503,9 @@ def main(config_path, logs_path):
         print("请检查是否已添加用户，确保config.yaml与logs.json可读写")
         print("运行 python3 main.py add 添加用户，运行 python3 main sckey 修改sckey")
         return False
-    report_result = reportUsers(config_path, logs_path)
+
+    post_day = getTime().strftime("%Y-%m-%d")
+    report_result = reportUsers(config_path, logs_path, report_type=None, post_day=post_day)
     if not report_result:
         print("填报失败，尝试重试")
     send_result = sendLogs(logs_path, config_path)
