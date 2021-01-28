@@ -320,7 +320,7 @@ def reportUsers(config_path, logs_path, is_in_school, post_day):
     if not users:
         return False
     logs = getLogs(logs_path)
-    if not logs != False:
+    if not logs:
         return False
 
     logs_time = getTime().strftime("%Y-%m-%d %H:%M:%S")
@@ -341,7 +341,15 @@ def getSCKey(config_path):
 def scSend(title, desp, key):
     url = "http://sc.ftqq.com/%s.send" % key
     data = {'text': title, 'desp': desp}
-    return json.loads(requests.post(url, data=data).text)
+    text = ''
+    try:
+        text = requests.post(url, data=data).text
+        result = json.loads(text)
+        return result
+    except Exception as e:
+        print(text)
+        print(e)
+        return False
 
 
 def getLogs(logs_path, newest=False):
@@ -432,7 +440,11 @@ def checkEnv(config_path, logs_path):
             if len(username) != 8:
                 print('学号有误')
                 return False
+
         logs = getLogs(logs_path)
+        if not logs:
+            print('logs.json文件出错')
+            return False
         saveLogs(logs_path, logs)
     except Exception as e:
         print(e)
@@ -556,8 +568,8 @@ def grabRank(username, password, post_day):
                 if '提交成功' in report_result.text:
                     GRAB_LOGS['success'].append(username)
                     return True
-                else:
-                    print(report_result.text)
+                # else:
+                #     print(report_result.text)
                 report_times += 1
                 if report_times > 1000:
                     GRAB_LOGS['fail'].append(username)
