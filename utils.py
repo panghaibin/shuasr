@@ -498,7 +498,8 @@ def addUser(config_path):
     return True
 
 
-def main(config_path, logs_path):
+# 上报所有用户，用于测试
+def test(config_path, logs_path):
     if not checkEnv(config_path, logs_path):
         print("请检查是否已添加用户，确保config.yaml与logs.json可读写")
         print("运行 python3 main.py add 添加用户，运行 python3 main sckey 修改sckey")
@@ -512,3 +513,7 @@ def main(config_path, logs_path):
     if not send_result:
         print("Logs 发送失败，可能未配置key")
     # print("填报成功")
+
+
+def main(config_path, logs_path):
+    pass

@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 import sys
 
-from utils import main, abs_path, addUser, setSCKey
+from utils import abs_path, main, test, addUser, setSCKey
 
 
 if __name__ == '__main__':
@@ -10,7 +10,9 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         main(config, logs)
     elif len(sys.argv) == 2:
-        if sys.argv[1] == 'add':
+        if sys.argv[1] == 'test':
+            test(config, logs)
+        elif sys.argv[1] == 'add':
             addUser(config)
         elif sys.argv[1] == 'sckey':
             setSCKey(config)
