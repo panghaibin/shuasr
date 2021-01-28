@@ -7,8 +7,10 @@ from utils import abs_path, main, test, addUser, setSCKey
 if __name__ == '__main__':
     config = abs_path + '/config.yaml'
     logs = abs_path + '/logs.json'
+    grab_mode = True
+
     if len(sys.argv) == 1:
-        main(config, logs, True)
+        main(config, logs, grab_mode)
     elif len(sys.argv) == 2:
         if sys.argv[1] == 'test':
             test(config, logs)
