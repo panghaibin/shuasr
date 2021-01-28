@@ -314,13 +314,13 @@ def getUsers(config_path, is_in_school):
 
 # 上报所有指定 is_in_school 的用户并退出
 def reportUsers(config_path, logs_path, is_in_school, post_day):
-    if is_in_school is not None or is_in_school not in [0, 1]:
+    if is_in_school is not None and is_in_school not in [0, 1]:
         return False
     users = getUsers(config_path, is_in_school)
     if not users:
         return False
     logs = getLogs(logs_path)
-    if not logs:
+    if not logs != False:
         return False
 
     logs_time = getTime().strftime("%Y-%m-%d %H:%M:%S")
