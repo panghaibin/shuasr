@@ -3,6 +3,7 @@ import random
 import json
 import base64
 import re
+import threading
 import time
 import requests
 import yaml
@@ -10,6 +11,8 @@ import datetime
 import os
 
 abs_path = os.path.split(os.path.realpath(__file__))[0]
+
+GRAB_LOGS = {'success': [], 'fail': []}
 
 
 def getTime():
@@ -274,40 +277,46 @@ def reportSingle(username, password, post_day, campus_id):
     if not form:
         return False
 
-    report_result = session.post(url=url, data=form)
-    if '提交成功' in report_result.text:
-        return True
-    else:
-        print(report_result.text)
-        return False
+    report_times = 0
+    while True:
+        report_result = session.post(url=url, data=form)
+        if '提交成功' in report_result.text:
+            return True
+        else:
+            print(report_result.text)
+        report_times += 1
+        if report_times > 10:
+            return False
+        time.sleep(10)
 
 
-def getUsers(config_path, report_type):
+# is_in_school: 获取所有(None)/不在校(0)/在校(1)用户
+def getUsers(config_path, is_in_school):
     with open(config_path, 'r', encoding='utf-8') as f:
         users = yaml.load(f, Loader=yaml.FullLoader)['users']
-    if report_type is None:
+    if is_in_school is None:
         return users
-    elif report_type == 0:
+    elif is_in_school == 0:
         filter_users = {}
         for username in users:
             if users[username][1] == 0:
                 filter_users.update({username: users[username]})
         return filter_users
-    elif report_type in [1, 2]:
+    elif is_in_school == 1:
         filter_users = {}
         for username in users:
             if users[username][1] in [1, 2, 3]:
                 filter_users.update({username: users[username]})
         return filter_users
-    print(f'错误的report_type: {report_type}')
+    print(f'错误的report_type: {is_in_school}')
     return False
 
 
-# 上报所有指定report_type的用户并退出
-def reportUsers(config_path, logs_path, report_type, post_day):
-    if report_type is not None or report_type not in [0, 1, 2]:
+# 上报所有指定 is_in_school 的用户并退出
+def reportUsers(config_path, logs_path, is_in_school, post_day):
+    if is_in_school is not None or is_in_school not in [0, 1]:
         return False
-    users = getUsers(config_path, report_type)
+    users = getUsers(config_path, is_in_school)
     if not users:
         return False
     logs = getLogs(logs_path)
@@ -353,24 +362,24 @@ def getLogs(logs_path, newest=False):
             return False
 
 
-def updateLogs(logs, report_time, username, status):
-    if report_time not in logs:
-        logs.update({report_time: {}})
-        if 'success' not in logs.get(report_time, {}):
-            logs[report_time].update({'success': []})
-        if 'fail' not in logs.get(report_time, {}):
-            logs[report_time].update({'fail': []})
+def updateLogs(logs, logs_time, username, status):
+    if logs_time not in logs:
+        logs.update({logs_time: {}})
+        if 'success' not in logs.get(logs_time, {}):
+            logs[logs_time].update({'success': []})
+        if 'fail' not in logs.get(logs_time, {}):
+            logs[logs_time].update({'fail': []})
 
-    success = logs[report_time]['success']
-    fail = logs[report_time]['fail']
+    success = logs[logs_time]['success']
+    fail = logs[logs_time]['fail']
 
     if status and username not in success:
         success.append(username)
     elif not status and username not in fail:
         fail.append(username)
 
-    logs[report_time]['success'] = success
-    logs[report_time]['fail'] = fail
+    logs[logs_time]['success'] = success
+    logs[logs_time]['fail'] = fail
 
     return logs
 
@@ -506,14 +515,110 @@ def test(config_path, logs_path):
         return False
 
     post_day = getTime().strftime("%Y-%m-%d")
-    report_result = reportUsers(config_path, logs_path, report_type=None, post_day=post_day)
+    report_result = reportUsers(config_path, logs_path, is_in_school=None, post_day=post_day)
     if not report_result:
-        print("填报失败，尝试重试")
+        print("填报失败，请检查错误信息")
     send_result = sendLogs(logs_path, config_path)
     if not send_result:
         print("Logs 发送失败，可能未配置key")
     # print("填报成功")
 
 
-def main(config_path, logs_path):
-    pass
+def isTimeToReport():
+    now = getTime()
+    if now.hour == 23 and now.minute >= 54:
+        return 0
+    elif 7 <= now.hour <= 12:
+        return 1
+    elif 20 <= now.hour <= 23:
+        return 2
+    return -1
+
+
+def grabRank(username, password, post_day):
+    session = login(username, password)
+    if not session:
+        return False
+
+    url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
+
+    form = getReportForm(session, report_type=0, url=url, post_day=post_day, campus_id=0)
+    if not form:
+        return False
+
+    global GRAB_LOGS
+    while True:
+        now = getTime()
+        if now.hour == 23 and now.minute == 59 and now.second >= 55:
+            report_times = 0
+            while True:
+                report_result = session.post(url=url, data=form)
+                if '提交成功' in report_result.text:
+                    GRAB_LOGS['success'].append(username)
+                    return True
+                else:
+                    print(report_result.text)
+                report_times += 1
+                if report_times > 1000:
+                    GRAB_LOGS['fail'].append(username)
+                    return False
+        time.sleep(0.5)
+
+
+def grabRankUsers(config_path, logs_path, post_day):
+    users = getUsers(config_path, is_in_school=0)
+    if not users:
+        return False
+
+    global GRAB_LOGS
+    GRAB_LOGS = {'success': [], 'fail': []}
+
+    temp = {}
+
+    for username in users:
+        temp[username] = threading.Thread(target=grabRank, args=(username, users[username][0], post_day))
+        temp[username].start()
+    for username in users:
+        temp[username].join()
+
+    logs = getLogs(logs_path)
+    logs_time = getTime().strftime("%Y-%m-%d %H:%M:%S")
+    for username in GRAB_LOGS['success']:
+        logs = updateLogs(logs, logs_time, username, True)
+    for username in GRAB_LOGS['fail']:
+        logs = updateLogs(logs, logs_time, username, False)
+    saveLogs(logs_path, logs)
+    return True
+
+
+def main(config_path, logs_path, grab_mode):
+    report_result = False
+    while True:
+        if not report_result:
+            if isTimeToReport() == 0 and grab_mode:
+                post_day = (getTime() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+                report_result = grabRankUsers(config_path, logs_path, post_day)
+                if not report_result:
+                    print("填报失败，请检查错误信息")
+                send_result = sendLogs(logs_path, config_path)
+                if not send_result:
+                    print("Logs 发送失败，可能未配置key")
+            elif isTimeToReport() == 1:
+                post_day = getTime().strftime("%Y-%m-%d")
+                report_result = reportUsers(config_path, logs_path, is_in_school=None, post_day=post_day)
+                if not report_result:
+                    print("填报失败，请检查错误信息")
+                send_result = sendLogs(logs_path, config_path)
+                if not send_result:
+                    print("Logs 发送失败，可能未配置key")
+            elif isTimeToReport() == 2 and len(getUsers(config_path, 1)) > 0:
+                post_day = getTime().strftime("%Y-%m-%d")
+                report_result = reportUsers(config_path, logs_path, is_in_school=1, post_day=post_day)
+                if not report_result:
+                    print("填报失败，请检查错误信息")
+                send_result = sendLogs(logs_path, config_path)
+                if not send_result:
+                    print("Logs 发送失败，可能未配置key")
+        if isTimeToReport() == -1:
+            report_result = False
+        time.sleep(5)
