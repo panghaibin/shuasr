@@ -540,9 +540,9 @@ def isTimeToReport():
     now = getTime()
     if now.hour == 23 and now.minute >= 54:
         return 0
-    elif 7 <= now.hour <= 12:
+    elif 7 <= now.hour <= 8:
         return 1
-    elif 20 <= now.hour <= 23:
+    elif 20 <= now.hour <= 21:
         return 2
     return -1
 
@@ -607,30 +607,27 @@ def main(config_path, logs_path, grab_mode):
     report_result = False
     while True:
         if not report_result:
+            is_reported = False
             if isTimeToReport() == 0 and grab_mode:
                 post_day = (getTime() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
                 report_result = grabRankUsers(config_path, logs_path, post_day)
-                if not report_result:
-                    print("填报失败，请检查错误信息")
-                send_result = sendLogs(logs_path, config_path)
-                if not send_result:
-                    print("Logs 发送失败，可能未配置key")
+                is_reported = True
             elif isTimeToReport() == 1:
                 post_day = getTime().strftime("%Y-%m-%d")
                 report_result = reportUsers(config_path, logs_path, is_in_school=None, post_day=post_day)
-                if not report_result:
-                    print("填报失败，请检查错误信息")
-                send_result = sendLogs(logs_path, config_path)
-                if not send_result:
-                    print("Logs 发送失败，可能未配置key")
+                is_reported = True
             elif isTimeToReport() == 2 and len(getUsers(config_path, 1)) > 0:
                 post_day = getTime().strftime("%Y-%m-%d")
                 report_result = reportUsers(config_path, logs_path, is_in_school=1, post_day=post_day)
+                is_reported = True
+
+            if is_reported:
                 if not report_result:
                     print("填报失败，请检查错误信息")
                 send_result = sendLogs(logs_path, config_path)
                 if not send_result:
                     print("Logs 发送失败，可能未配置key")
+
         if isTimeToReport() == -1:
             report_result = False
         time.sleep(5)
