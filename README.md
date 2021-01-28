@@ -3,7 +3,7 @@ Ver.21.01.29
 
 Shanghai University Auto SelfReport
 
-上海大学健康之路自动上报（巻王专用）
+上海大学健康之路自动上报（卷王专用）
 
 ## 特色
 - 调用Server酱接口，适合一人为多人上报的情况，上报结果仅发送给一人。使用前请前往 [Server酱官网](http://sc.ftqq.com/3.version) 申请sckey。
