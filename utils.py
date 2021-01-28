@@ -390,7 +390,11 @@ def checkEnv(config_path, logs_path):
     try:
         users = getUsers(config_path)
         for username in users:
+            if users[username][1] not in [0, 1, 2, 3]:
+                print('校区设置错误')
+                return False
             if len(username) != 8:
+                print('学号有误')
                 return False
         logs = getLogs(logs_path)
         saveLogs(logs_path, logs)
