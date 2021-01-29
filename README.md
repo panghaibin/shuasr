@@ -12,7 +12,7 @@ Shanghai University Auto SelfReport
   
 - 兼容每日两报，健康之路页显示两报的视为在校，需设置所在校区。（未充分测试）
 
-- 支持抢排名模式：
+- 支持 ~~卷王~~ 抢排名模式：
 
     ![抢排名](https://p.ananas.chaoxing.com/star3/origin/b2e4280c8f422ca595e4f17bb63cadc4.jpg)
   
@@ -95,7 +95,9 @@ screen -r shu
 ## TODO
 - [ ] 自动补报功能
   
-- [ ] GitHub Action
+- [ ] GitHub Actions
+
+- [ ] 优化两报改为自动获取地址
   
 - [x] ~~自动判断是否为上报时间上报~~
 
