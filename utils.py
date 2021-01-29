@@ -48,7 +48,7 @@ def login(username, password, try_once=False):
         if login_times > 10:
             print('尝试登录次数过多')
             return False
-        time.sleep(30)
+        time.sleep(15)
 
 
 # 一报：0 两报上午：1 两报下午：2
@@ -129,7 +129,7 @@ def getReportForm(session, report_type, url, post_day, campus_id):
         if get_times > 10:
             print('view state 获取超时')
             return False
-        time.sleep(60)
+        time.sleep(10)
     html = index.text
 
     view_state = re.search('id="__VIEWSTATE" value="(.*?)" /', html).group(1)
