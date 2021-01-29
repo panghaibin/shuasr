@@ -430,10 +430,14 @@ def sendLogs(logs_path, config_path):
         title += '失败'
         desp += '请尽快查看控制台输出确定失败原因'
 
-    sc_msg = scSend(title, desp, sckey)
-    if sc_msg['errmsg'] != 'success':
-        return False
-    return True
+    send_times = 0
+    while True:
+        sc_msg = scSend(title, desp, sckey)
+        if sc_msg != False and sc_msg['errmsg'] == 'success':
+            return True
+        send_times += 1
+        if send_times > 10:
+            return False
 
 
 def checkEnv(config_path, logs_path):
