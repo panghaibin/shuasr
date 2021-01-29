@@ -61,6 +61,7 @@ def getReportType(session):
         return report_type
     else:
         print(index.text)
+        print('判断一报/两报失败')
         return False
 
 
@@ -70,6 +71,7 @@ def getReportUrl(report_type):
     elif report_type == 1 or report_type == 2:
         return f'https://selfreport.shu.edu.cn/XueSFX/HalfdayReport.aspx?t={report_type}'
     else:
+        print('错误的report_type')
         return False
 
 
@@ -80,6 +82,7 @@ def generateFState(origin_json, post_day=None, province=None, city=None, county=
             json_data = json.load(f)
     except Exception as e:
         print(e)
+        print('json文件出错')
         return False
 
     if campus is None:
@@ -120,9 +123,11 @@ def getReportForm(session, report_type, url, post_day, campus_id):
             if index.status_code == 200:
                 break
         except Exception as e:
+            print('view state 获取出错')
             print(e)
         get_times += 1
         if get_times > 10:
+            print('view state 获取超时')
             return False
         time.sleep(60)
     html = index.text
@@ -257,6 +262,7 @@ def getReportForm(session, report_type, url, post_day, campus_id):
         }
         return report_form
 
+    print('传入参数有误')
     return False
 
 
@@ -433,12 +439,16 @@ def sendLogs(logs_path, config_path):
 def checkEnv(config_path, logs_path):
     try:
         users = getUsers(config_path, None)
+        if len(users) == 0:
+            print('未配置用户，请执行 python3 main.py add 添加用户')
+            return False
+
         for username in users:
-            if users[username][1] not in [0, 1, 2, 3]:
-                print('校区设置错误')
-                return False
             if len(username) != 8:
-                print('学号有误')
+                print(f'学号{username}有误')
+                return False
+            if users[username][1] not in [0, 1, 2, 3]:
+                print(f'学号{username}校区设置错误')
                 return False
 
         logs = getLogs(logs_path)
@@ -534,6 +544,7 @@ def test(config_path, logs_path):
     if not send_result:
         print("Logs 发送失败，可能未配置key")
     # print("填报成功")
+    return True
 
 
 def isTimeToReport():
@@ -604,19 +615,28 @@ def grabRankUsers(config_path, logs_path, post_day):
 
 
 def main(config_path, logs_path, grab_mode):
+    if not checkEnv(config_path, logs_path):
+        print("请检查是否已添加用户，确保config.yaml与logs.json可读写")
+        print("运行 python3 main.py add 添加用户，运行 python3 main sckey 修改sckey")
+        return False
+
     report_result = False
     while True:
         if not report_result:
             is_reported = False
-            if isTimeToReport() == 0 and grab_mode:
+            is_time = isTimeToReport()
+            if is_time == 0 and grab_mode:
                 post_day = (getTime() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
                 report_result = grabRankUsers(config_path, logs_path, post_day)
                 is_reported = True
-            elif isTimeToReport() == 1:
+            elif is_time == 1:
                 post_day = getTime().strftime("%Y-%m-%d")
-                report_result = reportUsers(config_path, logs_path, is_in_school=None, post_day=post_day)
+                if not grab_mode:
+                    report_result = reportUsers(config_path, logs_path, is_in_school=None, post_day=post_day)
+                else:
+                    report_result = reportUsers(config_path, logs_path, is_in_school=1, post_day=post_day)
                 is_reported = True
-            elif isTimeToReport() == 2 and len(getUsers(config_path, 1)) > 0:
+            elif is_time == 2 and len(getUsers(config_path, 1)) > 0:
                 post_day = getTime().strftime("%Y-%m-%d")
                 report_result = reportUsers(config_path, logs_path, is_in_school=1, post_day=post_day)
                 is_reported = True
@@ -630,4 +650,4 @@ def main(config_path, logs_path, grab_mode):
 
         if isTimeToReport() == -1:
             report_result = False
-        time.sleep(5)
+        time.sleep(5 * 60)
