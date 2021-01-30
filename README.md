@@ -65,7 +65,13 @@ python3 main.py
 ```
 
 ### 进程守护
-启动程序后若关闭控制台程序会自动退出，因此需要进程守护。进程守护的方式有多种，如`nohup`命令等。下面以`screen`为例介绍用法。
+启动程序后若关闭控制台程序会自动退出，因此需要进程守护。进程守护的方式有多种，如使用`nohup`命令：
+
+```shell
+nohup /usr/bin/python3 /root/shuasr/main.py > /root/shuasr/output.log 2>&1 &
+```
+
+另外也可以用`screen`，下面以`screen`为例介绍用法。
 
 安装`screen`（部分系统已安装）
 
