@@ -174,6 +174,7 @@ def getReportForm(session, report_type, url, post_day, campus_id):
             'p1$ddlXian$Value': county,
             'p1$ddlXian': county,
             'p1$XiangXDZ': address,
+            'p1$ShiFZJ': '是',
             'p1$FengXDQDL': '否',
             'p1$TongZWDLH': '否',
             'p1$CengFWH': '否',

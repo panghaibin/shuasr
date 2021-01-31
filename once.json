@@ -165,6 +165,23 @@
     "Label": "国内详细地址（省市区县无需重复填写）",
     "Text": ""
   },
+  "p1_ShiFZJ": {
+    "Required": true,
+    "Hidden": false,
+    "F_Items": [
+      [
+        "是",
+        "家庭地址",
+        1
+      ],
+      [
+        "否",
+        "不是家庭地址",
+        1
+      ]
+    ],
+    "SelectedValue": "是"
+  },
   "p1_ContentPanel1_ZhongGFXDQ": {
   },
   "p1_ContentPanel1": {
