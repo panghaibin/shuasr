@@ -629,17 +629,18 @@ def main(config_path, logs_path, grab_mode):
         if not report_result:
             is_reported = False
             is_time = isTimeToReport()
-            if is_time == 0 and grab_mode:
+            if is_time == 0 and grab_mode and len(getUsers(config_path, 0)) > 0:
                 post_day = (getTime() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
                 report_result = grabRankUsers(config_path, logs_path, post_day)
                 is_reported = True
-            elif is_time == 1:
+            elif is_time == 1 and len(getUsers(config_path, 0)) > 0:
                 post_day = getTime().strftime("%Y-%m-%d")
                 if not grab_mode:
                     report_result = reportUsers(config_path, logs_path, is_in_school=None, post_day=post_day)
-                else:
+                    is_reported = True
+                elif len(getUsers(config_path, 1)) > 0:
                     report_result = reportUsers(config_path, logs_path, is_in_school=1, post_day=post_day)
-                is_reported = True
+                    is_reported = True
             elif is_time == 2 and len(getUsers(config_path, 1)) > 0:
                 post_day = getTime().strftime("%Y-%m-%d")
                 report_result = reportUsers(config_path, logs_path, is_in_school=1, post_day=post_day)
