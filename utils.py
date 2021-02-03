@@ -5,6 +5,7 @@ import base64
 import re
 import threading
 import time
+import traceback
 import requests
 import yaml
 import datetime
@@ -35,12 +36,15 @@ def login(username, password, try_once=False):
             session.keep_alive = False
             sso = session.get(url=index_url)
             index = session.post(url=sso.url, data=form_data)
+            # debug
+            print(index.history)
             # 一个非常奇怪的bug，URL编码本应是不区分大小写的，但访问302返回的URL就会出问题，需要将URL中的替换成252f
             index = session.get(url=index.history[-1].url.replace("252F", "252f"))
             if index.url == index_url and index.status_code == 200:
                 return session
         except Exception as e:
             print(e)
+            traceback.print_exc()
 
         if try_once:
             return False
@@ -554,7 +558,7 @@ def test(config_path, logs_path):
 
 def isTimeToReport():
     now = getTime()
-    if now.hour == 23 and now.minute >= 54:
+    if now.hour == 23 and now.minute >= 45:
         return 0
     elif 7 <= now.hour <= 8:
         return 1
@@ -564,21 +568,42 @@ def isTimeToReport():
 
 
 def grabRank(username, password, post_day):
-    session = login(username, password)
-    if not session:
-        return False
+    global GRAB_LOGS
+
+    times = 0
+    while True:
+        session = login(username, password)
+        if session:
+            break
+        times += 1
+        if times < 20:
+            time.sleep(20)
+            continue
+        else:
+            GRAB_LOGS['fail'].append(username)
+            return False
 
     url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
 
-    form = getReportForm(session, report_type=0, url=url, post_day=post_day, campus_id=0)
-    if not form:
-        return False
+    times = 0
+    while True:
+        form = getReportForm(session, report_type=0, url=url, post_day=post_day, campus_id=0)
+        if form:
+            break
+        times += 1
+        if times < 10:
+            time.sleep(10)
+            continue
+        else:
+            GRAB_LOGS['fail'].append(username)
+            return False
 
-    global GRAB_LOGS
+    time.sleep(60 * (getTime().minute - 58))
+
     while True:
         now = getTime()
         if now.hour == 23 and now.minute == 59 and now.second >= 55:
-            report_times = 0
+            times = 0
             while True:
                 report_result = session.post(url=url, data=form)
                 if '提交成功' in report_result.text:
@@ -586,8 +611,8 @@ def grabRank(username, password, post_day):
                     return True
                 # else:
                 #     print(report_result.text)
-                report_times += 1
-                if report_times > 1000:
+                times += 1
+                if times > 1000:
                     GRAB_LOGS['fail'].append(username)
                     return False
         time.sleep(0.5)
@@ -606,6 +631,7 @@ def grabRankUsers(config_path, logs_path, post_day):
     for username in users:
         temp[username] = threading.Thread(target=grabRank, args=(username, users[username][0], post_day))
         temp[username].start()
+        time.sleep(45)
     for username in users:
         temp[username].join()
 
