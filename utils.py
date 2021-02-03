@@ -599,7 +599,7 @@ def grabRank(username, password, post_day):
             GRAB_LOGS['fail'].append(username)
             return False
 
-    time.sleep(60 * (getTime().minute - 58))
+    time.sleep(60 * (58 - getTime().minute))
 
     while True:
         now = getTime()
