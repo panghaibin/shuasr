@@ -39,9 +39,10 @@ def login(username, password, try_once=False):
             # 一个非常奇怪的bug，URL编码本应是不区分大小写的，但访问302返回的URL就会出问题，需要将URL中的替换成252f
             index = session.get(url=index.history[-1].url.replace("252F", "252f"))
             if index.url == index_url and index.status_code == 200:
+                return session
+            else:
                 # debug
                 print(index.history)
-                return session
         except Exception as e:
             print(e)
             traceback.print_exc()
