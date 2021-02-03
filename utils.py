@@ -571,13 +571,13 @@ def isTimeToReport():
 def grabRank(username, password, post_day):
     global GRAB_LOGS
 
-    times = 0
+    try_times = 0
     while True:
         session = login(username, password)
         if session:
             break
-        times += 1
-        if times < 20:
+        try_times += 1
+        if try_times < 20:
             time.sleep(20)
             continue
         else:
@@ -586,25 +586,27 @@ def grabRank(username, password, post_day):
 
     url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
 
-    times = 0
+    try_times = 0
     while True:
         form = getReportForm(session, report_type=0, url=url, post_day=post_day, campus_id=0)
         if form:
             break
-        times += 1
-        if times < 10:
+        try_times += 1
+        if try_times < 10:
             time.sleep(10)
             continue
         else:
             GRAB_LOGS['fail'].append(username)
             return False
 
-    time.sleep(60 * (58 - getTime().minute))
+    sleep_time = 60 * (57 - getTime().minute)
+    sleep_time = sleep_time if sleep_time > 0 else 0
+    time.sleep(sleep_time)
 
     while True:
         now = getTime()
-        if now.hour == 23 and now.minute == 59 and now.second >= 55:
-            times = 0
+        if (now.hour == 23 and now.minute == 59 and now.second >= 55) or now.hour == 0:
+            try_times = 0
             while True:
                 report_result = session.post(url=url, data=form)
                 if '提交成功' in report_result.text:
@@ -612,8 +614,8 @@ def grabRank(username, password, post_day):
                     return True
                 # else:
                 #     print(report_result.text)
-                times += 1
-                if times > 1000:
+                try_times += 1
+                if try_times > 1000:
                     GRAB_LOGS['fail'].append(username)
                     return False
         time.sleep(0.5)
