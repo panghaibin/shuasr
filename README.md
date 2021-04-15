@@ -1,5 +1,5 @@
 # SHUASR
-Ver.21.02.28 (Bate)临时版
+Ver.21.04.15
 
 Shanghai University Auto SelfReport
 
@@ -10,15 +10,13 @@ Shanghai University Auto SelfReport
 ## 特色
 - 调用Server酱接口，适合一人为多人上报的情况，上报结果仅发送给一人。使用前请前往 [Server酱官网](http://sc.ftqq.com/3.version) 申请sckey。
   
-- 离校每日一报的，自动获取上次填报地址进行上报
-  
-- 兼容每日两报，健康之路页显示两报的视为在校，需设置所在校区。（未充分测试）
+- 每日一报可自动获取上次填报地址进行上报
+
+[comment]: <> (- 兼容每日两报，健康之路页显示两报的视为在校，需设置所在校区。（未充分测试）)
 
 - 支持 ~~卷王~~ 抢排名模式：
 
-    ![抢排名](https://p.ananas.chaoxing.com/star3/origin/b2e4280c8f422ca595e4f17bb63cadc4.jpg)
-  
-  （若图片无法加载请 [点击此处查看](https://p.ananas.chaoxing.com/star3/origin/b2e4280c8f422ca595e4f17bb63cadc4.jpg) ）
+    ![抢排名](./img/rank.jpg)
 
 ## 使用
 ### 下载/更新
@@ -39,13 +37,13 @@ pip3 install -r requirements.txt
 #### 方法一：命令行下添加
 ```shell
 # 添加用户
-# 如需修改已添加用户的密码或校区，再次执行并输入相同学号即可
+# 如需修改已添加用户的密码，再次执行并输入相同学号即可
 python3 main.py add
 # 设置SCKey
 python3 main.py sckey
 ```
 
-**请注意已离校每日一报的，校区一项务必录入0** ，仍在校每日两报的须指定校区（见运行时提示）。
+[comment]: <> (**请注意已离校每日一报的，校区一项务必录入0** ，仍在校每日两报的须指定校区（见运行时提示）。)
 
 #### 方法二：手动修改配置文件 
 修改目录下`config.bak.yaml`文件名为`config.yaml`，按照文件所写格式修改填写。
@@ -105,7 +103,7 @@ screen -r shu
   
 - [ ] GitHub Actions
 
-- [ ] 优化两报改为自动获取地址
+[comment]: <> (- [ ] 优化两报改为自动获取地址)
   
 - [x] ~~自动判断是否为上报时间上报~~
 

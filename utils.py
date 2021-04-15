@@ -33,6 +33,7 @@ def login(username, password, try_once=False):
     while True:
         try:
             session = requests.Session()
+            session.trust_env = False
             session.keep_alive = False
             sso = session.get(url=index_url)
             index = session.post(url=sso.url, data=form_data)
@@ -153,7 +154,7 @@ def getReportForm(session, report_type, url, post_day, campus_id):
                                 county=county, address=address, is_in_shanghai=is_in_shanghai)
 
         report_form = {
-            '__EVENTTARGET': 'p1$ctl00$btnSubmit',
+            '__EVENTTARGET': 'p1$ctl01$btnSubmit',
             '__EVENTARGUMENT': '',
             '__VIEWSTATE': view_state,
             '__VIEWSTATEGENERATOR': view_state_generator,
@@ -509,18 +510,21 @@ def addUser(config_path):
         print('学号或密码错误，请重新输入')
         return False
 
-    while True:
-        campus = input('输入校区，宝山1/嘉定2/延长3/不在校0：')
-        try:
-            campus = int(campus)
-        except Exception as e:
-            print(e)
-            print('输入有误，请重新输入')
-            continue
-        if campus not in [0, 1, 2, 3]:
-            print('输入有误，请重新输入')
-        else:
-            break
+    if False:
+        while True:
+            campus = input('输入校区，宝山1/嘉定2/延长3/不在校0：')
+            try:
+                campus = int(campus)
+            except Exception as e:
+                print(e)
+                print('输入有误，请重新输入')
+                continue
+            if campus not in [0, 1, 2, 3]:
+                print('输入有误，请重新输入')
+            else:
+                break
+    else:
+        campus = 0
     new_user = {username: [password, campus]}
 
     if not initConfig(config_path):
