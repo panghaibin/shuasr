@@ -7,6 +7,7 @@ import threading
 import time
 import traceback
 import requests
+import rsa
 import yaml
 import datetime
 import os
@@ -22,11 +23,24 @@ def getTime():
     return t
 
 
+# 2021.04.17 更新密码加密
+def encryptPass(password):
+    key_str = '''-----BEGIN PUBLIC KEY-----
+    MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDl/aCgRl9f/4ON9MewoVnV58OL
+    OU2ALBi2FKc5yIsfSpivKxe7A6FitJjHva3WpM7gvVOinMehp6if2UNIkbaN+plW
+    f5IwqEVxsNZpeixc4GsbY9dXEk3WtRjwGSyDLySzEESH/kpJVoxO7ijRYqU+2oSR
+    wTBNePOk1H+LRQokgQIDAQAB
+    -----END PUBLIC KEY-----'''
+    pub_key = rsa.PublicKey.load_pkcs1_openssl_pem(key_str.encode('utf-8'))
+    crypto = base64.b64encode(rsa.encrypt(password.encode('utf-8'), pub_key)).decode()
+    return crypto
+
+
 def login(username, password, try_once=False):
     index_url = "https://selfreport.shu.edu.cn/Default.aspx"
     form_data = {
         'username': username,
-        'password': password,
+        'password': encryptPass(password),
         'login_submit': None,
     }
     login_times = 0

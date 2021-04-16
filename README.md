@@ -1,11 +1,13 @@
 # SHUASR
-Ver.21.04.15
+Ver.21.04.17
 
 Shanghai University Auto SelfReport
 
 上海大学健康之路自动上报（卷王专用）
 
 项目地址：<https://github.com/panghaibin/shuasr>
+
+_2021.04.17 登录接口使用了新的密码加密方式，更新本程序后需执行 `pip install rsa` 安装加密依赖库_
 
 ## 特色
 - 调用Server酱接口，适合一人为多人上报的情况，上报结果仅发送给一人。使用前请前往 [Server酱官网](http://sc.ftqq.com/3.version) 申请sckey。
