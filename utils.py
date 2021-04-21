@@ -47,12 +47,15 @@ def login(username, password, try_once=False):
     while True:
         try:
             session = requests.Session()
+            session.headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (' \
+                                            'KHTML, like Gecko) Chrome/34.0.1847.131 Safari/537.36 '
             session.trust_env = False
             session.keep_alive = False
             sso = session.get(url=index_url)
-            index = session.post(url=sso.url, data=form_data)
+            index = session.post(url=sso.url, data=form_data, allow_redirects=False)
             # 一个非常奇怪的bug，URL编码本应是不区分大小写的，但访问302返回的URL就会出问题，需要将URL中的替换成252f
-            index = session.get(url=index.history[-1].url.replace("252F", "252f"))
+            # index = session.get(url=index.history[-1].url.replace("252F", "252f"))
+            index = session.get(url=index.next.url.replace("252F", "252f"))
             if index.url == index_url and index.status_code == 200:
                 return session
             else:
@@ -68,7 +71,7 @@ def login(username, password, try_once=False):
         if login_times > 10:
             print('尝试登录次数过多')
             return False
-        time.sleep(15)
+        time.sleep(20)
 
 
 # 一报：0 两报上午：1 两报下午：2
@@ -157,10 +160,10 @@ def getReportForm(session, report_type, url, post_day, campus_id):
     # post_day = re.search('f4_state={"Text":"(.*?)"}', html).group(1)
 
     if report_type == 0 and campus_id == 0:
-        province = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f23=', html).group(1)
-        city = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f24=', html).group(1)
-        county = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f25=', html).group(1)
-        address = re.search('"Text":"(((?!"Text":").)*)"};var f26=', html).group(1)
+        province = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f24=', html).group(1)
+        city = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f25=', html).group(1)
+        county = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f26=', html).group(1)
+        address = re.search('"Text":"(((?!"Text":").)*)"};var f27=', html).group(1)
         is_in_shanghai = '是' if province == '上海' else '否'
         # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
@@ -633,7 +636,7 @@ def grabRank(username, password, post_day):
                 # else:
                 #     print(report_result.text)
                 try_times += 1
-                if try_times > 1000:
+                if try_times > 500:
                     GRAB_LOGS['fail'].append(username)
                     return False
         time.sleep(0.5)
