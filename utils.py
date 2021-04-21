@@ -71,7 +71,7 @@ def login(username, password, try_once=False):
         if login_times > 10:
             print('尝试登录次数过多')
             return False
-        time.sleep(20)
+        time.sleep(60)
 
 
 # 一报：0 两报上午：1 两报下午：2
@@ -580,8 +580,10 @@ def test(config_path, logs_path):
 
 def isTimeToReport():
     now = getTime()
-    if now.hour == 23 and now.minute >= 45:
+    if now.hour == 23 and now.minute >= 30:
         return 0
+    elif now.hour == 0:
+        return 3
     elif 7 <= now.hour <= 8:
         return 1
     elif 20 <= now.hour <= 21:
@@ -680,8 +682,8 @@ def main(config_path, logs_path, grab_mode):
         if not report_result:
             is_reported = False
             is_time = isTimeToReport()
-            if is_time == 0 and grab_mode and len(getUsers(config_path, 0)) > 0:
-                post_day = (getTime() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+            if (is_time == 0 or is_time == 3) and grab_mode and len(getUsers(config_path, 0)) > 0:
+                post_day = (getTime() + datetime.timedelta(days=1)).strftime("%Y-%m-%d") if is_time == 0 else getTime().strftime("%Y-%m-%d")
                 report_result = grabRankUsers(config_path, logs_path, post_day)
                 is_reported = True
             elif is_time == 1 and len(getUsers(config_path, 0)) > 0:
