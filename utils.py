@@ -55,7 +55,10 @@ def login(username, password, try_once=False):
             index = session.post(url=sso.url, data=form_data, allow_redirects=False)
             # 一个非常奇怪的bug，URL编码本应是不区分大小写的，但访问302返回的URL就会出问题，需要将URL中的替换成252f
             # index = session.get(url=index.history[-1].url.replace("252F", "252f"))
-            index = session.get(url=index.next.url.replace("252F", "252f"))
+            # index = session.get(url=index.next.url.replace("252F", "252f"))
+            index = session.get(url='https://newsso.shu.edu.cn/oauth/authorize?client_id=WUHWfrntnWYHZfzQ5QvXUCVy'
+                                    '&response_type=code&scope=1&redirect_uri=https%3A%2F%2Fselfreport.shu.edu.cn'
+                                    '%2FLoginSSO.aspx%3FReturnUrl%3D%252fDefault.aspx&state=')
             if index.url == index_url and index.status_code == 200:
                 return session
             else:
@@ -601,7 +604,7 @@ def grabRank(username, password, post_day):
             break
         try_times += 1
         if try_times < 20:
-            time.sleep(20)
+            time.sleep(60)
             continue
         else:
             GRAB_LOGS['fail'].append(username)
@@ -639,6 +642,7 @@ def grabRank(username, password, post_day):
                 #     print(report_result.text)
                 try_times += 1
                 if try_times > 500:
+                    print(report_result.text)
                     GRAB_LOGS['fail'].append(username)
                     return False
         time.sleep(0.5)
@@ -657,7 +661,7 @@ def grabRankUsers(config_path, logs_path, post_day):
     for username in users:
         temp[username] = threading.Thread(target=grabRank, args=(username, users[username][0], post_day))
         temp[username].start()
-        time.sleep(45)
+        time.sleep(60)
     for username in users:
         temp[username].join()
 
