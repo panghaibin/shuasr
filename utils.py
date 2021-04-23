@@ -360,7 +360,7 @@ def reportUsers(config_path, logs_path, is_in_school, post_day):
     for username in users:
         report_result = reportSingle(username, users[username][0], post_day, users[username][1])
         logs = updateLogs(logs, logs_time, username, report_result)
-        time.sleep(30)
+        time.sleep(60)
     saveLogs(logs_path, logs)
     return True
 
@@ -625,13 +625,14 @@ def grabRank(username, password, post_day):
             GRAB_LOGS['fail'].append(username)
             return False
 
-    sleep_time = 60 * (57 - getTime().minute)
-    sleep_time = sleep_time if sleep_time > 0 else 0
+    now = getTime()
+    sleep_time = 60 * (57 - now.minute)
+    sleep_time = sleep_time if sleep_time > 0 and now.hour == 23 else 0
     time.sleep(sleep_time)
 
     while True:
         now = getTime()
-        if (now.hour == 23 and now.minute == 59 and now.second >= 55) or now.hour == 0:
+        if (now.hour == 23 and now.minute == 59 and now.second >= 55) or now.hour != 23:
             try_times = 0
             while True:
                 report_result = session.post(url=url, data=form)
@@ -661,7 +662,7 @@ def grabRankUsers(config_path, logs_path, post_day):
     for username in users:
         temp[username] = threading.Thread(target=grabRank, args=(username, users[username][0], post_day))
         temp[username].start()
-        time.sleep(60)
+        time.sleep(2 * 60)
     for username in users:
         temp[username].join()
 
