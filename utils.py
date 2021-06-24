@@ -380,7 +380,7 @@ def sendMsg(title, desp, api, key):
             data = {'text': title, 'desp': desp}
             text = requests.post(url, data=data).text
             result = json.loads(text)
-            if result['data'] == '发送消息成功':
+            if result['errmsg'] == 'success':
                 return True
             else:
                 return False
@@ -395,7 +395,7 @@ def sendMsg(title, desp, api, key):
             headers = {'Content-Type': 'application/json'}
             text = requests.post(url, data=body, headers=headers).text
             result = json.loads(text)
-            if result['errmsg'] == 'success':
+            if result['data'] == '发送消息成功':
                 return True
             else:
                 return False
