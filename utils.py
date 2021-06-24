@@ -365,20 +365,40 @@ def reportUsers(config_path, logs_path, is_in_school, post_day):
     return True
 
 
-def getSCKey(config_path):
-    config = open(config_path, encoding='utf-8').read()
-    sckey = yaml.load(config, Loader=yaml.FullLoader).get('sckey', None)
-    return sckey
+def getSendApi(config_path):
+    config = yaml.load(open(config_path, encoding='utf-8').read(), Loader=yaml.FullLoader)
+    send_api = config.get('send_api', None)
+    send_key = config.get('send_key', None)
+    return {'api': send_api, 'key': send_key}
 
 
-def scSend(title, desp, key):
-    url = "http://sc.ftqq.com/%s.send" % key
-    data = {'text': title, 'desp': desp}
+def sendMsg(title, desp, api, key):
     text = ''
     try:
-        text = requests.post(url, data=data).text
-        result = json.loads(text)
-        return result
+        if api == 1:
+            url = "http://sc.ftqq.com/%s.send" % key
+            data = {'text': title, 'desp': desp}
+            text = requests.post(url, data=data).text
+            result = json.loads(text)
+            if result['data'] == '发送消息成功':
+                return True
+            else:
+                return False
+        elif api == 2:
+            url = 'http://pushplus.hxtrip.com/send'
+            data = {
+                "token": key,
+                "title": title,
+                "content": desp.replace("\n\n", "<br>")
+            }
+            body = json.dumps(data).encode(encoding='utf-8')
+            headers = {'Content-Type': 'application/json'}
+            text = requests.post(url, data=body, headers=headers).text
+            result = json.loads(text)
+            if result['errmsg'] == 'success':
+                return True
+            else:
+                return False
     except Exception as e:
         print(text)
         print(e)
@@ -431,9 +451,9 @@ def saveLogs(logs_path, logs):
 
 
 def sendLogs(logs_path, config_path):
-    sckey = getSCKey(config_path)
-    if sckey is None:
-        print("未配置sckey")
+    send_msg = getSendApi(config_path)
+    if send_msg['api'] == 0 or send_msg['key'] is None:
+        print("未配置消息发送API")
         return False
 
     logs = getLogs(logs_path, newest=True)
@@ -459,8 +479,8 @@ def sendLogs(logs_path, config_path):
 
     send_times = 0
     while True:
-        sc_msg = scSend(title, desp, sckey)
-        if sc_msg != False and sc_msg['errmsg'] == 'success':
+        send_msg = sendMsg(title, desp, send_msg['api'], send_msg['key'])
+        if send_msg != False and send_msg == True:
             return True
         send_times += 1
         if send_times > 10:
@@ -497,7 +517,7 @@ def initConfig(config_path):
     if not os.path.exists(config_path):
         try:
             with open(config_path, 'w') as f:
-                config = {'sckey': '', 'users': {}}
+                config = {'send_api': 0, 'send_key': '', 'users': {}}
                 yaml.dump(config, f)
         except Exception as e:
             print(e)
@@ -505,14 +525,35 @@ def initConfig(config_path):
     return True
 
 
-def setSCKey(config_path):
+def setSendMsgApi(config_path):
     if not initConfig(config_path):
         return False
     with open(config_path, 'r', encoding='utf-8') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
-    print('当前sckey：%s' % config['sckey'])
-    sckey = input('输入新的sckey：')
-    config['sckey'] = sckey
+    send_msg_api = ['未设置',
+                    '方糖气球 https://sct.ftqq.com/',
+                    '推送加 https://pushplus.hxtrip.com/']
+    print('当前消息发送平台设置为：%s' % send_msg_api[config['send_api']])
+    print('支持的平台：')
+    for i in range(1, len(send_msg_api)):
+        print("%s. %s" % (i, send_msg_api[i]))
+    while True:
+        send_api = input("请选择：")
+        try:
+            send_api = int(send_api)
+        except Exception as e:
+            print(e)
+            print('输入有误，重新输入')
+            continue
+        if send_api not in range(1, len(send_msg_api)):
+            print('输入有误，重新输入')
+        else:
+            break
+    config['send_api'] = send_api
+
+    print('当前Token为: %s' % config['send_key'])
+    send_key = input('设置Token：')
+    config['send_key'] = send_key
     with open(config_path, 'w') as f:
         yaml.dump(config, f)
     return True
@@ -567,7 +608,7 @@ def addUser(config_path):
 def test(config_path, logs_path):
     if not checkEnv(config_path, logs_path):
         print("请检查是否已添加用户，确保config.yaml与logs.json可读写")
-        print("运行 python3 main.py add 添加用户，运行 python3 main sckey 修改sckey")
+        print("运行 python3 main.py add 添加用户，运行 python3 main.py send 配置消息发送API")
         return False
 
     post_day = getTime().strftime("%Y-%m-%d")
@@ -576,7 +617,7 @@ def test(config_path, logs_path):
         print("填报失败，请检查错误信息")
     send_result = sendLogs(logs_path, config_path)
     if not send_result:
-        print("Logs 发送失败，可能未配置key")
+        print("Logs 发送失败，可能未配置消息发送API")
     # print("填报成功")
     return True
 
@@ -679,7 +720,7 @@ def grabRankUsers(config_path, logs_path, post_day):
 def main(config_path, logs_path, grab_mode):
     if not checkEnv(config_path, logs_path):
         print("请检查是否已添加用户，确保config.yaml与logs.json可读写")
-        print("运行 python3 main.py add 添加用户，运行 python3 main sckey 修改sckey")
+        print("运行 python3 main.py add 添加用户，运行 python3 main.py send 配置消息发送API")
         return False
 
     report_result = False
@@ -688,7 +729,8 @@ def main(config_path, logs_path, grab_mode):
             is_reported = False
             is_time = isTimeToReport()
             if (is_time == 0 or is_time == 3) and grab_mode and len(getUsers(config_path, 0)) > 0:
-                post_day = (getTime() + datetime.timedelta(days=1)).strftime("%Y-%m-%d") if is_time == 0 else getTime().strftime("%Y-%m-%d")
+                post_day = (getTime() + datetime.timedelta(days=1)).strftime(
+                    "%Y-%m-%d") if is_time == 0 else getTime().strftime("%Y-%m-%d")
                 report_result = grabRankUsers(config_path, logs_path, post_day)
                 is_reported = True
             elif is_time == 1 and len(getUsers(config_path, 0)) > 0:
@@ -709,7 +751,7 @@ def main(config_path, logs_path, grab_mode):
                     print("填报失败，请检查错误信息")
                 send_result = sendLogs(logs_path, config_path)
                 if not send_result:
-                    print("Logs 发送失败，可能未配置key")
+                    print("Logs 发送失败，可能未配置消息发送API")
 
         if isTimeToReport() == -1:
             report_result = False

@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 import sys
 
-from utils import abs_path, main, test, addUser, setSCKey
+from utils import abs_path, main, test, addUser, setSendMsgApi
 
 
 if __name__ == '__main__':
@@ -16,8 +16,8 @@ if __name__ == '__main__':
             test(config, logs)
         elif sys.argv[1] == 'add':
             addUser(config)
-        elif sys.argv[1] == 'sckey':
-            setSCKey(config)
+        elif sys.argv[1] == 'send':
+            setSendMsgApi(config)
         else:
             print('未定义的参数：%s' % sys.argv[1])
     else:

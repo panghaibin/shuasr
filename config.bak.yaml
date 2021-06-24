@@ -1,5 +1,8 @@
-# 前往 http://sc.ftqq.com/3.version 获取sckey
-sckey: ""
+# 0: 未设置
+# 1: 方糖气球 https://sct.ftqq.com/
+# 2: 推送加 https://pushplus.hxtrip.com/
+send_api: 0
+send_key: ""
 
 users:
   "id_card_num_here1":

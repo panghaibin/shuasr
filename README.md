@@ -1,16 +1,16 @@
 # SHUASR
 Shanghai University Auto SelfReport
 
-Ver.21.04.24
+Ver.21.06.24
 
 上海大学健康之路自动上报（卷王专用）
 
 项目地址：<https://github.com/panghaibin/shuasr>
 
-[comment]: <> (_2021.04.17 登录接口使用了新的密码加密方式，更新本程序后需执行 `pip install rsa` 安装加密依赖库_)
+2021.06.24 UPDATE: 更新了消息推送接口，更新后需重新设置消息推送API
 
 ## 特色
-- 调用Server酱接口，适合一人为多人上报的情况，上报结果仅发送给一人。使用前请前往 [Server酱官网](http://sc.ftqq.com/3.version) 申请sckey。
+- 支持多种消息发送接口，适合一人为多人上报的情况，上报结果仅发送给一人。使用前请前往对应官网申请 Token。
   
 - 每日一报可自动获取上次填报地址进行上报
 
@@ -34,15 +34,21 @@ git pull
 pip3 install -r requirements.txt
 ```
 
-### 添加用户，设置SCKey
+### 添加用户，设置消息发送API
+
+目前支持以下消息推送服务：
+
+方糖气球 https://sct.ftqq.com/
+
+推送加 https://pushplus.hxtrip.com/
 
 #### 方法一：命令行下添加
 ```shell
 # 添加用户
 # 如需修改已添加用户的密码，再次执行并输入相同学号即可
 python3 main.py add
-# 设置SCKey
-python3 main.py sckey
+# 设置消息发送API
+python3 main.py send
 ```
 
 [comment]: <> (**请注意已离校每日一报的，校区一项务必录入0** ，仍在校每日两报的须指定校区（见运行时提示）。)
@@ -51,13 +57,13 @@ python3 main.py sckey
 修改目录下`config.bak.yaml`文件名为`config.yaml`，按照文件所写格式修改填写。
 
 ### 启动
-添加设置完毕用户及SCKEY后，建议先执行以下命令测试
+添加设置完毕用户及消息发送API后，建议先执行以下命令测试
 
 ```shell
 python3 main.py test
 ```
 
-该命令会将所有用户立即上报一次，如控制台无异常输出且微信能收到推送，说明设置无误。若出现异常报错有可能是健康之路已改版，等待更新或向我提PR。
+该命令会将所有用户立即上报一次，如控制台无异常输出且能收到消息推送，说明设置无误。若出现异常报错有可能是健康之路已改版，等待更新或向我提PR。
 
 运行以下命令，程序将自行检查是否在上报时间内，并自动进行上报
 ```shell
