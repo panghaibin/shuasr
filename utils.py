@@ -533,7 +533,9 @@ def setSendMsgApi(config_path):
     send_msg_api = ['未设置',
                     '方糖气球 https://sct.ftqq.com/',
                     '推送加 https://pushplus.hxtrip.com/']
-    print('当前消息发送平台设置为：%s' % send_msg_api[config['send_api']])
+    send_api = config.get('send_api', 0)
+    send_key = config.get('send_key', '')
+    print('当前消息发送平台设置为：%s' % send_msg_api[send_api])
     print('支持的平台：')
     for i in range(1, len(send_msg_api)):
         print("%s. %s" % (i, send_msg_api[i]))
@@ -551,7 +553,7 @@ def setSendMsgApi(config_path):
             break
     config['send_api'] = send_api
 
-    print('当前Token为: %s' % config['send_key'])
+    print('当前Token为: %s' % send_key)
     send_key = input('设置Token：')
     config['send_key'] = send_key
     with open(config_path, 'w') as f:
