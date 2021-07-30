@@ -3,13 +3,12 @@
 # 2: 推送加 https://pushplus.hxtrip.com/
 send_api: 0
 send_key: ""
+# 抢排名模式
+grab_mode: True
 
 users:
   "id_card_num_here1":
     - "password_here"
-    # 校区设置（宝山1/嘉定2/延长3/不在校0）
-    # 目前只用每日一报，设置为0即可，但不能为空
-    - 0
   "id_card_num_here2":
     - "password_here"
     - 3
