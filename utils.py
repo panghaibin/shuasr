@@ -398,8 +398,8 @@ def sendLogs(logs_path, config_path):
 
     send_times = 0
     while True:
-        send_msg = sendMsg(title, desp, send_msg['api'], send_msg['key'])
-        if send_msg != False and send_msg == True:
+        send_msg_result = sendMsg(title, desp, send_msg['api'], send_msg['key'])
+        if send_msg_result != False and send_msg_result == True:
             return True
         send_times += 1
         if send_times > 10:
