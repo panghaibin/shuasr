@@ -1,7 +1,7 @@
 # SHUASR
 Shanghai University Auto SelfReport
 
-Ver.21.09.10
+Ver.21.09.26
 
 上海大学健康之路自动上报（卷王专用）
 

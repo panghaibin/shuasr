@@ -311,7 +311,8 @@ def sendMsg(title, desp, api, key):
                 "content": desp.replace("\n\n", "<br>")
             }
             body = json.dumps(data).encode(encoding='utf-8')
-            headers = {'Content-Type': 'application/json'}
+            headers = {'Content-Type': 'application/json',
+                       'accept': 'application/json'}
             text = requests.post(url, data=body, headers=headers).text
             result = json.loads(text)
             if result['data'] == '发送消息成功':
