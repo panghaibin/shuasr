@@ -22,11 +22,12 @@ Ver.21.10.01
 ## 使用
 
 ### 1. 使用 GitHub Actions 填报
-### i. 开始
+#### i. 开始
 点击本项目右上角的`Star`和`Fork`
+
 ![gh-1](./img/gh-1.jpg)
 
-### ii. 添加 USERS Secret
+#### ii. 添加 USERS Secret
 Fork 项目后，在自己 Fork 后的项目的页面依次点击 `Settings`-`Secrets`-`New repository secret`
 
 ![gh-1](./img/gh-2.jpg)
@@ -37,31 +38,35 @@ Fork 项目后，在自己 Fork 后的项目的页面依次点击 `Settings`-`Se
 
 输入完毕后，点击`Add secret`添加
 
-### iii. 添加 SEND Secret （可选）
+#### iii. 添加 SEND Secret （可选）
 
-采用同样的方法配置该 Secret。配置后可在每次 GitHub Actions 执行填报后，通过第三方的消息推送接口将结果发送给自己。
+需要在第三方消息推送接口申请 key 后，采用同样的方法配置该 Secret。配置后可在每次 GitHub Actions 执行填报后，将填报结果发送给自己。
 
 Secret 的 `Name` 设置为 `SEND` ， `Value` 格式为 `send_api,send_key` ， `send_api` 代表消息推送接口代号， `send_key` 代表消息推送接口密钥。例如： `2,5e58d2264821c69ebcd46c448e7f5fe6`。
 
 对于支持的消息推送接口及其代号查询，可参考 [填报结果消息推送介绍](#填报结果消息推送介绍)。
 
-### iv. 开启 Actions
+#### iv. 开启 Actions
 如下图所示
 
 ![gh-1](./img/gh-4.jpg)
 ![gh-1](./img/gh-5.jpg)
 
-开启后可点击 `Run workflow` 测试填报一次
+此时 Actions 开启成功，为确保能够填报成功，程序将会在**每天 6:30 及 12:30** 各执行一次
+
+可以点击 `Run workflow` 测试填报一下，确认可以成功填报
 
 ![gh-1](./img/gh-6.jpg)
 
-### v. 更新项目
-当本项目更新后，你的 Fork 并不会自动更新，需要手动 `Fetch and merge` 一下，如下图所示，在你 Fork 后的项目页执行该操作
+#### v. 更新项目
+当本项目更新后，你 Fork 的项目并不会自动更新，需要手动 `Fetch and merge` 一下，如下图所示，在你 Fork 后的项目页执行该操作
 
 ![gh-1](./img/gh-7.jpg)
 
+你可以 `Watch` 本项目以确保项目更新时能收到消息
+
 ### 2. 在自己的服务器上填报
-### i. 下载/更新
+#### i. 下载/更新
 ```shell
 git clone https://github.com/panghaibin/shuasr.git
 cd shuasr
@@ -69,14 +74,14 @@ cd shuasr
 git pull
 ```
 
-### ii.安装依赖
+#### ii.安装依赖
 ```shell
 pip3 install -r requirements.txt
 ```
 
-### iii. 添加用户，设置消息推送API
+#### iii. 添加用户，设置消息推送API
 
-#### 方法一：命令行下添加
+##### 方法一：命令行下添加
 ```shell
 # 添加用户
 # 如需修改已添加用户的密码，再次执行并输入相同学号即可
@@ -87,10 +92,10 @@ python3 main.py send
 
 推送API设置可参考 [填报结果消息推送介绍](#填报结果消息推送介绍)
 
-#### 方法二：手动修改配置文件 
+##### 方法二：手动修改配置文件 
 修改目录下`config.bak.yaml`文件名为`config.yaml`，按照文件所写格式修改填写。
 
-### iv. 启动
+#### iv. 启动
 添加设置完毕用户及消息发送API后，建议先执行以下命令测试
 
 ```shell
@@ -104,7 +109,7 @@ python3 main.py test
 python3 main.py
 ```
 
-### v. 进程守护
+#### v. 进程守护
 启动程序后若关闭控制台程序会自动退出，因此需要进程守护。进程守护的方式有多种，如使用`nohup`命令：
 
 ```shell
