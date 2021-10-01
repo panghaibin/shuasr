@@ -1,26 +1,67 @@
-# SHUASR
+# 上海大学健康之路自动上报
 Shanghai University Auto SelfReport
 
-Ver.21.09.26
+Ver.21.10.01
 
-上海大学健康之路自动上报（卷王专用）
+上海大学健康之路每日一报自动上报（卷王专用）
 
 项目地址：<https://github.com/panghaibin/shuasr>
 
 
 ## 特色
-- 支持多种消息发送接口，适合一人为多人上报的情况，上报结果仅发送给一人。使用前请前往对应官网申请 Token。
-  
-- 自动获取上次填报信息进行上报
+- 支持使用 GitHub Actions 填报。
 
-[comment]: <> (- 兼容每日两报，健康之路页显示两报的视为在校，需设置所在校区。（未充分测试）)
+- 支持多种消息推送接口，适合一人为多人上报的情况，上报结果仅发送给一人。
 
-- 支持 ~~卷王~~ 抢排名模式：
+- 自动获取最新一次填报信息进行上报，如需修改地址等信息，当天重新手动填报一次，下次填报将自动采用。
+
+- 支持 ~~卷王~~ 抢排名模式（需使用自建服务器，不支持在 GitHub Actions 上使用）：
 
     ![抢排名](./img/rank.jpg)
 
 ## 使用
-### 下载/更新
+
+### 1. 使用 GitHub Actions 填报
+### i. 开始
+点击本项目右上角的`Star`和`Fork`
+![gh-1](./img/gh-1.jpg)
+
+### ii. 添加 USERS Secret
+Fork 项目后，在自己 Fork 后的项目的页面依次点击 `Settings`-`Secrets`-`New repository secret`
+
+![gh-1](./img/gh-2.jpg)
+
+如图所示， `Name` 处输入 `USERS` ， `Value` 处输入学号和密码，格式为 `学号1,密码1;学号2,密码2...` ，即学号与密码用`英文逗号`分隔开，多个用户之间用`英文分号`分隔开，最后结尾不用加分号，只有一个用户也不用加
+
+![gh-1](./img/gh-3.jpg)
+
+输入完毕后，点击`Add secret`添加
+
+### iii. 添加 SEND Secret （可选）
+
+采用同样的方法配置该 Secret。配置后可在每次 GitHub Actions 执行填报后，通过第三方的消息推送接口将结果发送给自己。
+
+Secret 的 `Name` 设置为 `SEND` ， `Value` 格式为 `send_api,send_key` ， `send_api` 代表消息推送接口代号， `send_key` 代表消息推送接口密钥。例如： `2,5e58d2264821c69ebcd46c448e7f5fe6`。
+
+对于支持的消息推送接口及其代号查询，可参考 [填报结果消息推送介绍](#填报结果消息推送介绍)。
+
+### iv. 开启 Actions
+如下图所示
+
+![gh-1](./img/gh-4.jpg)
+![gh-1](./img/gh-5.jpg)
+
+开启后可点击 `Run workflow` 测试填报一次
+
+![gh-1](./img/gh-6.jpg)
+
+### v. 更新项目
+当本项目更新后，你的 Fork 并不会自动更新，需要手动 `Fetch and merge` 一下，如下图所示，在你 Fork 后的项目页执行该操作
+
+![gh-1](./img/gh-7.jpg)
+
+### 2. 在自己的服务器上填报
+### i. 下载/更新
 ```shell
 git clone https://github.com/panghaibin/shuasr.git
 cd shuasr
@@ -28,34 +69,28 @@ cd shuasr
 git pull
 ```
 
-### 安装依赖
+### ii.安装依赖
 ```shell
 pip3 install -r requirements.txt
 ```
 
-### 添加用户，设置消息发送API
-
-目前支持以下消息推送服务：
-
-方糖气球 https://sct.ftqq.com/
-
-推送加 https://pushplus.hxtrip.com/
+### iii. 添加用户，设置消息推送API
 
 #### 方法一：命令行下添加
 ```shell
 # 添加用户
 # 如需修改已添加用户的密码，再次执行并输入相同学号即可
 python3 main.py add
-# 设置消息发送API
+# 设置消息推送API
 python3 main.py send
 ```
 
-[comment]: <> (**请注意已离校每日一报的，校区一项务必录入0** ，仍在校每日两报的须指定校区（见运行时提示）。)
+推送API设置可参考 [填报结果消息推送介绍](#填报结果消息推送介绍)
 
 #### 方法二：手动修改配置文件 
 修改目录下`config.bak.yaml`文件名为`config.yaml`，按照文件所写格式修改填写。
 
-### 启动
+### iv. 启动
 添加设置完毕用户及消息发送API后，建议先执行以下命令测试
 
 ```shell
@@ -69,7 +104,7 @@ python3 main.py test
 python3 main.py
 ```
 
-### 进程守护
+### v. 进程守护
 启动程序后若关闭控制台程序会自动退出，因此需要进程守护。进程守护的方式有多种，如使用`nohup`命令：
 
 ```shell
@@ -105,18 +140,26 @@ screen -r shu
 
 即可
 
-### 抢排名模式
-该模式默认开启，每天24点前会向填报系统重复提交次日的日报信息直到提交成功，以提升排名。如需关闭，修改`config.yaml`中的`grab_mode`值为`False`即可。
+## 填报结果消息推送介绍
+目前支持以下消息推送服务：
+
+| 接口代号 | 名称| 官网 |
+| :---: | :---: | :---: |
+| 1 | Server酱 | https://sct.ftqq.com/ |
+| 2 | 推送加（hxtrip域名下） | https://pushplus.hxtrip.com/ |
+
+请前往任意官网注册得到`key`后即可在本项目中使用，在 GitHub Actions 中使用时注意接口代号正确设置。
+
+## 抢排名模式介绍
+该模式仅支持在自建服务器上使用。功能默认开启，每天24点前会向填报系统重复提交次日的日报信息直到提交成功，以提升排名。如需关闭，修改`config.yaml`中的`grab_mode`值为`False`即可。
 
 关闭后每天7:30填报一次。
 
 ## TODO
 - [ ] 自动补报功能
   
-- [ ] GitHub Actions
-
-[comment]: <> (- [ ] 优化两报改为自动获取地址)
-  
+- [x] ~~GitHub Actions~~
+ 
 - [x] ~~自动判断是否为上报时间上报~~
 
 - [x] ~~增加多线程支持，以便抢排名(?)~~
