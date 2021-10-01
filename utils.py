@@ -535,7 +535,7 @@ def github():
             suc_log.append(username)
         else:
             err_log.append(username)
-        # time.sleep(60)
+        time.sleep(60)
 
     if not err_log:
         title = '每日一报%s位成功，共%s位' % (len(suc_log), len(users))
@@ -552,7 +552,7 @@ def github():
         for log in err_log:
             desp += "%s填报失败\n\n" % log
         send_result = sendMsg(title, desp, send_api, send_key)
-        print(send_result)
+        print('消息发送结果：%s' % send_result)
 
     print(title)
     if err_log:
