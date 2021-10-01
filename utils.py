@@ -521,11 +521,51 @@ def test(config_path, logs_path):
     return True
 
 
+# GitHub Actions
+def github():
+    post_day = getTime().strftime("%Y-%m-%d")
+    suc_log = []
+    err_log = []
+    users = os.environ['users'].split(';')
+    send = os.environ.get('send', '').split(',')
+    for user_info in users:
+        username, password = user_info.split(',')
+        result = reportSingle(username, password, post_day)
+        if result:
+            suc_log.append(username)
+        else:
+            err_log.append(username)
+        # time.sleep(60)
+
+    if not err_log:
+        title = '每日一报%s位成功，共%s位' % (len(suc_log), len(users))
+    elif not suc_log:
+        title = '每日一报%s位失败，共%s位' % (len(err_log), len(users))
+    else:
+        title = '每日一报%s位成功，%s位失败，共%s位' % (len(suc_log), len(err_log), len(users))
+    if len(send) == 2:
+        send_api = int(send[0])
+        send_key = send[1]
+        desp = ''
+        for log in suc_log:
+            desp += "%s填报成功\n\n" % log
+        for log in err_log:
+            desp += "%s填报失败\n\n" % log
+        send_result = sendMsg(title, desp, send_api, send_key)
+        print(send_result)
+
+    print(title)
+    if err_log:
+        print('填报失败用户：')
+    for log in err_log:
+        print('%s****%s' % (log[0:2], log[-2]))
+
+
 def isTimeToReport():
     now = getTime()
-    if now.hour == 23 and now.minute >= 30:
+    if now.hour == 0 and now.minute >= 30:
         return 0
-    elif now.hour == 0:
+    elif now.hour == 1:
         return 3
     elif now.hour == 7:
         return 1
@@ -572,13 +612,13 @@ def grabRank(username, password, post_day):
             return False
 
     now = getTime()
-    sleep_time = 60 * (57 - now.minute)
-    sleep_time = sleep_time if sleep_time > 0 and now.hour == 23 else 0
+    sleep_time = 60 * (58 - now.minute)
+    sleep_time = sleep_time if sleep_time > 0 and now.hour == 0 else 0
     time.sleep(sleep_time)
 
     while True:
         now = getTime()
-        if (now.hour == 23 and now.minute == 59 and now.second >= 55) or now.hour != 23:
+        if (now.hour == 0 and now.minute == 59 and now.second >= 55) or now.hour != 0:
             try_times = 0
             while True:
                 report_result = session.post(url=url, data=form)
@@ -588,7 +628,7 @@ def grabRank(username, password, post_day):
                 # else:
                 #     print(report_result.text)
                 try_times += 1
-                if try_times > 500:
+                if try_times > 800:
                     print(report_result.text)
                     GRAB_LOGS['fail'].append(username)
                     return False

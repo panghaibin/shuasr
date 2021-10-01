@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 import sys
 
-from utils import abs_path, main, test, addUser, setSendMsgApi
+from utils import abs_path, main, test, addUser, setSendMsgApi, github
 
 
 if __name__ == '__main__':
@@ -17,6 +17,8 @@ if __name__ == '__main__':
             addUser(config)
         elif sys.argv[1] == 'send':
             setSendMsgApi(config)
+        elif sys.argv[1] == 'gh':
+            github()
         else:
             print('未定义的参数：%s' % sys.argv[1])
     else:
