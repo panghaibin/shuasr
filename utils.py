@@ -676,8 +676,7 @@ def main(config_path, logs_path):
             is_reported = False
             is_time = isTimeToReport()
             if (is_time == 0 or is_time == 3) and grab_mode and len(getUsers(config_path)) > 0:
-                post_day = (getTime() + datetime.timedelta(days=1)).strftime(
-                    "%Y-%m-%d") if is_time == 0 else getTime().strftime("%Y-%m-%d")
+                post_day = getTime().strftime("%Y-%m-%d")
                 report_result = grabRankUsers(config_path, logs_path, post_day)
                 is_reported = True
             elif is_time == 1 and len(getUsers(config_path)) > 0 and not grab_mode:
