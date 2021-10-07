@@ -299,7 +299,7 @@ def sendMsg(title, desp, api, key):
             data = {'text': title, 'desp': desp}
             text = requests.post(url, data=data).text
             result = json.loads(text)
-            if result['errmsg'] == 'success':
+            if result['code'] == 0:
                 return True
             else:
                 return False
@@ -315,7 +315,7 @@ def sendMsg(title, desp, api, key):
                        'accept': 'application/json'}
             text = requests.post(url, data=body, headers=headers).text
             result = json.loads(text)
-            if result['data'] == '发送消息成功':
+            if result['code'] == 200:
                 return True
             else:
                 return False
