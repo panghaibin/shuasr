@@ -78,7 +78,7 @@ def login(username, password, try_once=False):
 
 
 def generateFState(json_file, post_day=None, province=None, city=None, county=None, address=None, in_shanghai=None,
-                   in_school=None, in_home=None):
+                   in_school=None, in_home=None, sui_img=None, sui_code=None, xing_img=None, xing_code=None):
     try:
         with open(json_file, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
@@ -106,6 +106,11 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
     json_data['p1_ShiFSH']['SelectedValue'] = in_shanghai
     json_data['p1_ShiFZX']['SelectedValue'] = in_school
     json_data['p1_ShiFZJ']['SelectedValue'] = in_home
+
+    json_data['p1_pImages_HFimgSuiSM']['Text'] = sui_code
+    json_data['p1_pImages_imgSuiSM']['ImageUrl'] = sui_img
+    json_data['p1_pImages_HFimgXingCM']['Text'] = xing_code
+    json_data['p1_pImages_imgXingCM']['ImageUrl'] = xing_img
 
     fstate = base64.b64encode(json.dumps(json_data).encode("utf-8")).decode("utf-8")
     return fstate
@@ -135,7 +140,18 @@ def getLatestInfo(session):
     else:
         in_school = '否'
     in_home = re.search('f16_state=\{"Hidden":false,"SelectedValue":"(.*?)",', html).group(1)
-    info = [province, city, county, address, in_shanghai, in_school, in_home]
+
+    sui_img = re.search('f47_state=\{"ImageUrl":"(.*?)"}', html).group(1)
+    xing_img = re.search('f48_state=\{"ImageUrl":"(.*?)"}', html).group(1)
+
+    url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
+    html = session.get(url=url).text
+    sui_code = re.search('f64_state=\{"Text":"(.*?)"}', html).group(1)
+    xing_code = re.search('f67_state=\{"Text":"(.*?)"}', html).group(1)
+
+    info = dict(province=province, city=city, county=county, address=address,
+                in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
+                sui_img=sui_img, xing_img=xing_img, sui_code=sui_code, xing_code=xing_code)
 
     return info
 
@@ -162,18 +178,23 @@ def getReportForm(session, url, post_day):
     # post_day = re.search('f4_state={"Text":"(.*?)"}', html).group(1)
 
     info = getLatestInfo(session)
-    province = info[0]
-    city = info[1]
-    county = info[2]
-    address = info[3]
-    in_shanghai = info[4]
-    in_school = info[5]
-    in_home = info[6]
+    province = info['province']
+    city = info['city']
+    county = info['county']
+    address = info['address']
+    in_shanghai = info['in_shanghai']
+    in_school = info['in_school']
+    in_home = info['in_home']
+    sui_img = info['sui_img']
+    sui_code = info['sui_code']
+    xing_img = info['xing_img']
+    xing_code = info['xing_code']
 
     # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
     f_state = generateFState(abs_path + '/once.json', post_day=post_day, province=province, city=city, county=county,
-                             address=address, in_shanghai=in_shanghai, in_school=in_school, in_home=in_home)
+                             address=address, in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
+                             sui_img=sui_img, sui_code=sui_code, xing_img=xing_img, xing_code=xing_code)
 
     report_form = {
         '__EVENTTARGET': 'p1$ctl01$btnSubmit',
@@ -203,6 +224,8 @@ def getReportForm(session, url, post_day):
         'p1$ddlXian': county,
         'p1$XiangXDZ': address,
         'p1$ShiFZJ': in_home,
+        'p1$pImages$HFimgSuiSM': sui_code,
+        'p1$pImages$HFimgXingCM': xing_code,
         'p1$FengXDQDL': '否',
         'p1$TongZWDLH': '否',
         'p1$CengFWH': '否',
