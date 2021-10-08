@@ -141,13 +141,20 @@ def getLatestInfo(session):
         in_school = '否'
     in_home = re.search('f16_state=\{"Hidden":false,"SelectedValue":"(.*?)",', html).group(1)
 
-    sui_img = re.search('f47_state=\{"ImageUrl":"(.*?)"}', html).group(1)
-    xing_img = re.search('f48_state=\{"ImageUrl":"(.*?)"}', html).group(1)
+    _ = re.search('f47_state=\{"ImageUrl":"(.*?)"}', html)
+    sui_img = None if _ is None else _.group(1)
+
+    _ = re.search('f48_state=\{"ImageUrl":"(.*?)"}', html)
+    xing_img = None if _ is None else _.group(1)
 
     url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
     html = session.get(url=url).text
-    sui_code = re.search('f64_state=\{"Text":"(.*?)"}', html).group(1)
-    xing_code = re.search('f67_state=\{"Text":"(.*?)"}', html).group(1)
+
+    _ = re.search('f64_state=\{"Text":"(.*?)"}', html)
+    sui_code = None if _ is None else _.group(1)
+
+    _ = re.search('f67_state=\{"Text":"(.*?)"}', html)
+    xing_code = None if _ is None else _.group(1)
 
     info = dict(province=province, city=city, county=county, address=address,
                 in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
