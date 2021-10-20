@@ -204,7 +204,7 @@ def getReportForm(session, url, post_day):
                              sui_img=sui_img, sui_code=sui_code, xing_img=xing_img, xing_code=xing_code)
 
     report_form = {
-        '__EVENTTARGET': 'p1$ctl01$btnSubmit',
+        '__EVENTTARGET': 'p1$ctl02$btnSubmit',
         '__EVENTARGUMENT': '',
         '__VIEWSTATE': view_state,
         '__VIEWSTATEGENERATOR': view_state_generator,
@@ -257,11 +257,14 @@ def getReportForm(session, url, post_day):
         'p1$SuiSM': '绿色',
         'p1$LvMa14Days': '是',
         'p1$Address2': '',
-        'F_TARGET': 'p1_ctl00_btnSubmit',
+        'F_TARGET': 'p1_ctl02_btnSubmit',
+        'p1_pnlDangSZS_Collapsed': 'false',
+        'p1_pImages_Collapsed': 'false',
         'p1_ContentPanel1_Collapsed': 'true',
         'p1_GeLSM_Collapsed': 'false',
         'p1_Collapsed': 'false',
         'F_STATE': f_state,
+        'X-FineUI-Ajax': 'true',
     }
     return report_form
 
