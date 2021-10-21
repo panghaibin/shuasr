@@ -1,7 +1,7 @@
 # 上海大学健康之路自动上报
 Shanghai University Auto SelfReport
 
-Ver.21.10.21
+Ver.21.10.21:02
 
 上海大学健康之路每日一报自动上报（卷王专用）
 

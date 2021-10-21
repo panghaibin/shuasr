@@ -130,33 +130,33 @@ def getLatestInfo(session):
 
     # return info_url
     html = session.get(url=info_url).text
-    province = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f12=', html).group(1)
-    city = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f13=', html).group(1)
-    county = re.search('"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f14=', html).group(1)
-    address = re.search('"Text":"(((?!"Text":").)*)"};var f15=', html).group(1)
-    in_shanghai = re.search('f8_state=\{"Hidden":false,"SelectedValue":"(.*?)",', html).group(1)
+    province = re.search(r'"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f12=', html).group(1)
+    city = re.search(r'"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f13=', html).group(1)
+    county = re.search(r'"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f14=', html).group(1)
+    address = re.search(r'"Text":"(((?!"Text":").)*)"};var f15=', html).group(1)
+    in_shanghai = re.search(r'f8_state=\{"Hidden":false,"SelectedValue":"(.*?)",', html).group(1)
     if in_shanghai == '是':
-        in_school = re.search('f9_state=\{"Hidden":false,"SelectedValue":"(.*?)",', html).group(1)
+        in_school = re.search(r'f9_state=\{"Hidden":false,"SelectedValue":"(.*?)",', html).group(1)
     else:
         in_school = '否'
-    in_home = re.search('f16_state=\{"Hidden":false,"SelectedValue":"(.*?)",', html).group(1)
-
-    _ = re.search('f47_state=\{"ImageUrl":"(.*?)"}', html)
+    in_home = re.search(r'f16_state=\{"Hidden":false,"SelectedValue":"(.*?)",', html).group(1)
+    _ = re.search(r'f47_state=\{"ImageUrl":"(.*?)"}', html)
     sui_img = None if _ is None else _.group(1)
-
-    _ = re.search('f48_state=\{"ImageUrl":"(.*?)"}', html)
+    _ = re.search(r'f48_state=\{"ImageUrl":"(.*?)"}', html)
     xing_img = None if _ is None else _.group(1)
 
     url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
     html = session.get(url=url).text
-
-    _ = re.search('f64_state=\{"Text":"(.*?)"}', html)
+    _ = re.search(r'f64_state=\{"Text":"(.*?)"}', html)
     sui_code = None if _ is None else _.group(1)
-
-    _ = re.search('f67_state=\{"Text":"(.*?)"}', html)
+    _ = re.search(r'f67_state=\{"Text":"(.*?)"}', html)
     xing_code = None if _ is None else _.group(1)
+    _ = re.search(r'ok:\'F\.f_disable\(\\\'(.*?)\\\'\);__doPostBack\(\\\'(.*?)\\\',\\\'\\\'\);\',', html)
+    f_target = _.group(1)
+    even_target = _.group(2)
 
-    info = dict(province=province, city=city, county=county, address=address,
+    info = dict(f_target=f_target, even_target=even_target,
+                province=province, city=city, county=county, address=address,
                 in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
                 sui_img=sui_img, xing_img=xing_img, sui_code=sui_code, xing_code=xing_code)
 
@@ -180,8 +180,8 @@ def getReportForm(session, url, post_day):
         time.sleep(10)
     html = index.text
 
-    view_state = re.search('id="__VIEWSTATE" value="(.*?)" /', html).group(1)
-    view_state_generator = re.search('id="__VIEWSTATEGENERATOR" value="(.*?)" /', html).group(1)
+    view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', html).group(1)
+    view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', html).group(1)
     # post_day = re.search('f4_state={"Text":"(.*?)"}', html).group(1)
 
     info = getLatestInfo(session)
@@ -196,6 +196,8 @@ def getReportForm(session, url, post_day):
     sui_code = info['sui_code']
     xing_img = info['xing_img']
     xing_code = info['xing_code']
+    f_target = info['f_target']
+    even_target = info['even_target']
 
     # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
@@ -204,7 +206,7 @@ def getReportForm(session, url, post_day):
                              sui_img=sui_img, sui_code=sui_code, xing_img=xing_img, xing_code=xing_code)
 
     report_form = {
-        '__EVENTTARGET': 'p1$ctl02$btnSubmit',
+        '__EVENTTARGET': even_target,
         '__EVENTARGUMENT': '',
         '__VIEWSTATE': view_state,
         '__VIEWSTATEGENERATOR': view_state_generator,
@@ -257,7 +259,7 @@ def getReportForm(session, url, post_day):
         'p1$SuiSM': '绿色',
         'p1$LvMa14Days': '是',
         'p1$Address2': '',
-        'F_TARGET': 'p1_ctl02_btnSubmit',
+        'F_TARGET': f_target,
         'p1_pnlDangSZS_Collapsed': 'false',
         'p1_pImages_Collapsed': 'false',
         'p1_ContentPanel1_Collapsed': 'true',
