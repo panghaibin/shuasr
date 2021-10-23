@@ -354,6 +354,17 @@ def sendMsg(title, desp, api, key):
                 return True
             else:
                 return False
+        elif api == 3:
+            tg_bot_key, tg_chat_id = key.split('@')
+            url = 'https://api.telegram.org/bot%s/sendMessage' % tg_bot_key
+            data = {
+                'chat_id': tg_chat_id,
+                'text': title + '\n' + desp
+            }
+            text = requests.post(url, data=data).text
+            result = json.loads(text)
+            return result['ok']
+
     except Exception as e:
         print(text)
         print(e)
