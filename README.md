@@ -1,7 +1,7 @@
 # 上海大学健康之路自动上报
 Shanghai University Auto SelfReport
 
-Ver.21.10.23 新增 Telegram 消息推送
+Ver.21.10.25  新增 [Telegram 消息推送](./Telegram_bot.md)
 
 上海大学健康之路每日一报自动上报（卷王专用）
 
@@ -152,11 +152,11 @@ screen -r shu
 | :---: | :---: | :---: |
 | 1 | Server酱 | https://sct.ftqq.com/ |
 | 2 | 推送加（hxtrip域名下） | https://pushplus.hxtrip.com/ |
-| 3 | Telegram Bot | 需自行创建`Bot`，获取`Chat ID`* |
+| 3 | Telegram Bot | 需自行创建`Bot`，[查看创建方法](./Telegram_bot.md)|
 
 请前往任意官网注册得到`key`后即可在本项目中使用，在 GitHub Actions 中使用时注意接口代号正确设置。
 
-注：Telegram Bot 的 Key 的格式为 `BOT_TOKEN@CHAT_ID` ，例如 `123456789:mbpSwrgRCr1iLt4MZRYqq0mlko-MGXMcg@987456321` 
+注意 Telegram Bot 的 Key 的格式为 `BOT_TOKEN@CHAT_ID` ，例如 `123456789:mbpSwrgRCr1iLt4MZRYqq0mlko-MGXMcg@987456321`
 
 ## 抢排名模式介绍
 该模式仅支持在自建服务器上使用。功能默认开启，每天24点前会向填报系统重复提交次日的日报信息直到提交成功，以提升排名。如需关闭，修改`config.yaml`中的`grab_mode`值为`False`即可。
