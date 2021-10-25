@@ -354,6 +354,17 @@ def sendMsg(title, desp, api, key):
                 return True
             else:
                 return False
+        elif api == 3:
+            tg_bot_key, tg_chat_id = key.split('@')
+            url = 'https://api.telegram.org/bot%s/sendMessage' % tg_bot_key
+            data = {
+                'chat_id': tg_chat_id,
+                'text': title + '\n' + desp
+            }
+            text = requests.post(url, data=data).text
+            result = json.loads(text)
+            return result['ok']
+
     except Exception as e:
         print(text)
         print(e)
@@ -479,7 +490,8 @@ def setSendMsgApi(config_path):
         config = yaml.load(f, Loader=yaml.FullLoader)
     send_msg_api = ['未设置',
                     '方糖气球 https://sct.ftqq.com/',
-                    '推送加 https://pushplus.hxtrip.com/']
+                    '推送加 https://pushplus.hxtrip.com/',
+                    'Telegram Bot (Key 的格式为 `BOT_TOKEN@CHAT_ID` )']
     send_api = config.get('send_api', 0)
     send_key = config.get('send_key', '')
     print('当前消息发送平台设置为：%s' % send_msg_api[send_api])
