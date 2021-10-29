@@ -140,25 +140,36 @@ def getLatestInfo(session):
     else:
         in_school = '否'
     in_home = re.search(r'f16_state=\{"Hidden":false,"SelectedValue":"(.*?)",', html).group(1)
-    _ = re.search(r'f47_state=\{"ImageUrl":"(.*?)"}', html)
-    sui_img = None if _ is None else _.group(1)
-    _ = re.search(r'f48_state=\{"ImageUrl":"(.*?)"}', html)
-    xing_img = None if _ is None else _.group(1)
+    # _ = re.search(r'f47_state=\{"ImageUrl":"(.*?)"}', html)
+    # sui_img = None if _ is None else _.group(1)
+    # _ = re.search(r'f48_state=\{"ImageUrl":"(.*?)"}', html)
+    # xing_img = None if _ is None else _.group(1)
 
     url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
     html = session.get(url=url).text
-    _ = re.search(r'f64_state=\{"Text":"(.*?)"}', html)
-    sui_code = None if _ is None else _.group(1)
-    _ = re.search(r'f67_state=\{"Text":"(.*?)"}', html)
-    xing_code = None if _ is None else _.group(1)
+    # _ = re.search(r'f64_state=\{"Text":"(.*?)"}', html)
+    # sui_code = None if _ is None else _.group(1)
+    # _ = re.search(r'f67_state=\{"Text":"(.*?)"}', html)
+    # xing_code = None if _ is None else _.group(1)
+
     _ = re.search(r'ok:\'F\.f_disable\(\\\'(.*?)\\\'\);__doPostBack\(\\\'(.*?)\\\',\\\'\\\'\);\',', html)
     f_target = _.group(1)
     even_target = _.group(2)
 
+    require_weekly_xing_code = True if 'f9_state={"Hidden":false' in html else False
+    weekly_xing_code = None
+    weekly_xing_img = None
+    if require_weekly_xing_code:
+        _ = re.search(r'f65_state=\{"Text":"(.*?)"}', html)
+        weekly_xing_code = None if _ is None else _.group(1)
+        _ = re.search(r'f66_state=\{"ImageUrl":"(.*?)"};var f66', html)
+        weekly_xing_img = None if _ is None else _.group(1)
+
     info = dict(f_target=f_target, even_target=even_target,
                 province=province, city=city, county=county, address=address,
                 in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
-                sui_img=sui_img, xing_img=xing_img, sui_code=sui_code, xing_code=xing_code)
+                # sui_img=sui_img, xing_img=xing_img, sui_code=sui_code, xing_code=xing_code,
+                rwxc=require_weekly_xing_code, wxc=weekly_xing_code, wxi=weekly_xing_img)
 
     return info
 
@@ -192,18 +203,22 @@ def getReportForm(session, url, post_day):
     in_shanghai = info['in_shanghai']
     in_school = info['in_school']
     in_home = info['in_home']
-    sui_img = info['sui_img']
-    sui_code = info['sui_code']
-    xing_img = info['xing_img']
-    xing_code = info['xing_code']
+    # sui_img = info['sui_img']
+    # sui_code = info['sui_code']
+    # xing_img = info['xing_img']
+    # xing_code = info['xing_code']
     f_target = info['f_target']
     even_target = info['even_target']
+    require_weekly_xing_code = info['rwxc']
+    weekly_xing_code = info['wxc']
+    weekly_xing_img = info['wxi']
 
     # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
     f_state = generateFState(abs_path + '/once.json', post_day=post_day, province=province, city=city, county=county,
                              address=address, in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
-                             sui_img=sui_img, sui_code=sui_code, xing_img=xing_img, xing_code=xing_code)
+                             # sui_img=sui_img, sui_code=sui_code, xing_img=xing_img, xing_code=xing_code,
+                             xing_img=weekly_xing_img, xing_code=weekly_xing_code)
 
     report_form = {
         '__EVENTTARGET': even_target,
@@ -233,8 +248,8 @@ def getReportForm(session, url, post_day):
         'p1$ddlXian': county,
         'p1$XiangXDZ': address,
         'p1$ShiFZJ': in_home,
-        'p1$pImages$HFimgSuiSM': sui_code,
-        'p1$pImages$HFimgXingCM': xing_code,
+        # 'p1$pImages$HFimgSuiSM': sui_code,
+        'p1$pImages$HFimgXingCM': weekly_xing_code,
         'p1$FengXDQDL': '否',
         'p1$TongZWDLH': '否',
         'p1$CengFWH': '否',
@@ -274,24 +289,26 @@ def getReportForm(session, url, post_day):
 def reportSingle(username, password, post_day):
     session = login(username, password)
     if not session:
-        return False
+        return -1
 
     url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
 
     form = getReportForm(session, url, post_day)
     if not form:
-        return False
+        return -2
 
     report_times = 0
     while True:
         report_result = session.post(url=url, data=form)
         if '提交成功' in report_result.text:
-            return True
+            return 1
+        elif '行程码' in report_result.text:
+            return -3
         else:
             print(report_result.text)
         report_times += 1
         if report_times > 10:
-            return False
+            return 0
         time.sleep(10)
 
 
@@ -396,17 +413,23 @@ def updateLogs(logs, logs_time, username, status):
             logs[logs_time].update({'success': []})
         if 'fail' not in logs.get(logs_time, {}):
             logs[logs_time].update({'fail': []})
+        if 'xing_code' not in logs.get(logs_time, {}):
+            logs[logs_time].update({'xing_code': []})
 
     success = logs[logs_time]['success']
     fail = logs[logs_time]['fail']
+    xing_code = logs[logs_time]['xing_code']
 
-    if status and username not in success:
+    if status == 1 and username not in success:
         success.append(username)
-    elif not status and username not in fail:
+    elif status == -3 and username not in xing_code:
+        xing_code.append(username)
+    elif username not in fail:
         fail.append(username)
 
     logs[logs_time]['success'] = success
     logs[logs_time]['fail'] = fail
+    logs[logs_time]['xing_code'] = xing_code
 
     return logs
 
@@ -429,12 +452,20 @@ def sendLogs(logs_path, config_path):
     desp = '时间：%s\n\n' % report_time
     success = logs[report_time].get('success')
     fail = logs[report_time].get('fail')
+    xing_code = logs[report_time].get('xing_code')
 
     if len(success):
         for username in success:
             title += username[4:] + '.'
             desp += '用户%s填报成功\n\n' % username
         title += '成功'
+
+    if len(xing_code):
+        for username in xing_code:
+            title += username[4:] + '.'
+            desp += '用户%s需要上传行程码\n\n' % username
+        title += '需要行程码'
+        desp += '请尽快上传行程码\n\n'
 
     if len(fail):
         for username in fail:
@@ -572,40 +603,56 @@ def test(config_path, logs_path):
 def github():
     post_day = getTime().strftime("%Y-%m-%d")
     suc_log = []
+    xc_log = []
     err_log = []
     users = os.environ['users'].split(';')
     send = os.environ.get('send', '').split(',')
     for user_info in users:
         username, password = user_info.split(',')
         result = reportSingle(username, password, post_day)
-        if result:
+        if result == 1:
             suc_log.append(username)
+        elif result == -3:
+            xc_log.append(username)
         else:
             err_log.append(username)
         time.sleep(60)
 
-    if not err_log:
-        title = '每日一报%s位成功，共%s位' % (len(suc_log), len(users))
-    elif not suc_log:
-        title = '每日一报%s位失败，共%s位' % (len(err_log), len(users))
-    else:
-        title = '每日一报%s位成功，%s位失败，共%s位' % (len(suc_log), len(err_log), len(users))
+    title = '每日一报'
+    desp = ''
+    if len(suc_log):
+        for username in suc_log:
+            desp += '用户%s填报成功\n\n' % username
+        title += '%s位成功，' % len(suc_log)
+    if len(xc_log):
+        for username in xc_log:
+            desp += '用户%s需要上传行程码\n\n' % username
+        title += '%s位需要行程码，' % len(xc_log)
+        desp += '请尽快上传行程码\n\n'
+    if len(err_log):
+        for username in err_log:
+            desp += '用户%s填报失败\n\n' % username
+        title += '%s位失败，' % len(err_log)
+        desp += '请尽快查看控制台输出确定失败原因'
+
+    title += '共%s位' % len(users)
+
     if len(send) == 2:
         send_api = int(send[0])
         send_key = send[1]
-        desp = ''
-        for log in suc_log:
-            desp += "%s填报成功\n\n" % log
-        for log in err_log:
-            desp += "%s填报失败\n\n" % log
         send_result = sendMsg(title, desp, send_api, send_key)
         print('消息发送结果：%s' % send_result)
 
     print(title)
     if err_log:
         print('填报失败用户：')
-    for log in err_log:
-        print('%s****%s' % (log[0:2], log[-2]))
+        for log in err_log:
+            print('%s****%s' % (log[:2], log[-2:]))
+
+    if xc_log:
+        print('需要上传行程码用户：')
+        for log in xc_log:
+            print('%s****%s' % (log[:2], log[-2:]))
 
 
 def isTimeToReport():

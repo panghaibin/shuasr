@@ -1,7 +1,9 @@
 # 上海大学健康之路自动上报
 Shanghai University Auto SelfReport
 
-Ver.21.10.25  新增 [Telegram 消息推送](./Telegram_bot.md)
+Ver.21.10.29
+
+近期系统升级成需要每周上传一次行程码，详情见这个 [issue](https://github.com/panghaibin/shuasr/issues/5)
 
 上海大学健康之路每日一报自动上报（卷王专用）
 
