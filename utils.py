@@ -78,7 +78,7 @@ def login(username, password, try_once=False):
 
 
 def generateFState(json_file, post_day=None, province=None, city=None, county=None, address=None, in_shanghai=None,
-                   in_school=None, in_home=None, sui_img=None, sui_code=None, xing_img=None, xing_code=None):
+                   in_school=None, in_home=None, sui_img=None, sui_code=None, xing_img=None, xing_code=None, ans=None):
     with open(json_file, 'r', encoding='utf-8') as f:
         json_data = json.load(f)
 
@@ -106,6 +106,8 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
     json_data['p1_pImages_imgSuiSM']['ImageUrl'] = sui_img
     json_data['p1_pImages_HFimgXingCM']['Text'] = xing_code
     json_data['p1_pImages_imgXingCM']['ImageUrl'] = xing_img
+
+    json_data['p1_pnlDangSZS_DangSZS']['SelectedValueArray'] = ans
 
     fstate = base64.b64encode(json.dumps(json_data).encode("utf-8")).decode("utf-8")
     return fstate
@@ -144,6 +146,20 @@ def getLatestInfo(session):
     f_target = _.group(1)
     even_target = _.group(2)
 
+    _ = re.search(r"'参考答案：(.*?)'", report_html)
+    ans = None if _ is None else _.group(1)
+    if ans is None:
+        _ = re.search(r'正确答案为：(.*?)"', report_html)
+        ans = None if _ is None else _.group(1)
+    if ans is None:
+        _ = re.search(r'"SelectedValueArray":\[(.*?)]', report_html)
+        ans = None if _ is None else _.group(1)
+        ans = ans.replace('"', '').replace(',', '')
+    ans = [i for i in ans] if ans is not None else ['A']
+
+    view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', report_html).group(1)
+    view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', report_html).group(1)
+
     require_weekly_xing_code = True if 'f9_state={"Hidden":false' in report_html else False
     weekly_xing_code = None
     weekly_xing_img = None
@@ -163,7 +179,7 @@ def getLatestInfo(session):
             img_upload = open(img_path, 'rb')
             data = {
                 '__EVENTTARGET': 'p1$pImages$fileXingCM',
-                '__VIEWSTATE': re.search(r'id="__VIEWSTATE" value="(.*?)" /', report_html).group(1),
+                '__VIEWSTATE': view_state,
                 'X-FineUI-Ajax': 'true',
             }
             file = {
@@ -177,35 +193,19 @@ def getLatestInfo(session):
             img_upload.close()
             os.remove(img_path)
 
-    info = dict(f_target=f_target, even_target=even_target,
+    info = dict(vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target,
                 province=province, city=city, county=county, address=address,
                 in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
-                rwxc=require_weekly_xing_code, wxc=weekly_xing_code, wxi=weekly_xing_img)
+                rwxc=require_weekly_xing_code, wxc=weekly_xing_code, wxi=weekly_xing_img,
+                ans=ans)
 
     return info
 
 
-def getReportForm(session, url, post_day):
-    get_times = 0
-    while True:
-        try:
-            index = session.get(url=url)
-            if index.status_code == 200:
-                break
-        except Exception as e:
-            print('view state 获取出错')
-            print(e)
-        get_times += 1
-        if get_times > 10:
-            print('view state 获取超时')
-            return False
-        time.sleep(10)
-    html = index.text
-
-    view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', html).group(1)
-    view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', html).group(1)
-
+def getReportForm(session, post_day):
     info = getLatestInfo(session)
+    view_state = info['vs']
+    view_state_generator = info['vsg']
     province = info['province']
     city = info['city']
     county = info['county']
@@ -218,12 +218,13 @@ def getReportForm(session, url, post_day):
     require_weekly_xing_code = info['rwxc']
     weekly_xing_code = info['wxc']
     weekly_xing_img = info['wxi']
+    ans = info['ans']
 
     # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
     f_state = generateFState(abs_path + '/once.json', post_day=post_day, province=province, city=city, county=county,
                              address=address, in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
-                             xing_img=weekly_xing_img, xing_code=weekly_xing_code)
+                             xing_img=weekly_xing_img, xing_code=weekly_xing_code, ans=ans)
 
     report_form = {
         '__EVENTTARGET': even_target,
@@ -231,6 +232,7 @@ def getReportForm(session, url, post_day):
         '__VIEWSTATE': view_state,
         '__VIEWSTATEGENERATOR': view_state_generator,
         'p1$ChengNuo': 'p1_ChengNuo',
+        'p1$pnlDangSZS$DangSZS': ans,
         'p1$BaoSRQ': post_day,
         'p1$DangQSTZK': '良好',
         'p1$TiWen': '',
@@ -298,7 +300,7 @@ def reportSingle(username, password, post_day):
 
     url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
 
-    form = getReportForm(session, url, post_day)
+    form = getReportForm(session, post_day)
     if not form:
         return -2
 
@@ -699,7 +701,7 @@ def grabRank(username, password, post_day):
 
     try_times = 0
     while True:
-        form = getReportForm(session, url=url, post_day=post_day)
+        form = getReportForm(session, post_day=post_day)
         if form:
             break
         try_times += 1

@@ -1,9 +1,40 @@
 {
+  "p1_ChengNuo": {
+    "Checked": true
+  },
   "p1_pnlDangSZS_DangSZS": {
-    "F_Items": [],
+    "Label": "",
+    "F_Items": [
+      [
+        "A",
+        "A.",
+        1
+      ],
+      [
+        "B",
+        "B.",
+        1
+      ],
+      [
+        "C",
+        "C.",
+        1
+      ],
+      [
+        "D",
+        "D.",
+        1
+      ]
+    ],
     "SelectedValueArray": []
   },
+  "p1_pnlDangSZS_ckda": {
+    "Hidden": false,
+    "OnClientClick": "alert('参考答案：');"
+  },
   "p1_pnlDangSZS": {
+    "Hidden": false,
+    "Title": "",
     "IFrameAttributes": {}
   },
   "p1_BaoSRQ": {
