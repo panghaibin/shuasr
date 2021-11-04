@@ -79,13 +79,8 @@ def login(username, password, try_once=False):
 
 def generateFState(json_file, post_day=None, province=None, city=None, county=None, address=None, in_shanghai=None,
                    in_school=None, in_home=None, sui_img=None, sui_code=None, xing_img=None, xing_code=None):
-    try:
-        with open(json_file, 'r', encoding='utf-8') as f:
-            json_data = json.load(f)
-    except Exception as e:
-        print(e)
-        print('json文件出错')
-        return False
+    with open(json_file, 'r', encoding='utf-8') as f:
+        json_data = json.load(f)
 
     json_data['p1_BaoSRQ']['Text'] = post_day
 
@@ -118,8 +113,8 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
 
 # 获取用户上报页面的最新上报成功的信息
 def getLatestInfo(session):
-    url = 'https://selfreport.shu.edu.cn/ReportHistory.aspx'
-    index = session.get(url=url).text
+    history_url = 'https://selfreport.shu.edu.cn/ReportHistory.aspx'
+    index = session.get(url=history_url).text
     js_str = re.search('f2_state=(.*?);', index).group(1)
     items = json.loads(js_str)['F_Items']
     info_url = 'https://selfreport.shu.edu.cn'
@@ -129,46 +124,62 @@ def getLatestInfo(session):
             break
 
     # return info_url
-    html = session.get(url=info_url).text
-    province = re.search(r'"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f12=', html).group(1)
-    city = re.search(r'"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f13=', html).group(1)
-    county = re.search(r'"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f14=', html).group(1)
-    address = re.search(r'"Text":"(((?!"Text":").)*)"};var f15=', html).group(1)
-    in_shanghai = re.search(r'f8_state=\{"Hidden":false,"SelectedValue":"(.*?)",', html).group(1)
-    if in_shanghai == '是':
-        in_school = re.search(r'f9_state=\{"Hidden":false,"SelectedValue":"(.*?)",', html).group(1)
+    info_html = session.get(url=info_url).text
+    province = re.search(r'"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f12=', info_html).group(1)
+    city = re.search(r'"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f13=', info_html).group(1)
+    county = re.search(r'"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f14=', info_html).group(1)
+    address = re.search(r'"Text":"(((?!"Text":").)*)"};var f15=', info_html).group(1)
+    _ = re.search(r'f8_state=\{"Hidden":false,"Text":"(.*?)"', info_html)
+    in_shanghai = '在上海（校内）' if _ is None or _.group(1) == '在上海' else _.group(1)
+    if '在上海' in in_shanghai:
+        in_school = re.search(r'f9_state=\{"Hidden":false,"SelectedValue":"(.*?)",', info_html).group(1)
     else:
         in_school = '否'
-    in_home = re.search(r'f16_state=\{"Hidden":false,"SelectedValue":"(.*?)",', html).group(1)
-    # _ = re.search(r'f47_state=\{"ImageUrl":"(.*?)"}', html)
-    # sui_img = None if _ is None else _.group(1)
-    # _ = re.search(r'f48_state=\{"ImageUrl":"(.*?)"}', html)
-    # xing_img = None if _ is None else _.group(1)
+    in_home = re.search(r'f16_state=\{"Hidden":false,"SelectedValue":"(.*?)",', info_html).group(1)
 
-    url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
-    html = session.get(url=url).text
-    # _ = re.search(r'f64_state=\{"Text":"(.*?)"}', html)
-    # sui_code = None if _ is None else _.group(1)
-    # _ = re.search(r'f67_state=\{"Text":"(.*?)"}', html)
-    # xing_code = None if _ is None else _.group(1)
+    report_url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
+    report_html = session.get(url=report_url).text
 
-    _ = re.search(r'ok:\'F\.f_disable\(\\\'(.*?)\\\'\);__doPostBack\(\\\'(.*?)\\\',\\\'\\\'\);\',', html)
+    _ = re.search(r'ok:\'F\.f_disable\(\\\'(.*?)\\\'\);__doPostBack\(\\\'(.*?)\\\',\\\'\\\'\);\',', report_html)
     f_target = _.group(1)
     even_target = _.group(2)
 
-    require_weekly_xing_code = True if 'f9_state={"Hidden":false' in html else False
+    require_weekly_xing_code = True if 'f9_state={"Hidden":false' in report_html else False
     weekly_xing_code = None
     weekly_xing_img = None
     if require_weekly_xing_code:
-        _ = re.search(r'f65_state=\{"Text":"(.*?)"}', html)
+        _ = re.search(r'f65_state=\{"Text":"(.*?)"}', report_html)
         weekly_xing_code = None if _ is None else _.group(1)
-        _ = re.search(r'f66_state=\{"ImageUrl":"(.*?)"};var f66', html)
+        _ = re.search(r'f66_state=\{"ImageUrl":"(.*?)"};var f66', report_html)
         weekly_xing_img = None if _ is None else _.group(1)
+        if weekly_xing_img is None or weekly_xing_img is None:
+            pinfo_url = 'https://selfreport.shu.edu.cn/PersonInfo.aspx'
+            pinfo_html = session.get(url=pinfo_url).text
+            xing_img = re.search(r'f13_state=\{"ImageUrl":"(.*?)"};var f13', pinfo_html).group(1)
+            img_raw = session.get(url=f'https://selfreport.shu.edu.cn/{xing_img}', stream=True).content
+            img_path = './temp.jpg'
+            with open(img_path, 'wb') as f:
+                f.write(img_raw)
+            img_upload = open(img_path, 'rb')
+            data = {
+                '__EVENTTARGET': 'p1$pImages$fileXingCM',
+                '__VIEWSTATE': re.search(r'id="__VIEWSTATE" value="(.*?)" /', report_html).group(1),
+                'X-FineUI-Ajax': 'true',
+            }
+            file = {
+                'p1$pImages$fileXingCM': img_upload,
+            }
+            upload_result = session.post(url=report_url, data=data, files=file).text
+            _ = re.search(r'Text&quot;:&quot;(.*?)&quot;\}\);f2', upload_result)
+            weekly_xing_code = None if _ is None else _.group(1)
+            _ = re.search(r'ImageUrl&quot;:&quot;(.*?)&quot;\}\);f3', upload_result)
+            weekly_xing_img = None if _ is None else _.group(1)
+            img_upload.close()
+            os.remove(img_path)
 
     info = dict(f_target=f_target, even_target=even_target,
                 province=province, city=city, county=county, address=address,
                 in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
-                # sui_img=sui_img, xing_img=xing_img, sui_code=sui_code, xing_code=xing_code,
                 rwxc=require_weekly_xing_code, wxc=weekly_xing_code, wxi=weekly_xing_img)
 
     return info
@@ -193,7 +204,6 @@ def getReportForm(session, url, post_day):
 
     view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', html).group(1)
     view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', html).group(1)
-    # post_day = re.search('f4_state={"Text":"(.*?)"}', html).group(1)
 
     info = getLatestInfo(session)
     province = info['province']
@@ -203,10 +213,6 @@ def getReportForm(session, url, post_day):
     in_shanghai = info['in_shanghai']
     in_school = info['in_school']
     in_home = info['in_home']
-    # sui_img = info['sui_img']
-    # sui_code = info['sui_code']
-    # xing_img = info['xing_img']
-    # xing_code = info['xing_code']
     f_target = info['f_target']
     even_target = info['even_target']
     require_weekly_xing_code = info['rwxc']
@@ -217,7 +223,6 @@ def getReportForm(session, url, post_day):
 
     f_state = generateFState(abs_path + '/once.json', post_day=post_day, province=province, city=city, county=county,
                              address=address, in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
-                             # sui_img=sui_img, sui_code=sui_code, xing_img=xing_img, xing_code=xing_code,
                              xing_img=weekly_xing_img, xing_code=weekly_xing_code)
 
     report_form = {

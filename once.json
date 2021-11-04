@@ -91,19 +91,24 @@
   "p1_ShiFSH": {
     "Required": true,
     "Hidden": false,
-    "SelectedValue": "否",
     "F_Items": [
       [
-        "是",
-        "在上海",
+        "在上海（校内）",
+        "在上海（校内）",
         1
       ],
       [
-        "否",
+        "在上海（不在校内）",
+        "在上海（不在校内）",
+        1
+      ],
+      [
+        "不在上海",
         "不在上海",
         1
       ]
-    ]
+    ],
+    "SelectedValue": "在上海（校内）"
   },
   "p1_ShiFZX": {
     "F_Items": [
@@ -428,7 +433,7 @@
       ]
     ]
   },
-  "p1_ctl01_btnReturn": {
+  "p1_ctl02_btnReturn": {
     "OnClientClick": "document.location.href='/Default.aspx';return;"
   },
   "p1": {

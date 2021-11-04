@@ -1,9 +1,7 @@
 # 上海大学健康之路自动上报
 Shanghai University Auto SelfReport
 
-Ver.21.10.29
-
-近期系统升级成需要每周上传一次行程码，详情见这个 [issue](https://github.com/panghaibin/shuasr/issues/5)
+Ver.21.11.04 提交行程码时默认使用上次图片提交
 
 上海大学健康之路每日一报自动上报（卷王专用）
 
