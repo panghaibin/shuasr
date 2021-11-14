@@ -11,6 +11,8 @@ import rsa
 import yaml
 import datetime
 import os
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 abs_path = os.path.split(os.path.realpath(__file__))[0]
 
@@ -48,9 +50,14 @@ def login(username, password, try_once=False):
         try:
             session = requests.Session()
             session.headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (' \
-                                            'KHTML, like Gecko) Chrome/34.0.1847.131 Safari/537.36 '
+                                            'KHTML, like Gecko) Chrome/34.0.1847.131 Safari/537.36'
             session.trust_env = False
             session.keep_alive = False
+            retry = Retry(connect=5, backoff_factor=60)
+            adapter = HTTPAdapter(max_retries=retry)
+            session.mount('http://', adapter)
+            session.mount('https://', adapter)
+
             sso = session.get(url=index_url)
             index = session.post(url=sso.url, data=form_data, allow_redirects=False)
             # 一个非常奇怪的bug，URL编码本应是不区分大小写的，但访问302返回的URL就会出问题，需要将URL中的替换成252f
@@ -59,8 +66,13 @@ def login(username, password, try_once=False):
             index = session.get(url='https://newsso.shu.edu.cn/oauth/authorize?client_id=WUHWfrntnWYHZfzQ5QvXUCVy'
                                     '&response_type=code&scope=1&redirect_uri=https%3A%2F%2Fselfreport.shu.edu.cn'
                                     '%2FLoginSSO.aspx%3FReturnUrl%3D%252fDefault.aspx&state=')
+            login_times += 1
+            notice_url = 'https://selfreport.shu.edu.cn/DayReportNotice.aspx'
             if index.url == index_url and index.status_code == 200:
                 return session
+            elif index.url == notice_url and index.status_code == 200:
+                if readNotice(session, index.text, notice_url, index_url):
+                    return session
             else:
                 # debug
                 print(index.history)
@@ -68,13 +80,31 @@ def login(username, password, try_once=False):
             print(e)
             traceback.print_exc()
 
+        del session
+
         if try_once:
             return False
-        login_times += 1
         if login_times > 10:
             print('尝试登录次数过多')
             return False
         time.sleep(60)
+
+
+def readNotice(session, notice_html, notice_url, index_url):
+    view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', notice_html).group(1)
+    view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', notice_html).group(1)
+    form_data = {'__EVENTTARGET': 'p1$ctl01$btnSubmit',
+                 '__EVENTARGUMENT': '',
+                 '__VIEWSTATE': view_state,
+                 '__VIEWSTATEGENERATOR': view_state_generator,
+                 'F_TARGET': 'p1_ctl01_btnSubmit',
+                 'p1_ctl00_Collapsed': 'false',
+                 'p1_Collapsed': 'false',
+                 'F_STATE': 'eyJwMV9jdGwwMCI6eyJJRnJhbWVBdHRyaWJ1dGVzIjp7fX0sInAxIjp7IklGcmFtZUF0dHJpYnV0ZXMiOnt9fX0=',
+                 }
+    index = session.post(url=notice_url, data=form_data)
+    if index.url == index_url:
+        return True
 
 
 def generateFState(json_file, post_day=None, province=None, city=None, county=None, address=None, in_shanghai=None,
@@ -293,8 +323,53 @@ def getReportForm(session, post_day):
     return report_form
 
 
-def reportSingle(username, password, post_day):
-    session = login(username, password)
+def getUnreadMsg(session):
+    msg_url = 'https://selfreport.shu.edu.cn/MyMessages.aspx'
+    msg_html = session.get(url=msg_url).text
+    msg_raw = re.search(r'f2_state=(.*?);var', msg_html).group(1)
+    msg = json.loads(msg_raw)['F_Items']
+    blue_url = []
+    red_url = []
+    red_title = []
+    for i in msg:
+        if '未读' in i[1]:
+            url = 'https://selfreport.shu.edu.cn' + i[4]
+            if 'blue' in i[1]:
+                blue_url.append(url)
+            elif 'red' in i[1]:
+                title = re.search(r'标题：(.*?)（未读）', i[1]).group(1)
+                red_url.append(url)
+                red_title.append(title)
+    unread_msg = dict(blue_url=blue_url, red_url=red_url, red_title=red_title,
+                      blue_count=len(blue_url), red_count=len(red_url))
+    return unread_msg
+
+
+def readUnreadMsg(session):
+    unread_msg = getUnreadMsg(session)
+    blue_count = unread_msg['blue_count']
+    red_count = unread_msg['red_count']
+    read_result = ''
+    if blue_count + red_count > 0:
+        for i in (unread_msg['blue_url'] + unread_msg['red_url']):
+            session.get(url=i, allow_redirects=False)
+        read_result = '阅读了'
+        read_result += '%s条非必读消息' % blue_count if blue_count > 0 else ''
+        read_result += '，%s条必读消息' % red_count if red_count > 0 else ''
+        read_result += '：标题为《' + '》《'.join(unread_msg['red_title']) + '》' if red_count > 0 else ''
+    return dict(red_count=red_count, result=read_result, username='')
+
+
+def sendAllReadMsgResult(results: list, send_api, send_key):
+    desp = ''
+    for r in results:
+        desp += r['username'] + ': ' + r['result'] + '\n\n' if r['red_count'] > 0 else ''
+    if desp != '':
+        title = '存在必读消息'
+        sendMsg(title, desp, send_api, send_key)
+
+
+def reportSingle(session, post_day):
     if not session:
         return -1
 
@@ -333,13 +408,23 @@ def reportUsers(config_path, logs_path, post_day):
     logs = getLogs(logs_path)
     if not logs:
         return False
+    send_msg = getSendApi(config_path)
+    if not send_msg:
+        return False
 
     logs_time = getTime().strftime("%Y-%m-%d %H:%M:%S")
+    read_msg_results = []
     for username in users:
-        report_result = reportSingle(username, users[username][0], post_day)
+        session = login(username, users[username][0])
+        report_result = reportSingle(session, post_day)
         logs = updateLogs(logs, logs_time, username, report_result)
+        if report_result != -1:
+            read_msg_result = readUnreadMsg(session)
+            read_msg_result['username'] = username
+            read_msg_results.append(read_msg_result)
         time.sleep(60)
     saveLogs(logs_path, logs)
+    sendAllReadMsgResult(read_msg_results, send_msg['api'], send_msg['key'])
     return True
 
 
@@ -614,16 +699,26 @@ def github():
     err_log = []
     users = os.environ['users'].split(';')
     send = os.environ.get('send', '').split(',')
+    read_msg_results = []
+    i = 1
     for user_info in users:
         username, password = user_info.split(',')
-        result = reportSingle(username, password, post_day)
+        session = login(username, password)
+        result = reportSingle(session, post_day)
         if result == 1:
             suc_log.append(username)
         elif result == -3:
             xc_log.append(username)
         else:
             err_log.append(username)
-        time.sleep(60)
+        if result != -1:
+            read_msg_result = readUnreadMsg(session)
+            if read_msg_result['result'] != '':
+                print('%s: %s' % (i, read_msg_result['result']))
+            i += 1
+            read_msg_result['username'] = username
+            read_msg_results.append(read_msg_result)
+        time.sleep(90)
 
     title = '每日一报'
     desp = ''
@@ -648,6 +743,7 @@ def github():
         send_api = int(send[0])
         send_key = send[1]
         send_result = sendMsg(title, desp, send_api, send_key)
+        sendAllReadMsgResult(read_msg_results, send_api, send_key)
         print('消息发送结果：%s' % send_result)
 
     print(title)
@@ -660,6 +756,9 @@ def github():
         print('需要上传行程码用户：')
         for log in xc_log:
             print('%s****%s' % (log[:2], log[-2:]))
+
+    if err_log or xc_log:
+        raise Exception
 
 
 def isTimeToReport():
