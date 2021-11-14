@@ -17,6 +17,7 @@ from requests.packages.urllib3.util.retry import Retry
 abs_path = os.path.split(os.path.realpath(__file__))[0]
 
 GRAB_LOGS = {'success': [], 'fail': []}
+READ_MSG_RESULTS = []
 
 
 def getTime():
@@ -417,12 +418,12 @@ def reportUsers(config_path, logs_path, post_day):
     read_msg_results = []
     for username in users:
         session = login(username, users[username][0])
-        report_result = reportSingle(session, post_day)
-        logs = updateLogs(logs, logs_time, username, report_result)
-        if report_result != -1:
+        if session:
             read_msg_result = readUnreadMsg(session)
             read_msg_result['username'] = username
             read_msg_results.append(read_msg_result)
+        report_result = reportSingle(session, post_day)
+        logs = updateLogs(logs, logs_time, username, report_result)
         time.sleep(60)
     saveLogs(logs_path, logs)
     sendAllReadMsgResult(read_msg_results, send_msg['api'], send_msg['key'])
@@ -706,6 +707,13 @@ def github():
     for user_info in users:
         username, password = user_info.split(',')
         session = login(username, password)
+        if session:
+            read_msg_result = readUnreadMsg(session)
+            if read_msg_result['result'] != '':
+                print('%s: %s' % (i, read_msg_result['result']))
+            i += 1
+            read_msg_result['username'] = username
+            read_msg_results.append(read_msg_result)
         result = reportSingle(session, post_day)
         if result == 1:
             suc_log.append(username)
@@ -713,13 +721,6 @@ def github():
             xc_log.append(username)
         else:
             err_log.append(username)
-        if result != -1:
-            read_msg_result = readUnreadMsg(session)
-            if read_msg_result['result'] != '':
-                print('%s: %s' % (i, read_msg_result['result']))
-            i += 1
-            read_msg_result['username'] = username
-            read_msg_results.append(read_msg_result)
         time.sleep(90)
 
     title = '每日一报'
@@ -786,6 +787,7 @@ def getGrabMode(config_path):
 
 def grabRank(username, password, post_day):
     global GRAB_LOGS
+    global READ_MSG_RESULTS
 
     try_times = 0
     while True:
@@ -799,6 +801,10 @@ def grabRank(username, password, post_day):
         else:
             GRAB_LOGS['fail'].append(username)
             return False
+
+    read_msg_result = readUnreadMsg(session)
+    read_msg_result['username'] = username
+    READ_MSG_RESULTS.append(read_msg_result)
 
     url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
 
@@ -843,9 +849,14 @@ def grabRankUsers(config_path, logs_path, post_day):
     users = getUsers(config_path)
     if not users:
         return False
+    send_msg = getSendApi(config_path)
+    if not send_msg:
+        return False
 
     global GRAB_LOGS
     GRAB_LOGS = {'success': [], 'fail': []}
+    global READ_MSG_RESULTS
+    READ_MSG_RESULTS = []
 
     temp = {}
 
@@ -863,6 +874,8 @@ def grabRankUsers(config_path, logs_path, post_day):
     for username in GRAB_LOGS['fail']:
         logs = updateLogs(logs, logs_time, username, False)
     saveLogs(logs_path, logs)
+    sendAllReadMsgResult(READ_MSG_RESULTS, send_msg['api'], send_msg['key'])
+    time.sleep(5)
     return True
 
 
