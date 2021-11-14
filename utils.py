@@ -366,7 +366,8 @@ def sendAllReadMsgResult(results: list, send_api, send_key):
         desp += r['username'] + ': ' + r['result'] + '\n\n' if r['red_count'] > 0 else ''
     if desp != '':
         title = '存在必读消息'
-        sendMsg(title, desp, send_api, send_key)
+        return sendMsg(title, desp, send_api, send_key)
+    return False
 
 
 def reportSingle(session, post_day):
@@ -425,6 +426,7 @@ def reportUsers(config_path, logs_path, post_day):
         time.sleep(60)
     saveLogs(logs_path, logs)
     sendAllReadMsgResult(read_msg_results, send_msg['api'], send_msg['key'])
+    time.sleep(5)
     return True
 
 
@@ -743,8 +745,10 @@ def github():
         send_api = int(send[0])
         send_key = send[1]
         send_result = sendMsg(title, desp, send_api, send_key)
-        sendAllReadMsgResult(read_msg_results, send_api, send_key)
-        print('消息发送结果：%s' % send_result)
+        print('填报消息发送结果：%s' % send_result)
+        time.sleep(5)
+        send_read_result = sendAllReadMsgResult(read_msg_results, send_api, send_key)
+        print('阅读消息发送结果：%s' % send_read_result)
 
     print(title)
     if err_log:
