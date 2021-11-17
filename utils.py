@@ -144,8 +144,41 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
     return fstate
 
 
+def getXingCodeByUpload(session, view_state, report_url, use_last=False):
+    if use_last:
+        pinfo_url = 'https://selfreport.shu.edu.cn/PersonInfo.aspx'
+        pinfo_html = session.get(url=pinfo_url).text
+        xing_img = re.search(r'f13_state=\{"ImageUrl":"(.*?)"};var f13', pinfo_html).group(1)
+        img_raw = session.get(url=f'https://selfreport.shu.edu.cn/{xing_img}', stream=True).content
+        img_path = './temp.jpg'
+        with open(img_path, 'wb') as f:
+            f.write(img_raw)
+    else:
+        img_path = 'default.jpg'
+
+    img_upload = open(img_path, 'rb')
+    data = {
+        '__EVENTTARGET': 'p1$pImages$fileXingCM',
+        '__VIEWSTATE': view_state,
+        'X-FineUI-Ajax': 'true',
+    }
+    file = {
+        'p1$pImages$fileXingCM': img_upload,
+    }
+    upload_result = session.post(url=report_url, data=data, files=file).text
+    _ = re.search(r'Text&quot;:&quot;(.*?)&quot;\}\);f2', upload_result)
+    weekly_xing_code = None if _ is None else _.group(1)
+    _ = re.search(r'ImageUrl&quot;:&quot;(.*?)&quot;\}\);f3', upload_result)
+    weekly_xing_img = None if _ is None else _.group(1)
+    img_upload.close()
+    if use_last:
+        os.remove(img_path)
+
+    return weekly_xing_code, weekly_xing_img
+
+
 # 获取用户上报页面的最新上报成功的信息
-def getLatestInfo(session):
+def getLatestInfo(session, notify_xc=False, use_last=False):
     history_url = 'https://selfreport.shu.edu.cn/ReportHistory.aspx'
     index = session.get(url=history_url).text
     js_str = re.search('f2_state=(.*?);', index).group(1)
@@ -199,30 +232,9 @@ def getLatestInfo(session):
         weekly_xing_code = None if _ is None else _.group(1)
         _ = re.search(r'f66_state=\{"ImageUrl":"(.*?)"};var f66', report_html)
         weekly_xing_img = None if _ is None else _.group(1)
-        if weekly_xing_img is None or weekly_xing_img is None:
-            pinfo_url = 'https://selfreport.shu.edu.cn/PersonInfo.aspx'
-            pinfo_html = session.get(url=pinfo_url).text
-            xing_img = re.search(r'f13_state=\{"ImageUrl":"(.*?)"};var f13', pinfo_html).group(1)
-            img_raw = session.get(url=f'https://selfreport.shu.edu.cn/{xing_img}', stream=True).content
-            img_path = './temp.jpg'
-            with open(img_path, 'wb') as f:
-                f.write(img_raw)
-            img_upload = open(img_path, 'rb')
-            data = {
-                '__EVENTTARGET': 'p1$pImages$fileXingCM',
-                '__VIEWSTATE': view_state,
-                'X-FineUI-Ajax': 'true',
-            }
-            file = {
-                'p1$pImages$fileXingCM': img_upload,
-            }
-            upload_result = session.post(url=report_url, data=data, files=file).text
-            _ = re.search(r'Text&quot;:&quot;(.*?)&quot;\}\);f2', upload_result)
-            weekly_xing_code = None if _ is None else _.group(1)
-            _ = re.search(r'ImageUrl&quot;:&quot;(.*?)&quot;\}\);f3', upload_result)
-            weekly_xing_img = None if _ is None else _.group(1)
-            img_upload.close()
-            os.remove(img_path)
+
+        if (weekly_xing_img is None or weekly_xing_img is None) and not notify_xc:
+            weekly_xing_code, weekly_xing_img = getXingCodeByUpload(session, view_state, report_url, use_last)
 
     info = dict(vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target,
                 province=province, city=city, county=county, address=address,
@@ -233,8 +245,8 @@ def getLatestInfo(session):
     return info
 
 
-def getReportForm(session, post_day):
-    info = getLatestInfo(session)
+def getReportForm(session, post_day, notify_xc=False):
+    info = getLatestInfo(session, notify_xc)
     view_state = info['vs']
     view_state_generator = info['vsg']
     province = info['province']
@@ -333,12 +345,12 @@ def getUnreadMsg(session):
     red_url = []
     red_title = []
     for i in msg:
-        if '未读' in i[1]:
+        if 'red' in i[1] or 'blue' in i[1]:
             url = 'https://selfreport.shu.edu.cn' + i[4]
             if 'blue' in i[1]:
                 blue_url.append(url)
             elif 'red' in i[1]:
-                title = re.search(r'标题：(.*?)（未读）', i[1]).group(1)
+                title = re.search(r'标题：(.*?)</div>', i[1]).group(1)
                 red_url.append(url)
                 red_title.append(title)
     unread_msg = dict(blue_url=blue_url, red_url=red_url, red_title=red_title,
@@ -371,7 +383,7 @@ def sendAllReadMsgResult(results: list, send_api, send_key):
     return False
 
 
-def reportSingle(session, post_day):
+def reportSingle(session, post_day, notify_xc=False):
     if not session:
         return -1
 
@@ -413,6 +425,7 @@ def reportUsers(config_path, logs_path, post_day):
     send_msg = getSendApi(config_path)
     if not send_msg:
         return False
+    notify_xc = getNotifyXC(config_path)
 
     logs_time = getTime().strftime("%Y-%m-%d %H:%M:%S")
     read_msg_results = []
@@ -422,7 +435,7 @@ def reportUsers(config_path, logs_path, post_day):
             read_msg_result = readUnreadMsg(session)
             read_msg_result['username'] = username
             read_msg_results.append(read_msg_result)
-        report_result = reportSingle(session, post_day)
+        report_result = reportSingle(session, post_day, notify_xc)
         logs = updateLogs(logs, logs_time, username, report_result)
         time.sleep(60)
     saveLogs(logs_path, logs)
@@ -702,6 +715,8 @@ def github():
     err_log = []
     users = os.environ['users'].split(';')
     send = os.environ.get('send', '').split(',')
+    notify_xc = os.environ.get('notify_xc', '')
+    notify_xc = True if notify_xc == '1' else False
     read_msg_results = []
     i = 1
     for user_info in users:
@@ -714,7 +729,7 @@ def github():
             i += 1
             read_msg_result['username'] = username
             read_msg_results.append(read_msg_result)
-        result = reportSingle(session, post_day)
+        result = reportSingle(session, post_day, notify_xc)
         if result == 1:
             suc_log.append(username)
         elif result == -3:
@@ -783,6 +798,12 @@ def getGrabMode(config_path):
     with open(config_path, 'r', encoding='utf-8') as f:
         grab_mode = yaml.load(f, Loader=yaml.FullLoader).get('grab_mode', True)
     return grab_mode
+
+
+def getNotifyXC(config_path):
+    with open(config_path, 'r', encoding='utf-8') as f:
+        notify_xc = yaml.load(f, Loader=yaml.FullLoader).get('notify_xc', False)
+    return notify_xc
 
 
 def grabRank(username, password, post_day):

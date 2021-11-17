@@ -1,7 +1,7 @@
 # 上海大学健康之路自动上报
 Shanghai University Auto SelfReport
 
-Ver.21.11.15 支持自动阅读消息，并将必读消息的标题进行推送; 适配了消息阅读提示
+Ver.21.11.17 修复阅读消息; [调整行程码上传策略](https://github.com/panghaibin/shuasr/issues/5)
 
 上海大学健康之路每日一报自动上报（卷王专用）
 

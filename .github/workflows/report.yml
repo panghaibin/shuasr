@@ -20,4 +20,5 @@ jobs:
         env:
           users: ${{ secrets.USERS }}
           send: ${{ secrets.SEND }}
+          notify_xc: ${{ secrets.NOTIFY_XC }}
         run: "python main.py gh"
