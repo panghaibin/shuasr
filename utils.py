@@ -389,7 +389,7 @@ def reportSingle(session, post_day, notify_xc=False):
 
     url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
 
-    form = getReportForm(session, post_day)
+    form = getReportForm(session, post_day, notify_xc)
     if not form:
         return -2
 
