@@ -716,7 +716,7 @@ def github():
     users = os.environ['users'].split(';')
     send = os.environ.get('send', '').split(',')
     notify_xc = os.environ.get('notify_xc', '')
-    notify_xc = True if notify_xc == '1' else False
+    notify_xc = True if notify_xc == 'enable' else False
     read_msg_results = []
     i = 1
     for user_info in users:
