@@ -1,5 +1,4 @@
 # -*- coding: UTF-8 -*-
-import random
 import json
 import base64
 import re
@@ -60,10 +59,7 @@ def login(username, password, try_once=False):
             session.mount('https://', adapter)
 
             sso = session.get(url=index_url)
-            index = session.post(url=sso.url, data=form_data, allow_redirects=False)
-            # 一个非常奇怪的bug，URL编码本应是不区分大小写的，但访问302返回的URL就会出问题，需要将URL中的替换成252f
-            # index = session.get(url=index.history[-1].url.replace("252F", "252f"))
-            # index = session.get(url=index.next.url.replace("252F", "252f"))
+            session.post(url=sso.url, data=form_data, allow_redirects=False)
             index = session.get(url='https://newsso.shu.edu.cn/oauth/authorize?client_id=WUHWfrntnWYHZfzQ5QvXUCVy'
                                     '&response_type=code&scope=1&redirect_uri=https%3A%2F%2Fselfreport.shu.edu.cn'
                                     '%2FLoginSSO.aspx%3FReturnUrl%3D%252fDefault.aspx&state=')
@@ -75,8 +71,7 @@ def login(username, password, try_once=False):
                 if readNotice(session, index.text, notice_url, index_url):
                     return session
             else:
-                # debug
-                print(index.history)
+                print([u.url for u in index.history])
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -144,41 +139,17 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
     return fstate
 
 
-def getXingCodeByUpload(session, view_state, report_url, use_last=False):
-    if use_last:
-        pinfo_url = 'https://selfreport.shu.edu.cn/PersonInfo.aspx'
-        pinfo_html = session.get(url=pinfo_url).text
-        xing_img = re.search(r'f13_state=\{"ImageUrl":"(.*?)"};var f13', pinfo_html).group(1)
-        img_raw = session.get(url=f'https://selfreport.shu.edu.cn/{xing_img}', stream=True).content
-        img_path = './temp.jpg'
-        with open(img_path, 'wb') as f:
-            f.write(img_raw)
-    else:
-        img_path = 'default.jpg'
-
-    img_upload = open(img_path, 'rb')
-    data = {
-        '__EVENTTARGET': 'p1$pImages$fileXingCM',
-        '__VIEWSTATE': view_state,
-        'X-FineUI-Ajax': 'true',
-    }
-    file = {
-        'p1$pImages$fileXingCM': img_upload,
-    }
-    upload_result = session.post(url=report_url, data=data, files=file).text
-    _ = re.search(r'Text&quot;:&quot;(.*?)&quot;\}\);f2', upload_result)
-    weekly_xing_code = None if _ is None else _.group(1)
-    _ = re.search(r'ImageUrl&quot;:&quot;(.*?)&quot;\}\);f3', upload_result)
-    weekly_xing_img = None if _ is None else _.group(1)
-    img_upload.close()
-    if use_last:
-        os.remove(img_path)
-
-    return weekly_xing_code, weekly_xing_img
+def html2JsLine(html):
+    js = re.search(r'F\.load.*]>', html).group(0)
+    split = js.split(';var ')
+    return split
 
 
-# 获取用户上报页面的最新上报成功的信息
-def getLatestInfo(session, notify_xc=False, use_last=False):
+def jsLine2Json(js):
+    return json.loads(js[js.find('=') + 1:])
+
+
+def getLatestInfo(session):
     history_url = 'https://selfreport.shu.edu.cn/ReportHistory.aspx'
     index = session.get(url=history_url).text
     js_str = re.search('f2_state=(.*?);', index).group(1)
@@ -189,19 +160,31 @@ def getLatestInfo(session, notify_xc=False, use_last=False):
             info_url += i[4]
             break
 
-    # return info_url
     info_html = session.get(url=info_url).text
-    province = re.search(r'"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f12=', info_html).group(1)
-    city = re.search(r'"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f13=', info_html).group(1)
-    county = re.search(r'"SelectedValueArray":\["(((?!"SelectedValueArray":\[").)*)"]};var f14=', info_html).group(1)
-    address = re.search(r'"Text":"(((?!"Text":").)*)"};var f15=', info_html).group(1)
-    _ = re.search(r'f8_state=\{"Hidden":false,"Text":"(.*?)"', info_html)
-    in_shanghai = '在上海（校内）' if _ is None or _.group(1) == '在上海' else _.group(1)
-    if '在上海' in in_shanghai:
-        in_school = re.search(r'f9_state=\{"Hidden":false,"SelectedValue":"(.*?)",', info_html).group(1)
-    else:
-        in_school = '否'
-    in_home = re.search(r'f16_state=\{"Hidden":false,"SelectedValue":"(.*?)",', info_html).group(1)
+    info_line = html2JsLine(info_html)
+
+    in_shanghai = '在上海（校内）'
+    in_school = '是'
+    province = '上海'
+    city = '上海'
+    county = '宝山区'
+    address = '上海大学宝山校区'
+    in_home = '否'
+    for i, h in enumerate(info_line):
+        if 'ShiFSH' in h:
+            in_shanghai = jsLine2Json(info_line[i - 1])['Text']
+        if 'ShiFZX' in h:
+            in_school = jsLine2Json(info_line[i - 1])['SelectedValue']
+        if 'ddlSheng' in h:
+            province = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
+        if 'ddlShi' in h:
+            city = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
+        if 'ddlXian' in h:
+            county = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
+        if 'XiangXDZ' in h:
+            address = jsLine2Json(info_line[i - 1])['Text']
+        if 'ShiFZJ' in h:
+            in_home = jsLine2Json(info_line[i - 1])['SelectedValue']
 
     report_url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
     report_html = session.get(url=report_url).text
@@ -210,43 +193,49 @@ def getLatestInfo(session, notify_xc=False, use_last=False):
     f_target = _.group(1)
     even_target = _.group(2)
 
-    _ = re.search(r"'参考答案：(.*?)'", report_html)
-    ans = None if _ is None else _.group(1)
-    if ans is None:
-        _ = re.search(r'正确答案为：(.*?)"', report_html)
-        ans = None if _ is None else _.group(1)
-    if ans is None:
-        _ = re.search(r'"SelectedValueArray":\[(.*?)]', report_html)
-        ans = None if _ is None else _.group(1)
-        ans = ans.replace('"', '').replace(',', '')
-    ans = [i for i in ans] if ans is not None else ['A']
-
     view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', report_html).group(1)
     view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', report_html).group(1)
 
-    require_weekly_xing_code = True if 'f9_state={"Hidden":false' in report_html else False
-    weekly_xing_code = None
-    weekly_xing_img = None
-    if require_weekly_xing_code:
-        _ = re.search(r'f65_state=\{"Text":"(.*?)"}', report_html)
-        weekly_xing_code = None if _ is None else _.group(1)
-        _ = re.search(r'f66_state=\{"ImageUrl":"(.*?)"};var f66', report_html)
-        weekly_xing_img = None if _ is None else _.group(1)
-
-        if (weekly_xing_img is None or weekly_xing_img is None) and not notify_xc:
-            weekly_xing_code, weekly_xing_img = getXingCodeByUpload(session, view_state, report_url, use_last)
+    report_split = html2JsLine(report_html)
+    ans = ['A']
+    sui_code = 'odrp1Za3DEU='
+    sui_img = '/ShowImage.ashx?squrl=oyhA3XzMDCTMwyYAn6kyLt3hxsAoCfpvYGMSocfVfx2RRyKXq9QDVV5cVuq9mN8Mt%2bxyoS93C' \
+              '%2b9qawY41vXjo7H18V%2b08RW%2fWDwSfK2TQ8Qc7ob' \
+              '%2fnXpyYlgzh5aNOE9tpHWs9n7P7dTaa6iBSTv3Yt40C9UuPY0edMplSSzgA4DQn0HMJY3R5GihYy5Hr9PeiSbwSeJ3GOY%3d'
+    xing_code = sui_code
+    xing_img = sui_img
+    for i, h in enumerate(report_split):
+        if 'p1_pnlDangSZS_ckda' in h:
+            text = report_split[i - 1]
+            if 'p1_pnlDangSZS_DangSZS' not in text:
+                ans = re.findall(r'答案：(.*)\'', text)[0]
+                ans = [i for i in ans]
+        if 'p1_pnlDangSZS_DangSZS' in h:
+            ans = jsLine2Json(report_split[i - 1])['SelectedValueArray']
+        if 'p1_pImages_HFimgSuiSM' in h:
+            try:
+                sui_code = jsLine2Json(report_split[i - 1])['Text']
+                sui_img = jsLine2Json(report_split[i + 1])['ImageUrl']
+            except (KeyError, json.JSONDecodeError):
+                pass
+        if 'p1$pImages$HFimgXingCM' in h:
+            try:
+                xing_code = jsLine2Json(report_split[i - 1])['Text']
+                xing_img = jsLine2Json(report_split[i + 1])['ImageUrl']
+            except (KeyError, json.JSONDecodeError):
+                pass
 
     info = dict(vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target,
                 province=province, city=city, county=county, address=address,
                 in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
-                rwxc=require_weekly_xing_code, wxc=weekly_xing_code, wxi=weekly_xing_img,
+                sui_code=sui_code, sui_img=sui_img, xing_code=xing_code, xing_img=xing_img,
                 ans=ans)
 
     return info
 
 
-def getReportForm(session, post_day, notify_xc=False):
-    info = getLatestInfo(session, notify_xc)
+def getReportForm(session, post_day):
+    info = getLatestInfo(session)
     view_state = info['vs']
     view_state_generator = info['vsg']
     province = info['province']
@@ -258,16 +247,18 @@ def getReportForm(session, post_day, notify_xc=False):
     in_home = info['in_home']
     f_target = info['f_target']
     even_target = info['even_target']
-    require_weekly_xing_code = info['rwxc']
-    weekly_xing_code = info['wxc']
-    weekly_xing_img = info['wxi']
+    sui_code = info['sui_code']
+    sui_img = info['sui_img']
+    xing_code = info['xing_code']
+    xing_img = info['xing_img']
     ans = info['ans']
 
     # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
     f_state = generateFState(abs_path + '/once.json', post_day=post_day, province=province, city=city, county=county,
                              address=address, in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
-                             xing_img=weekly_xing_img, xing_code=weekly_xing_code, ans=ans)
+                             sui_code=sui_code, sui_img=sui_img, xing_img=xing_img, xing_code=xing_code,
+                             ans=ans)
 
     report_form = {
         '__EVENTTARGET': even_target,
@@ -298,8 +289,8 @@ def getReportForm(session, post_day, notify_xc=False):
         'p1$ddlXian': county,
         'p1$XiangXDZ': address,
         'p1$ShiFZJ': in_home,
-        # 'p1$pImages$HFimgSuiSM': sui_code,
-        'p1$pImages$HFimgXingCM': weekly_xing_code,
+        'p1$pImages$HFimgSuiSM': sui_code,
+        'p1$pImages$HFimgXingCM': xing_code,
         'p1$FengXDQDL': '否',
         'p1$TongZWDLH': '否',
         'p1$CengFWH': '否',
@@ -383,13 +374,13 @@ def sendAllReadMsgResult(results: list, send_api, send_key):
     return False
 
 
-def reportSingle(session, post_day, notify_xc=False):
+def reportSingle(session, post_day):
     if not session:
         return -1
 
     url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
 
-    form = getReportForm(session, post_day, notify_xc)
+    form = getReportForm(session, post_day)
     if not form:
         return -2
 
@@ -425,7 +416,6 @@ def reportUsers(config_path, logs_path, post_day):
     send_msg = getSendApi(config_path)
     if not send_msg:
         return False
-    notify_xc = getNotifyXC(config_path)
 
     logs_time = getTime().strftime("%Y-%m-%d %H:%M:%S")
     read_msg_results = []
@@ -435,7 +425,7 @@ def reportUsers(config_path, logs_path, post_day):
             read_msg_result = readUnreadMsg(session)
             read_msg_result['username'] = username
             read_msg_results.append(read_msg_result)
-        report_result = reportSingle(session, post_day, notify_xc)
+        report_result = reportSingle(session, post_day)
         logs = updateLogs(logs, logs_time, username, report_result)
         time.sleep(60)
     saveLogs(logs_path, logs)
@@ -592,7 +582,7 @@ def sendLogs(logs_path, config_path):
             return False
 
 
-def checkEnv(config_path, logs_path):
+def checkEnv(config_path):
     try:
         users = getUsers(config_path)
         if len(users) == 0:
@@ -691,7 +681,7 @@ def addUser(config_path):
 
 # 上报所有用户，用于测试
 def test(config_path, logs_path):
-    if not checkEnv(config_path, logs_path):
+    if not checkEnv(config_path):
         print("请检查是否已添加用户，确保config.yaml与logs.json可读写")
         print("运行 python3 main.py add 添加用户，运行 python3 main.py send 配置消息发送API")
         return False
@@ -715,8 +705,6 @@ def github():
     err_log = []
     users = os.environ['users'].split(';')
     send = os.environ.get('send', '').split(',')
-    notify_xc = os.environ.get('notify_xc', '')
-    notify_xc = True if notify_xc == 'enable' else False
     read_msg_results = []
     i = 1
     for user_info in users:
@@ -729,7 +717,7 @@ def github():
             i += 1
             read_msg_result['username'] = username
             read_msg_results.append(read_msg_result)
-        result = reportSingle(session, post_day, notify_xc)
+        result = reportSingle(session, post_day)
         if result == 1:
             suc_log.append(username)
         elif result == -3:
@@ -798,12 +786,6 @@ def getGrabMode(config_path):
     with open(config_path, 'r', encoding='utf-8') as f:
         grab_mode = yaml.load(f, Loader=yaml.FullLoader).get('grab_mode', True)
     return grab_mode
-
-
-def getNotifyXC(config_path):
-    with open(config_path, 'r', encoding='utf-8') as f:
-        notify_xc = yaml.load(f, Loader=yaml.FullLoader).get('notify_xc', False)
-    return notify_xc
 
 
 def grabRank(username, password, post_day):
@@ -901,7 +883,7 @@ def grabRankUsers(config_path, logs_path, post_day):
 
 
 def main(config_path, logs_path):
-    if not checkEnv(config_path, logs_path):
+    if not checkEnv(config_path):
         print("请检查是否已添加用户，确保config.yaml与logs.json可读写")
         print("运行 python3 main.py add 添加用户，运行 python3 main.py send 配置消息发送API")
         return False

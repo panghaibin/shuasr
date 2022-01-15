@@ -1,7 +1,7 @@
 # 上海大学健康之路自动上报
 Shanghai University Auto SelfReport
 
-Ver.21.11.17 修复阅读消息; [调整行程码上传策略](https://github.com/panghaibin/shuasr/issues/5)
+Ver.22.01.15 适配随申码，优化行程码报送实现方式; 提升代码结构; 修复bug
 
 上海大学健康之路每日一报自动上报（卷王专用）
 
