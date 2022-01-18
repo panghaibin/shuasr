@@ -39,7 +39,7 @@ def encryptPass(password):
 
 
 def login(username, password, try_once=False):
-    index_url = "https://selfreport.shu.edu.cn/Default.aspx"
+    default_url = "https://selfreport.shu.edu.cn/Default.aspx"
     form_data = {
         'username': username,
         'password': encryptPass(password),
@@ -58,20 +58,28 @@ def login(username, password, try_once=False):
             session.mount('http://', adapter)
             session.mount('https://', adapter)
 
-            sso = session.get(url=index_url)
+            sso = session.get(url=default_url)
             session.post(url=sso.url, data=form_data, allow_redirects=False)
             index = session.get(url='https://newsso.shu.edu.cn/oauth/authorize?client_id=WUHWfrntnWYHZfzQ5QvXUCVy'
                                     '&response_type=code&scope=1&redirect_uri=https%3A%2F%2Fselfreport.shu.edu.cn'
                                     '%2FLoginSSO.aspx%3FReturnUrl%3D%252fDefault.aspx&state=')
             login_times += 1
             notice_url = 'https://selfreport.shu.edu.cn/DayReportNotice.aspx'
-            if index.url == index_url and index.status_code == 200:
+            view_msg_url = 'https://selfreport.shu.edu.cn/ViewMessage.aspx'
+            if index.url == default_url and index.status_code == 200:
                 return session
-            elif index.url == notice_url and index.status_code == 200:
-                if readNotice(session, index.text, notice_url, index_url):
+            elif index.url.startswith(view_msg_url):
+                view_times = 0
+                while view_times < 5:
+                    index = session.get(url=default_url)
+                    view_times += 1
+                    if index.url == default_url:
+                        return session
+            elif index.url == notice_url:
+                if readNotice(session, index.text, notice_url, default_url):
                     return session
             else:
-                print([u.url for u in index.history])
+                print([u.url for u in index.history] + [index.url])
         except Exception as e:
             print(e)
             traceback.print_exc()
