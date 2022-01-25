@@ -1,7 +1,11 @@
 # 上海大学健康之路自动上报
 Shanghai University Auto SelfReport
 
-Ver.22.01.15 适配随申码，优化行程码报送实现方式; 提升代码结构; 修复bug
+Ver.22.01.25 实现模拟XC码上报
+
+> 目前(22.01.25)健康之路仅对XC码进行检测，且仅检测文字信息。程序可模拟生成仅有文字信息的XC码，并上报。模拟生成的XC码包含的地址信息，来源于上次填报的地址。
+
+-----
 
 上海大学健康之路每日一报自动上报（卷王专用）
 
@@ -59,7 +63,10 @@ Secret 的 `Name` 设置为 `SEND` ， `Value` 格式为 `send_api,send_key` ，
 ![gh-1](./img/gh-6.jpg)
 
 #### v. 更新项目
-当本项目更新后，你 Fork 的项目并不会自动更新，需要手动 `Fetch and merge` 一下，如下图所示，在你 Fork 后的项目页执行该操作
+可以选择安装 GitHub Apps 中的 [Pull App](https://github.com/apps/pull) ，保持你的 Fork 始终最新。
+[![Pull App](https://prod.download/pull-social-svg)](https://github.com/apps/pull)
+
+若不安装，当本项目更新后，你 Fork 的项目并不会自动更新，需要手动 `Fetch and merge` 一下，如下图所示，在你 Fork 后的项目页执行该操作
 
 ![gh-1](./img/gh-7.jpg)
 

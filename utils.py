@@ -10,10 +10,14 @@ import rsa
 import yaml
 import datetime
 import os
+import random
+from PIL import Image, ImageFont, ImageDraw
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
 abs_path = os.path.split(os.path.realpath(__file__))[0]
+
+XCM = base64.b64decode('6KGM56iL56CB').decode('utf-8')
 
 GRAB_LOGS = {'success': [], 'fail': []}
 READ_MSG_RESULTS = []
@@ -147,6 +151,92 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
     return fstate
 
 
+def convertAddress(province, city):
+    if province in ["北京", "上海", "天津", "重庆"]:
+        province += "市"
+        city = ''
+    elif province in ["香港", "澳门"]:
+        province += "特别行政区"
+        city = ''
+    elif province == "广西":
+        province += "壮族自治区"
+    elif province == "内蒙古":
+        province += "自治区"
+    elif province == "宁夏":
+        province += "回族自治区"
+    elif province == "新疆":
+        province += "维吾尔自治区"
+    elif province == "西藏":
+        province += "自治区"
+    else:
+        province += "省"
+    return province + city
+
+
+def generateXingImage(ph_num, position=None):
+    phone = ph_num[:3] + '****' + ph_num[-4:] + base64.b64decode('55qE5Yqo5oCB6KGM56iL5Y2h').decode('utf-8')
+    update = '更新于：' + getTime().strftime("%Y.%m.%d %H:%M:%S")
+    tip = base64.b64decode('5oKo5LqO5YmNMTTlpKnlhoXliLDovr7miJbpgJTnu4/vvJo=').decode('utf-8')
+    position = '上海市' if position is None else position
+
+    # image = Image.open("xcm.jpg")
+    image = Image.new('RGB', (675, 1260), (255, 255, 255))
+    draw = ImageDraw.Draw(image)
+    full_width, full_height = image.size
+
+    phone_font = ImageFont.truetype('font/NotoSansSC-Bold.otf', 30)
+    update_font = ImageFont.truetype('font/NotoSansSC-Bold.otf', 32)
+    tip_font = ImageFont.truetype('font/NotoSansSC-Regular.otf', 28)
+    position_font = ImageFont.truetype('font/NotoSansSC-Bold.otf', 28)
+
+    phone_width, _ = draw.textsize(phone, phone_font)
+    update_width, _ = draw.textsize(update, update_font)
+    tip_width, _ = draw.textsize(tip, tip_font)
+
+    draw.text(((full_width - phone_width) / 2, 300), phone, (70, 70, 76), phone_font)
+    draw.text(((full_width - update_width) / 2, 355), update, (148, 148, 158), update_font)
+    draw.text((80, 795), tip, (148, 148, 158), tip_font)
+
+    draw_x = 80 + tip_width
+    draw_y = 795
+    while len(position) > 0:
+        word_width, word_height = draw.textsize(position[0], position_font)
+        if draw_x + word_width > full_width - 80:
+            draw_x = 80
+            draw_y += word_height + 3
+        draw.text((draw_x, draw_y), position[0], (71, 70, 76), position_font)
+        draw_x += word_width
+        position = position[1:]
+
+    img_path = '%s_%s.jpg' % (ph_num, str(random.randint(100000000, 999999999)))
+    image.save(img_path, 'jpeg')
+    return img_path
+
+
+def generateSuiImage(ph_num, position=None):
+    return generateXingImage(ph_num, position)
+
+
+def getImgCodeByUpload(session, img_type, view_state, report_url, img_path, _code, _img):
+    img_type_dict = {'sui': 'p1$pImages$fileSuiSM', 'xing': 'p1$pImages$fileXingCM'}
+    img_upload = open(img_path, 'rb')
+    data = {
+        '__EVENTTARGET': img_type_dict[img_type],
+        '__VIEWSTATE': view_state,
+        'X-FineUI-Ajax': 'true',
+    }
+    file = {
+        img_type_dict[img_type]: img_upload,
+    }
+    upload_result = session.post(url=report_url, data=data, files=file).text
+    img_upload.close()
+    _ = re.search(r'Text&quot;:&quot;(.*?)&quot;}\);f2', upload_result)
+    _code = _code if _ is None else _.group(1)
+    _ = re.search(r'ImageUrl&quot;:&quot;(.*?)&quot;}\);f3', upload_result)
+    _img = _img if _ is None else _.group(1)
+    return _code, _img
+
+
 def html2JsLine(html):
     js = re.search(r'F\.load.*]>', html).group(0)
     split = js.split(';var ')
@@ -181,18 +271,27 @@ def getLatestInfo(session):
     for i, h in enumerate(info_line):
         if 'ShiFSH' in h:
             in_shanghai = jsLine2Json(info_line[i - 1])['Text']
-        if 'ShiFZX' in h:
+        elif 'ShiFZX' in h:
             in_school = jsLine2Json(info_line[i - 1])['SelectedValue']
-        if 'ddlSheng' in h:
+        elif 'ddlSheng' in h:
             province = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
-        if 'ddlShi' in h:
+        elif 'ddlShi' in h:
             city = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
-        if 'ddlXian' in h:
+        elif 'ddlXian' in h:
             county = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
-        if 'XiangXDZ' in h:
+        elif 'XiangXDZ' in h:
             address = jsLine2Json(info_line[i - 1])['Text']
-        if 'ShiFZJ' in h:
+        elif 'ShiFZJ' in h:
             in_home = jsLine2Json(info_line[i - 1])['SelectedValue']
+
+    p_info_url = 'https://selfreport.shu.edu.cn/PersonInfo.aspx'
+    p_info_html = session.get(url=p_info_url).text
+    p_info_line = html2JsLine(p_info_html)
+
+    phone_number = '18888888888'
+    for i, h in enumerate(p_info_line):
+        if 'persinfo_ctl00_ShouJHM' in h:
+            phone_number = jsLine2Json(p_info_line[i - 1])['Text']
 
     report_url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
     report_html = session.get(url=report_url).text
@@ -204,34 +303,40 @@ def getLatestInfo(session):
     view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', report_html).group(1)
     view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', report_html).group(1)
 
-    report_split = html2JsLine(report_html)
+    report_line = html2JsLine(report_html)
     ans = ['A']
-    sui_code = 'odrp1Za3DEU='
-    sui_img = '/ShowImage.ashx?squrl=oyhA3XzMDCTMwyYAn6kyLt3hxsAoCfpvYGMSocfVfx2RRyKXq9QDVV5cVuq9mN8Mt%2bxyoS93C' \
-              '%2b9qawY41vXjo7H18V%2b08RW%2fWDwSfK2TQ8Qc7ob' \
-              '%2fnXpyYlgzh5aNOE9tpHWs9n7P7dTaa6iBSTv3Yt40C9UuPY0edMplSSzgA4DQn0HMJY3R5GihYy5Hr9PeiSbwSeJ3GOY%3d'
-    xing_code = sui_code
-    xing_img = sui_img
-    for i, h in enumerate(report_split):
+    _code = 'odrp1Za3DEU='
+    _img = '/ShowImage.ashx?squrl=oyhA3XzMDCTMwyYAn6kyLt3hxsAoCfpvYGMSocfVfx2RRyKXq9QDVV5cVuq9mN8Mt%2bxyoS93C' \
+           '%2b9qawY41vXjo7H18V%2b08RW%2fWDwSfK2TQ8Qc7ob' \
+           '%2fnXpyYlgzh5aNOE9tpHWs9n7P7dTaa6iBSTv3Yt40C9UuPY0edMplSSzgA4DQn0HMJY3R5GihYy5Hr9PeiSbwSeJ3GOY%3d'
+    sui_code = xing_code = _code
+    sui_img = xing_img = _img
+    for i, h in enumerate(report_line):
         if 'p1_pnlDangSZS_ckda' in h:
-            text = report_split[i - 1]
+            text = report_line[i - 1]
             if 'p1_pnlDangSZS_DangSZS' not in text:
                 ans = re.findall(r'答案：(.*)\'', text)[0]
                 ans = [i for i in ans]
-        if 'p1_pnlDangSZS_DangSZS' in h:
-            ans = jsLine2Json(report_split[i - 1])['SelectedValueArray']
-        if 'p1_pImages_HFimgSuiSM' in h:
+        elif 'p1_pnlDangSZS_DangSZS' in h:
+            ans = jsLine2Json(report_line[i - 1])['SelectedValueArray']
+        elif 'p1_pImages_HFimgSuiSM' in h:
             try:
-                sui_code = jsLine2Json(report_split[i - 1])['Text']
-                sui_img = jsLine2Json(report_split[i + 1])['ImageUrl']
+                sui_code = jsLine2Json(report_line[i - 1])['Text']
+                sui_img = jsLine2Json(report_line[i + 1])['ImageUrl']
             except (KeyError, json.JSONDecodeError):
+                # 目前(22.01.25)没有针对SS码的检测
                 pass
-        if 'p1$pImages$HFimgXingCM' in h:
+                # img_path = generateSuiImage(phone_number, convertAddress(province, city))
+                # sui_code, sui_img = getImgCodeByUpload(session, 'sui', view_state, report_url, img_path, _code, _img)
+                # os.remove(img_path)
+        elif 'p1$pImages$HFimgXingCM' in h:
             try:
-                xing_code = jsLine2Json(report_split[i - 1])['Text']
-                xing_img = jsLine2Json(report_split[i + 1])['ImageUrl']
+                xing_code = jsLine2Json(report_line[i - 1])['Text']
+                xing_img = jsLine2Json(report_line[i + 1])['ImageUrl']
             except (KeyError, json.JSONDecodeError):
-                pass
+                img_path = generateXingImage(phone_number, convertAddress(province, city))
+                xing_code, xing_img = getImgCodeByUpload(session, 'xing', view_state, report_url, img_path, _code, _img)
+                os.remove(img_path)
 
     info = dict(vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target,
                 province=province, city=city, county=county, address=address,
@@ -397,7 +502,7 @@ def reportSingle(session, post_day):
         report_result = session.post(url=url, data=form)
         if '提交成功' in report_result.text:
             return 1
-        elif '行程码' in report_result.text:
+        elif XCM in report_result.text:
             return -3
         else:
             print(report_result.text)
@@ -569,9 +674,9 @@ def sendLogs(logs_path, config_path):
     if len(xing_code):
         for username in xing_code:
             title += username[4:] + '.'
-            desp += '用户%s需要上传行程码\n\n' % username
-        title += '需要行程码'
-        desp += '请尽快上传行程码\n\n'
+            desp += '用户%s需要上传%s\n\n' % (username, XCM)
+        title += '需要' + XCM
+        desp += '请尽快上传%s\n\n' % XCM
 
     if len(fail):
         for username in fail:
@@ -742,9 +847,9 @@ def github():
         title += '%s位成功，' % len(suc_log)
     if len(xc_log):
         for username in xc_log:
-            desp += '用户%s需要上传行程码\n\n' % username
-        title += '%s位需要行程码，' % len(xc_log)
-        desp += '请尽快上传行程码\n\n'
+            desp += '用户%s需要上传%s\n\n' % (username, XCM)
+        title += '%s位需要%s，' % (len(xc_log), XCM)
+        desp += '请尽快上传%s\n\n' % XCM
     if len(err_log):
         for username in err_log:
             desp += '用户%s填报失败\n\n' % username
@@ -769,7 +874,7 @@ def github():
             print('%s****%s' % (log[:2], log[-2:]))
 
     if xc_log:
-        print('需要上传行程码用户：')
+        print('需要上传XC码用户：')
         for log in xc_log:
             print('%s****%s' % (log[:2], log[-2:]))
 
