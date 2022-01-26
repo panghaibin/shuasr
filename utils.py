@@ -290,7 +290,7 @@ def getLatestInfo(session):
 
     phone_number = '18888888888'
     for i, h in enumerate(p_info_line):
-        if 'persinfo_ctl00_ShouJHM' in h:
+        if 'ShouJHM' in h:
             phone_number = jsLine2Json(p_info_line[i - 1])['Text']
 
     report_url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
@@ -312,14 +312,14 @@ def getLatestInfo(session):
     sui_code = xing_code = _code
     sui_img = xing_img = _img
     for i, h in enumerate(report_line):
-        if 'p1_pnlDangSZS_ckda' in h:
+        if 'pnlDangSZS_ckda' in h:
             text = report_line[i - 1]
-            if 'p1_pnlDangSZS_DangSZS' not in text:
+            if 'pnlDangSZS_DangSZS' not in text:
                 ans = re.findall(r'答案：(.*)\'', text)[0]
                 ans = [i for i in ans]
-        elif 'p1_pnlDangSZS_DangSZS' in h:
+        elif 'pnlDangSZS_DangSZS' in h:
             ans = jsLine2Json(report_line[i - 1])['SelectedValueArray']
-        elif 'p1_pImages_HFimgSuiSM' in h:
+        elif 'pImages_HFimgSuiSM' in h:
             try:
                 sui_code = jsLine2Json(report_line[i - 1])['Text']
                 sui_img = jsLine2Json(report_line[i + 1])['ImageUrl']
@@ -329,7 +329,7 @@ def getLatestInfo(session):
                 # img_path = generateSuiImage(phone_number, convertAddress(province, city))
                 # sui_code, sui_img = getImgCodeByUpload(session, 'sui', view_state, report_url, img_path, _code, _img)
                 # os.remove(img_path)
-        elif 'p1$pImages$HFimgXingCM' in h:
+        elif 'pImages_fileXingCM' in h:
             try:
                 xing_code = jsLine2Json(report_line[i - 1])['Text']
                 xing_img = jsLine2Json(report_line[i + 1])['ImageUrl']
@@ -347,8 +347,7 @@ def getLatestInfo(session):
     return info
 
 
-def getReportForm(session, post_day):
-    info = getLatestInfo(session)
+def getReportForm(post_day, info):
     view_state = info['vs']
     view_state_generator = info['vsg']
     province = info['province']
@@ -487,16 +486,41 @@ def sendAllReadMsgResult(results: list, send_api, send_key):
     return False
 
 
-def reportSingle(session, post_day):
+def getUnreportedDay(session, ignore_today=True):
+    today = getTime().strftime("%Y-%m-%d")
+    history_url = 'https://selfreport.shu.edu.cn/ReportHistory.aspx'
+    index = session.get(url=history_url).text
+    js_str = re.search('f2_state=(.*?);', index).group(1)
+    items = json.loads(js_str)['F_Items']
+    unreported_day = []
+    if ignore_today and today in items[0][1]:
+        items.pop(0)
+    for i in items:
+        if '未填报' in i[1]:
+            date = re.search(r'\d{4}-\d{2}-\d{2}', i[1]).group(0)
+            unreported_day.append(date)
+    unreported_day.sort()
+    return unreported_day
+
+
+def reportUnreported(session, info, unreported_day):
+    for post_day in unreported_day:
+        _form = getReportForm(post_day, info)
+        report_result = reportSingleUser(session, _form)
+        if report_result == 1:
+            print('补报%s成功' % post_day)
+        else:
+            print('补报%s失败' % post_day)
+    print('补报结束')
+
+
+def reportSingleUser(session, form):
     if not session:
         return -1
-
-    url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
-
-    form = getReportForm(session, post_day)
     if not form:
         return -2
 
+    url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
     report_times = 0
     while True:
         report_result = session.post(url=url, data=form)
@@ -509,7 +533,7 @@ def reportSingle(session, post_day):
         report_times += 1
         if report_times > 10:
             return 0
-        time.sleep(10)
+        time.sleep(5)
 
 
 def getUsers(config_path):
@@ -518,8 +542,7 @@ def getUsers(config_path):
     return users
 
 
-# 上报所有用户并退出
-def reportUsers(config_path, logs_path, post_day):
+def reportAllUsers(config_path, logs_path, post_day):
     users = getUsers(config_path)
     if not users:
         return False
@@ -534,11 +557,21 @@ def reportUsers(config_path, logs_path, post_day):
     read_msg_results = []
     for username in users:
         session = login(username, users[username][0])
-        if session:
-            read_msg_result = readUnreadMsg(session)
-            read_msg_result['username'] = username
-            read_msg_results.append(read_msg_result)
-        report_result = reportSingle(session, post_day)
+        if not session:
+            logs = updateLogs(logs, logs_time, username, -1)
+            time.sleep(60)
+            continue
+        read_msg_result = readUnreadMsg(session)
+        read_msg_result['username'] = username
+        read_msg_results.append(read_msg_result)
+
+        _info = getLatestInfo(session)
+        unreported_day = getUnreportedDay(session)
+        if len(unreported_day) > 0:
+            print('%s有%s天未填报，开始补报' % (username, len(unreported_day)))
+            reportUnreported(session, _info, unreported_day)
+        _form = getReportForm(post_day, _info)
+        report_result = reportSingleUser(session, _form)
         logs = updateLogs(logs, logs_time, username, report_result)
         time.sleep(60)
     saveLogs(logs_path, logs)
@@ -800,7 +833,7 @@ def test(config_path, logs_path):
         return False
 
     post_day = getTime().strftime("%Y-%m-%d")
-    report_result = reportUsers(config_path, logs_path, post_day=post_day)
+    report_result = reportAllUsers(config_path, logs_path, post_day=post_day)
     if not report_result:
         print("填报失败，请检查错误信息")
     send_result = sendLogs(logs_path, config_path)
@@ -830,10 +863,16 @@ def github():
             i += 1
             read_msg_result['username'] = username
             read_msg_results.append(read_msg_result)
-        result = reportSingle(session, post_day)
-        if result == 1:
+        _info = getLatestInfo(session)
+        unreported_day = getUnreportedDay(session)
+        if len(unreported_day) > 0:
+            print('%s****%s有%s天未填报，开始补报' % (username[:2], username[-2:],  len(unreported_day)))
+            reportUnreported(session, _info, unreported_day)
+        _form = getReportForm(post_day, _info)
+        report_result = reportSingleUser(session, _form)
+        if report_result == 1:
             suc_log.append(username)
-        elif result == -3:
+        elif report_result == -3:
             xc_log.append(username)
         else:
             err_log.append(username)
@@ -926,7 +965,8 @@ def grabRank(username, password, post_day):
 
     try_times = 0
     while True:
-        form = getReportForm(session, post_day=post_day)
+        _info = getLatestInfo(session)
+        form = getReportForm(post_day, _info)
         if form:
             break
         try_times += 1
@@ -1014,7 +1054,7 @@ def main(config_path, logs_path):
                 is_reported = True
             elif is_time == 1 and len(getUsers(config_path)) > 0 and not grab_mode:
                 post_day = getTime().strftime("%Y-%m-%d")
-                report_result = reportUsers(config_path, logs_path, post_day=post_day)
+                report_result = reportAllUsers(config_path, logs_path, post_day=post_day)
                 is_reported = True
 
             if is_reported:
