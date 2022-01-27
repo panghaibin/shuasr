@@ -1,7 +1,7 @@
 # 上海大学健康之路自动上报
 Shanghai University Auto SelfReport
 
-Ver.22.01.27 更新自动补报功能，填坑完成
+Ver.22.01.28 新增 [PushDeer](https://github.com/easychen/pushdeer) 消息推送渠道
 
 > 目前(22.01.25)健康之路仅对XC码进行检测，且仅检测文字信息。程序可模拟生成仅有文字信息的XC码，并上报。模拟生成的XC码包含的地址信息，来源于上次填报的地址。
 
@@ -160,6 +160,7 @@ screen -r shu
 | 1 | Server酱 | https://sct.ftqq.com/ |
 | 2 | 推送加（hxtrip域名下） | https://pushplus.hxtrip.com/ |
 | 3 | Telegram Bot | 需自行创建`Bot`，[查看创建方法](./Telegram_bot.md)|
+| 4 | PushDeer（开发中，未完善） | https://github.com/easychen/pushdeer |
 
 请前往任意官网注册得到`key`后即可在本项目中使用，在 GitHub Actions 中使用时注意接口代号正确设置。
 

@@ -595,10 +595,7 @@ def sendMsg(title, desp, api, key):
             data = {'text': title, 'desp': desp}
             text = requests.post(url, data=data).text
             result = json.loads(text)
-            if result['code'] == 0:
-                return True
-            else:
-                return False
+            return result['code'] == 0
         elif api == 2:
             url = 'http://pushplus.hxtrip.com/send'
             data = {
@@ -611,10 +608,7 @@ def sendMsg(title, desp, api, key):
                        'accept': 'application/json'}
             text = requests.post(url, data=body, headers=headers).text
             result = json.loads(text)
-            if result['code'] == 200:
-                return True
-            else:
-                return False
+            return result['code'] == 200
         elif api == 3:
             tg_bot_key, tg_chat_id = key.split('@')
             url = 'https://api.telegram.org/bot%s/sendMessage' % tg_bot_key
@@ -625,6 +619,15 @@ def sendMsg(title, desp, api, key):
             text = requests.post(url, data=data).text
             result = json.loads(text)
             return result['ok']
+        elif api == 4:
+            url = 'https://api2.pushdeer.com/message/push'
+            data = {
+                "pushkey": key,
+                "text": title + '\n\n' + desp,
+            }
+            text = requests.post(url, data=data).text
+            result = json.loads(text)
+            return result['content']['result'][0]['result'] == 'ok'
 
     except Exception as e:
         print(text)
