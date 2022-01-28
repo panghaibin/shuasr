@@ -209,6 +209,22 @@ def checkRiskPosition(position):
     return position
 
 
+def divideWords(text):
+    words = list(text)
+    mark_list = list("）。，：,*")
+    while any(mark in words for mark in mark_list + ['（']):
+        for i in range(len(words)):
+            if len(words) > 1 and i > 0 and words[i - 1] == '（':
+                words[i] = words[i - 1] + words[i]
+                del words[i - 1]
+                break
+            elif len(words) > 1 and words[i + 1] in mark_list:
+                words[i] = words[i] + words[i + 1]
+                del words[i + 1]
+                break
+    return words
+
+
 def generateXingImage(ph_num, position=None):
     t = getTime()
     clock = "%s:%s" % (t.hour, t.strftime("%M"))
@@ -239,6 +255,7 @@ def generateXingImage(ph_num, position=None):
     draw.text((draw_x_0, draw_y), tip, (148, 148, 158), tip_font)
     draw_x = draw_x_0 + tip_width
     _, word_height = draw.textsize('一', tip_font)
+    position = divideWords(position)
     while len(position) > 0:
         word_width, word_height = draw.textsize(position[0], position_font)
         if draw_x + word_width > full_width - draw_x_0:
