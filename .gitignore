@@ -1,6 +1,7 @@
 # 项目文件
 config.yaml
 test.py
+src/risk_area.json
 # Pycharm
 .idea/
 # Byte-compiled / optimized / DLL files

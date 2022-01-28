@@ -173,42 +173,94 @@ def convertAddress(province, city):
     return province + city
 
 
-def generateXingImage(ph_num, position=None):
-    phone = ph_num[:3] + '****' + ph_num[-4:] + base64.b64decode('55qE5Yqo5oCB6KGM56iL5Y2h').decode('utf-8')
-    update = '更新于：' + getTime().strftime("%Y.%m.%d %H:%M:%S")
-    tip = base64.b64decode('5oKo5LqO5YmNMTTlpKnlhoXliLDovr7miJbpgJTnu4/vvJo=').decode('utf-8')
-    position = '上海市' if position is None else position
+def updateRiskArea():
+    try:
+        api_url = base64.b64decode('aHR0cHM6Ly9kaXF1LmdlemhvbmcudmlwL2FwaS5waHA=').decode('utf-8')
+        result = requests.get(api_url).json()
+        result = result['data']
+        risk_list = []
+        for high in result['highlist']:
+            risk_list.append(high['area_name'].replace(' ', ''))
+        for middle in result['middlelist']:
+            risk_list.append(middle['area_name'].replace(' ', ''))
+        with open('src/risk_area.json', 'w', encoding='utf-8') as f:
+            json.dump(risk_list, f)
+    except Exception as e:
+        print(e)
 
-    # image = Image.open("xcm.jpg")
-    image = Image.new('RGB', (675, 1260), (255, 255, 255))
+
+def checkRiskPosition(position):
+    with open('src/risk_area.json', 'r', encoding='utf-8') as f:
+        risk_list = json.load(f)
+    risk_tip = '77yI5rOo77yaKuihqOekuuW9k+WJjeivpeWfjuW4guWtmOWcqOS4remjjumZqeaIlumrmOmjjumZqeWcsOWMuu' \
+               '+8jOW5tuS4jeihqOekuueUqOaIt+WunumZheWIsOiuv+i/h+i/meS6m+S4remrmOmjjumZqeWcsOWMuuOAgu+8iQ== '
+    risk_tip = base64.b64decode(risk_tip).decode('utf-8')
+    position_list = position.split(',')
+    asterisk = False
+    for i in range(len(position_list)):
+        for risk in risk_list:
+            if position_list[i] in risk:
+                position_list[i] += '*'
+                asterisk = True
+                break
+    position = ','.join(position_list)
+    if asterisk:
+        position += risk_tip
+    return position
+
+
+def generateXingImage(ph_num, position=None):
+    t = getTime()
+    clock = "%s:%s" % (t.hour, t.strftime("%M"))
+    phone = ph_num[:3] + '****' + ph_num[-4:] + base64.b64decode('55qE5Yqo5oCB6KGM56iL5Y2h').decode('utf-8')
+    update = '更新于：' + t.strftime("%Y.%m.%d %H:%M:%S")
+    tip = base64.b64decode('5oKo5LqO5YmNMTTlpKnlhoXliLDovr7miJbpgJTnu4/vvJo=').decode('utf-8')
+    position = checkRiskPosition('上海市') if position is None else position
+
+    image = Image.open("src/xcm_1.bin")
     draw = ImageDraw.Draw(image)
     full_width, full_height = image.size
 
-    phone_font = ImageFont.truetype('font/NotoSansSC-Bold.otf', 30)
-    update_font = ImageFont.truetype('font/NotoSansSC-Bold.otf', 32)
-    tip_font = ImageFont.truetype('font/NotoSansSC-Regular.otf', 28)
-    position_font = ImageFont.truetype('font/NotoSansSC-Bold.otf', 28)
+    clock_font = ImageFont.truetype('src/NotoSansSC-Regular.otf', 32)
+    phone_font = ImageFont.truetype('src/NotoSansSC-Bold.otf', 45)
+    update_font = ImageFont.truetype('src/NotoSansSC-Bold.otf', 48)
+    tip_font = ImageFont.truetype('src/NotoSansSC-Regular.otf', 47)
+    position_font = ImageFont.truetype('src/NotoSansSC-Bold.otf', 47)
 
     phone_width, _ = draw.textsize(phone, phone_font)
     update_width, _ = draw.textsize(update, update_font)
     tip_width, _ = draw.textsize(tip, tip_font)
+    draw_x_0 = 125
+    draw_y = 1457
 
-    draw.text(((full_width - phone_width) / 2, 300), phone, (70, 70, 76), phone_font)
-    draw.text(((full_width - update_width) / 2, 355), update, (148, 148, 158), update_font)
-    draw.text((80, 795), tip, (148, 148, 158), tip_font)
-
-    draw_x = 80 + tip_width
-    draw_y = 795
+    draw.text((52, 23), clock, (59, 59, 59), clock_font)
+    draw.text(((full_width - phone_width) / 2, 677), phone, (70, 70, 76), phone_font)
+    draw.text(((full_width - update_width) / 2, 779), update, (148, 148, 158), update_font)
+    draw.text((draw_x_0, draw_y), tip, (148, 148, 158), tip_font)
+    draw_x = draw_x_0 + tip_width
+    _, word_height = draw.textsize('一', tip_font)
     while len(position) > 0:
         word_width, word_height = draw.textsize(position[0], position_font)
-        if draw_x + word_width > full_width - 80:
-            draw_x = 80
+        if draw_x + word_width > full_width - draw_x_0:
+            draw_x = draw_x_0
             draw_y += word_height + 3
         draw.text((draw_x, draw_y), position[0], (71, 70, 76), position_font)
         draw_x += word_width
         position = position[1:]
 
-    img_path = '%s_%s.jpg' % (ph_num, str(random.randint(100000000, 999999999)))
+    provider_img = Image.open("src/xcm_2.bin")
+    _, provider_height = provider_img.size
+    draw_y += word_height
+    image.paste(provider_img, (0, draw_y))
+
+    draw_y += provider_height
+    draw.rectangle([(0, draw_y), (full_width, full_height)], fill=(43, 166, 103), outline=None)
+
+    footer_img = Image.open("src/xcm_3.bin")
+    _, footer_height = footer_img.size
+    image.paste(footer_img, (0, full_height - footer_height))
+
+    img_path = '%s_%s.jpg' % (ph_num, t.strftime("%Y%m%d%H%M%S%f"))
     image.save(img_path, 'jpeg')
     return img_path
 
@@ -334,7 +386,9 @@ def getLatestInfo(session):
                 xing_code = jsLine2Json(report_line[i - 1])['Text']
                 xing_img = jsLine2Json(report_line[i + 1])['ImageUrl']
             except (KeyError, json.JSONDecodeError):
-                img_path = generateXingImage(phone_number, convertAddress(province, city))
+                position = convertAddress(province, city)
+                position = checkRiskPosition(position)
+                img_path = generateXingImage(phone_number, position)
                 xing_code, xing_img = getImgCodeByUpload(session, 'xing', view_state, report_url, img_path, _code, _img)
                 os.remove(img_path)
 
@@ -835,6 +889,7 @@ def test(config_path, logs_path):
         print("运行 python3 main.py add 添加用户，运行 python3 main.py send 配置消息发送API")
         return False
 
+    updateRiskArea()
     post_day = getTime().strftime("%Y-%m-%d")
     report_result = reportAllUsers(config_path, logs_path, post_day=post_day)
     if not report_result:
@@ -846,8 +901,8 @@ def test(config_path, logs_path):
     return True
 
 
-# GitHub Actions
 def github():
+    updateRiskArea()
     post_day = getTime().strftime("%Y-%m-%d")
     suc_log = []
     xc_log = []
@@ -1053,10 +1108,12 @@ def main(config_path, logs_path):
             is_time = isTimeToReport()
             if (is_time == 0 or is_time == 3) and grab_mode and len(getUsers(config_path)) > 0:
                 post_day = getTime().strftime("%Y-%m-%d")
+                updateRiskArea()
                 report_result = grabRankUsers(config_path, logs_path, post_day)
                 is_reported = True
             elif is_time == 1 and len(getUsers(config_path)) > 0 and not grab_mode:
                 post_day = getTime().strftime("%Y-%m-%d")
+                updateRiskArea()
                 report_result = reportAllUsers(config_path, logs_path, post_day=post_day)
                 is_reported = True
 
