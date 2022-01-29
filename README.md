@@ -1,9 +1,15 @@
 # 上海大学健康之路自动上报
 Shanghai University Auto SelfReport
 
-Ver.22.01.28 新增 [PushDeer](https://github.com/easychen/pushdeer) 消息推送渠道
+Ver.22.01.29 More realistic generation for XingCheng code and SuiShen code
 
-> 目前(22.01.25)健康之路仅对XC码进行检测，且仅检测文字信息。程序可模拟生成仅有文字信息的XC码，并上报。模拟生成的XC码包含的地址信息，来源于上次填报的地址。
+> The program now supports automatic generation of **realistic** XingCheng codes and SuiShen codes.
+> 
+> The location information of the XingCheng code comes from the address in the SHU SelfReport system, and the green QR code in the SuiShen code is generated randomly each time.
+
+> **注意：程序仅供学习使用，严禁用于其他用途。**
+> 
+> **Notice: This program is for learning purposes only and is strictly prohibited for other uses.**
 
 -----
 
