@@ -2,3 +2,4 @@ requests==2.27.1
 PyYAML==6.0
 rsa==4.8
 Pillow==8.2.0
+qrcode~=7.3.1

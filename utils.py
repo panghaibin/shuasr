@@ -5,6 +5,7 @@ import re
 import threading
 import time
 import traceback
+import qrcode
 import requests
 import rsa
 import yaml
@@ -190,10 +191,14 @@ def updateRiskArea():
 
 
 def checkRiskPosition(position):
-    with open('src/risk_area.json', 'r', encoding='utf-8') as f:
-        risk_list = json.load(f)
+    try:
+        with open('src/risk_area.json', 'r', encoding='utf-8') as f:
+            risk_list = json.load(f)
+    except Exception as e:
+        print(e)
+        return position
     risk_tip = '77yI5rOo77yaKuihqOekuuW9k+WJjeivpeWfjuW4guWtmOWcqOS4remjjumZqeaIlumrmOmjjumZqeWcsOWMuu' \
-               '+8jOW5tuS4jeihqOekuueUqOaIt+WunumZheWIsOiuv+i/h+i/meS6m+S4remrmOmjjumZqeWcsOWMuuOAgu+8iQ== '
+               '+8jOW5tuS4jeihqOekuueUqOaIt+WunumZheWIsOiuv+i/h+i/meS6m+S4remrmOmjjumZqeWcsOWMuuOAgu+8iQ=='
     risk_tip = base64.b64decode(risk_tip).decode('utf-8')
     position_list = position.split(',')
     asterisk = False
@@ -209,31 +214,31 @@ def checkRiskPosition(position):
     return position
 
 
-def divideWords(text):
+def segmentText(text):
     words = list(text)
-    mark_list = list("）。，：,*")
-    while any(mark in words for mark in mark_list + ['（']):
+    left_mark = list("（")
+    right_mark = list("）。，：,*")
+    while any(mark in words for mark in left_mark + right_mark):
         for i in range(len(words)):
-            if len(words) > 1 and i > 0 and words[i - 1] == '（':
+            if len(words) > 1 and i > 0 and words[i - 1] in left_mark:
                 words[i] = words[i - 1] + words[i]
                 del words[i - 1]
                 break
-            elif len(words) > 1 and words[i + 1] in mark_list:
+            elif len(words) > 1 and i < len(words) and words[i + 1] in right_mark:
                 words[i] = words[i] + words[i + 1]
                 del words[i + 1]
                 break
     return words
 
 
-def generateXingImage(ph_num, position=None):
+def generateXingImage(ph_num, position):
     t = getTime()
     clock = "%s:%s" % (t.hour, t.strftime("%M"))
     phone = ph_num[:3] + '****' + ph_num[-4:] + base64.b64decode('55qE5Yqo5oCB6KGM56iL5Y2h').decode('utf-8')
-    update = '更新于：' + t.strftime("%Y.%m.%d %H:%M:%S")
+    update = base64.b64decode('5pu05paw5LqO77ya').decode('utf-8') + t.strftime("%Y.%m.%d %H:%M:%S")
     tip = base64.b64decode('5oKo5LqO5YmNMTTlpKnlhoXliLDovr7miJbpgJTnu4/vvJo=').decode('utf-8')
-    position = checkRiskPosition('上海市') if position is None else position
 
-    image = Image.open("src/xcm_1.bin")
+    image = Image.open("src/zxn_1.bin")
     draw = ImageDraw.Draw(image)
     full_width, full_height = image.size
 
@@ -255,7 +260,7 @@ def generateXingImage(ph_num, position=None):
     draw.text((draw_x_0, draw_y), tip, (148, 148, 158), tip_font)
     draw_x = draw_x_0 + tip_width
     _, word_height = draw.textsize('一', tip_font)
-    position = divideWords(position)
+    position = segmentText(position)
     while len(position) > 0:
         word_width, word_height = draw.textsize(position[0], position_font)
         if draw_x + word_width > full_width - draw_x_0:
@@ -265,7 +270,7 @@ def generateXingImage(ph_num, position=None):
         draw_x += word_width
         position = position[1:]
 
-    provider_img = Image.open("src/xcm_2.bin")
+    provider_img = Image.open("src/zxn_2.bin")
     _, provider_height = provider_img.size
     draw_y += word_height
     image.paste(provider_img, (0, draw_y))
@@ -273,17 +278,63 @@ def generateXingImage(ph_num, position=None):
     draw_y += provider_height
     draw.rectangle([(0, draw_y), (full_width, full_height)], fill=(43, 166, 103), outline=None)
 
-    footer_img = Image.open("src/xcm_3.bin")
+    footer_img = Image.open("src/zxn_3.bin")
     _, footer_height = footer_img.size
     image.paste(footer_img, (0, full_height - footer_height))
 
-    img_path = '%s_%s.jpg' % (ph_num, t.strftime("%Y%m%d%H%M%S%f"))
+    img_path = '%s_xing.jpg' % t.strftime("%Y%m%d%H%M%S%f")
     image.save(img_path, 'jpeg')
     return img_path
 
 
-def generateSuiImage(ph_num, position=None):
-    return generateXingImage(ph_num, position)
+def generateSuiImage(name):
+    t = getTime()
+    t -= datetime.timedelta(seconds=random.randint(10, 30))
+    clock = "%s:%s" % (t.hour, t.strftime("%M"))
+    name = '*' * (len(name) - 1) + name[-1]
+    time1 = t.strftime("%Y-%m-%d %H:%M:")
+    time2 = '%02d' % random.randint(1, 6)
+
+    image = Image.open("src/aan_1.bin")
+    draw = ImageDraw.Draw(image)
+    full_width, full_height = image.size
+
+    clock_font = ImageFont.truetype('src/NotoSansSC-Regular.otf', 32)
+    name_font = ImageFont.truetype('src/NotoSansSC-Bold.otf', 56)
+    time1_font = ImageFont.truetype('src/NotoSansSC-Regular.otf', 40)
+    time2_font = ImageFont.truetype('src/NotoSansSC-Regular.otf', 48)
+
+    name_width, _ = draw.textsize(name, name_font)
+    time1_width, time1_height = draw.textsize(time1, time1_font)
+    time2_width, time2_height = draw.textsize(time2, time2_font)
+
+    draw.text((52, 23), clock, (59, 59, 59), clock_font)
+    draw.text((558 - name_width, 572), name, (0, 0, 0), name_font)
+    time1_x = (full_width - time1_width - time2_width) / 2
+    time1_y = 828
+    time2_x = time1_x + time1_width
+    time2_y = time1_y - (time2_height - time1_height)
+    draw.text((time1_x, time1_y), time1, (0, 0, 0), time1_font)
+    draw.text((time2_x, time2_y), time2, (0, 0, 0), time2_font)
+
+    logo_img = Image.open("src/aan_2.bin")
+    logo_width, logo_height = [int(s * 0.9) for s in logo_img.size]
+    logo_img = logo_img.resize((logo_width, logo_height))
+
+    qr = qrcode.QRCode(version=5, box_size=15, error_correction=qrcode.constants.ERROR_CORRECT_M, border=0)
+    random_url = base64.b64decode('aHR0cHM6Ly9zLnNoLmdvdi5jbi8=').decode('utf-8')
+    random_url += ''.join(random.sample('0123456789abcdef' * 10, 30)) + str(int(t.timestamp() * 1000))
+    qr.add_data(random_url)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color=(9, 189, 100), back_color=(255, 255, 255))
+    qr_width, qr_height = qr_img.size
+
+    qr_img.paste(logo_img, (int((qr_width - logo_width) / 2), int((qr_height - logo_height) / 2)), logo_img)
+    image.paste(qr_img, (270, 938))
+
+    img_path = '%s_sui.jpg' % t.strftime("%Y%m%d%H%M%S%f")
+    image.save(img_path, 'jpeg')
+    return img_path
 
 
 def getImgCodeByUpload(session, img_type, view_state, report_url, img_path, _code, _img):
@@ -358,9 +409,12 @@ def getLatestInfo(session):
     p_info_line = html2JsLine(p_info_html)
 
     phone_number = '18888888888'
+    name = '***'
     for i, h in enumerate(p_info_line):
         if 'ShouJHM' in h:
             phone_number = jsLine2Json(p_info_line[i - 1])['Text']
+        elif 'XingMing' in h:
+            name = jsLine2Json(p_info_line[i - 1])['Text']
 
     report_url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
     report_html = session.get(url=report_url).text
@@ -393,11 +447,9 @@ def getLatestInfo(session):
                 sui_code = jsLine2Json(report_line[i - 1])['Text']
                 sui_img = jsLine2Json(report_line[i + 1])['ImageUrl']
             except (KeyError, json.JSONDecodeError):
-                # 目前(22.01.25)没有针对SS码的检测
-                pass
-                # img_path = generateSuiImage(phone_number, convertAddress(province, city))
-                # sui_code, sui_img = getImgCodeByUpload(session, 'sui', view_state, report_url, img_path, _code, _img)
-                # os.remove(img_path)
+                img_path = generateSuiImage(name)
+                sui_code, sui_img = getImgCodeByUpload(session, 'sui', view_state, report_url, img_path, _code, _img)
+                os.remove(img_path)
         elif 'pImages_fileXingCM' in h:
             try:
                 xing_code = jsLine2Json(report_line[i - 1])['Text']
@@ -941,7 +993,7 @@ def github():
         _info = getLatestInfo(session)
         unreported_day = getUnreportedDay(session)
         if len(unreported_day) > 0:
-            print('%s****%s有%s天未填报，开始补报' % (username[:2], username[-2:],  len(unreported_day)))
+            print('%s****%s有%s天未填报，开始补报' % (username[:2], username[-2:], len(unreported_day)))
             reportUnreported(session, _info, unreported_day)
         _form = getReportForm(post_day, _info)
         report_result = reportSingleUser(session, _form)
