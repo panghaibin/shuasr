@@ -450,7 +450,7 @@ def getLatestInfo(session):
                 img_path = generateSuiImage(name)
                 sui_code, sui_img = getImgCodeByUpload(session, 'sui', view_state, report_url, img_path, _code, _img)
                 os.remove(img_path)
-        elif 'pImages_fileXingCM' in h:
+        elif 'pImages_HFimgXingCM' in h:
             try:
                 xing_code = jsLine2Json(report_line[i - 1])['Text']
                 xing_img = jsLine2Json(report_line[i + 1])['ImageUrl']
@@ -715,7 +715,10 @@ def sendMsg(title, desp, api, key):
     try:
         if api == 1:
             url = "http://sctapi.ftqq.com/%s.send" % key
-            data = {'text': title, 'desp': desp}
+            data = {
+                'text': title,
+                'desp': desp,
+            }
             text = requests.post(url, data=data).text
             result = json.loads(text)
             return result['code'] == 0
@@ -724,7 +727,7 @@ def sendMsg(title, desp, api, key):
             data = {
                 "token": key,
                 "title": title,
-                "content": desp.replace("\n\n", "<br>")
+                "content": desp.replace("\n\n", "<br>"),
             }
             body = json.dumps(data).encode(encoding='utf-8')
             headers = {'Content-Type': 'application/json',
@@ -737,7 +740,7 @@ def sendMsg(title, desp, api, key):
             url = 'https://api.telegram.org/bot%s/sendMessage' % tg_bot_key
             data = {
                 'chat_id': tg_chat_id,
-                'text': title + '\n' + desp
+                'text': title + '\n' + desp,
             }
             text = requests.post(url, data=data).text
             result = json.loads(text)
@@ -746,11 +749,12 @@ def sendMsg(title, desp, api, key):
             url = 'https://api2.pushdeer.com/message/push'
             data = {
                 "pushkey": key,
-                "text": title + '\n\n' + desp,
+                "text": title,
+                "desp": desp,
             }
             text = requests.post(url, data=data).text
             result = json.loads(text)
-            return result['content']['result'][0]['result'] == 'ok'
+            return result['code'] == 0
 
     except Exception as e:
         print(text)
