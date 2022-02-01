@@ -337,7 +337,7 @@ def generateSuiImage(name):
     return img_path
 
 
-def getImgCodeByUpload(session, img_type, view_state, report_url, img_path, _code, _img):
+def getImgCodeByUpload(session, img_type, view_state, report_url, img_path):
     img_type_dict = {'sui': 'p1$pImages$fileSuiSM', 'xing': 'p1$pImages$fileXingCM'}
     img_upload = open(img_path, 'rb')
     data = {
@@ -351,9 +351,9 @@ def getImgCodeByUpload(session, img_type, view_state, report_url, img_path, _cod
     upload_result = session.post(url=report_url, data=data, files=file).text
     img_upload.close()
     _ = re.search(r'Text&quot;:&quot;(.*?)&quot;}\);f2', upload_result)
-    _code = _code if _ is None else _.group(1)
+    _code = None if _ is None else _.group(1)
     _ = re.search(r'ImageUrl&quot;:&quot;(.*?)&quot;}\);f3', upload_result)
-    _img = _img if _ is None else _.group(1)
+    _img = None if _ is None else _.group(1)
     return _code, _img
 
 
@@ -427,13 +427,13 @@ def getLatestInfo(session):
     view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', report_html).group(1)
 
     report_line = html2JsLine(report_html)
-    ans = ['A']
     _code = 'odrp1Za3DEU='
     _img = '/ShowImage.ashx?squrl=oyhA3XzMDCTMwyYAn6kyLt3hxsAoCfpvYGMSocfVfx2RRyKXq9QDVV5cVuq9mN8Mt%2bxyoS93C' \
            '%2b9qawY41vXjo7H18V%2b08RW%2fWDwSfK2TQ8Qc7ob' \
            '%2fnXpyYlgzh5aNOE9tpHWs9n7P7dTaa6iBSTv3Yt40C9UuPY0edMplSSzgA4DQn0HMJY3R5GihYy5Hr9PeiSbwSeJ3GOY%3d'
-    sui_code = xing_code = _code
-    sui_img = xing_img = _img
+    ans = None
+    sui_code = xing_code = None
+    sui_img = xing_img = None
     for i, h in enumerate(report_line):
         if 'pnlDangSZS_ckda' in h:
             text = report_line[i - 1]
@@ -448,7 +448,7 @@ def getLatestInfo(session):
                 sui_img = jsLine2Json(report_line[i + 1])['ImageUrl']
             except (KeyError, json.JSONDecodeError):
                 img_path = generateSuiImage(name)
-                sui_code, sui_img = getImgCodeByUpload(session, 'sui', view_state, report_url, img_path, _code, _img)
+                sui_code, sui_img = getImgCodeByUpload(session, 'sui', view_state, report_url, img_path)
                 os.remove(img_path)
         elif 'pImages_HFimgXingCM' in h:
             try:
@@ -458,8 +458,13 @@ def getLatestInfo(session):
                 position = convertAddress(province, city)
                 position = checkRiskPosition(position)
                 img_path = generateXingImage(phone_number, position)
-                xing_code, xing_img = getImgCodeByUpload(session, 'xing', view_state, report_url, img_path, _code, _img)
+                xing_code, xing_img = getImgCodeByUpload(session, 'xing', view_state, report_url, img_path)
                 os.remove(img_path)
+    ans = ['A'] if ans is None else ans
+    sui_code = _code if sui_code is None else sui_code
+    sui_img = _img if sui_img is None else sui_img
+    xing_code = _code if xing_code is None else xing_code
+    xing_img = _img if xing_img is None else xing_img
 
     info = dict(vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target,
                 province=province, city=city, county=county, address=address,
@@ -654,7 +659,16 @@ def reportSingleUser(session, form):
         else:
             print(report_result.text)
         report_times += 1
-        if report_times > 10:
+        if report_times > 5:
+            debug_key = ['__EVENTTARGET', 'p1$pnlDangSZS$DangSZS', 'p1$BaoSRQ', 'p1$ShiFSH', 'p1$ShiFZX', 'p1$ShiFZJ',
+                         'F_TARGET']
+            debug_privacy_key = ['p1$ddlSheng$Value', 'p1$ddlSheng', 'p1$ddlShi$Value', 'p1$ddlShi', 'p1$ddlXian$Value',
+                                 'p1$ddlXian', 'p1$XiangXDZ', 'p1$pImages$HFimgSuiSM', 'p1$pImages$HFimgXingCM']
+            debug_value = dict([(key, form[key]) for key in debug_key])
+            debug_privacy_value = dict([(key, f'***{str(form[key])[-1]}, length: {len(form[key])}')
+                                        for key in debug_privacy_key])
+            debug_value.update(debug_privacy_value)
+            print('调试信息：\n', debug_value)
             return 0
         time.sleep(5)
 
