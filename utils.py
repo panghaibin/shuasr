@@ -460,7 +460,7 @@ def getLatestInfo(session):
                 img_path = generateXingImage(phone_number, position)
                 xing_code, xing_img = getImgCodeByUpload(session, 'xing', view_state, report_url, img_path)
                 os.remove(img_path)
-    ans = ['A'] if ans is None else ans
+    ans = ['A'] if ans is None or ans == [] else ans
     sui_code = _code if sui_code is None else sui_code
     sui_img = _img if sui_img is None else sui_img
     xing_code = _code if xing_code is None else xing_code
