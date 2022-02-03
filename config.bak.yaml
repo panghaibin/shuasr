@@ -1,6 +1,8 @@
 # 0: 未设置
-# 1: 方糖气球 https://sct.ftqq.com/
-# 2: 推送加 https://pushplus.hxtrip.com/
+# 1: Server酱 https://sct.ftqq.com/
+# 2: 推送加（hxtrip域名下） https://pushplus.hxtrip.com/
+# 3: Telegram Bot 介绍见 ./Telegram_bot.md
+# 4: PushDear https://github.com/easychen/pushdeer
 send_api: 0
 send_key: ""
 # 抢排名模式

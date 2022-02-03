@@ -1,29 +1,23 @@
-# 上海大学健康之路自动上报
-Shanghai University Auto SelfReport
-
-Ver.22.01.29 More realistic generation for XingCheng code and SuiShen code
+![shuasr](https://socialify.git.ci/panghaibin/shuasr/image?description=1&descriptionEditable=Shanghai%20University%20Auto%20SelfReport%20-%20%E4%B8%8A%E6%B5%B7%E5%A4%A7%E5%AD%A6%E5%81%A5%E5%BA%B7%E4%B9%8B%E8%B7%AF%E6%AF%8F%E6%97%A5%E4%B8%80%E6%8A%A5%E8%87%AA%E5%8A%A8%E4%B8%8A%E6%8A%A5%20-%20%E6%94%AF%E6%8C%81%E8%87%AA%E5%8A%A8%E8%A1%A5%E6%8A%A5%20-%20%E5%8F%AF%E4%BD%BF%E7%94%A8GitHub%20Actions%20-%20%E5%8F%AF%E5%88%B7%E6%8E%92%E5%90%8D&font=Source%20Code%20Pro&forks=1&issues=1&language=1&owner=1&pattern=Signal&stargazers=1&theme=Light)
 
 > The program now supports automatic generation of **realistic** XingCheng codes and SuiShen codes.
 > 
 > The location information of the XingCheng code comes from the address in the SHU SelfReport system, and the green QR code in the SuiShen code is generated randomly each time.
 
-> **注意：程序仅供学习使用，严禁用于其他用途。**
-> 
-> **Notice: This program is for learning purposes only and is strictly prohibited for other uses.**
-
------
-
-上海大学健康之路每日一报自动上报（卷王专用）
-
 项目地址：<https://github.com/panghaibin/shuasr>
 
-
 ## 特色
-- 支持使用 GitHub Actions 填报。
+- 支持在 GitHub Actions 或自建服务器上使用
 
-- 支持多种消息推送接口，适合一人为多人上报的情况，上报结果仅发送给一人。
+- 多用户功能，可为多人填报
 
-- 自动获取最新一次填报信息进行上报，如需修改地址等信息，当天重新手动填报一次，下次填报将自动采用。
+- 支持[多种消息推送接口](#填报结果消息推送介绍)，可将上报结果仅发送给一人
+
+- 实现了自动补报功能，填报时自动检测是否需要补报
+
+- 自动获取最新一次填报信息进行上报，如需修改地址等信息，当天手动重新填报一次，程序下次填报将自动采用
+
+- 填报时可自动生成 XingCheng 码和 SuiShen 码
 
 - 支持 ~~卷王~~ 抢排名模式（需使用自建服务器，不支持在 GitHub Actions 上使用）：
 
@@ -31,20 +25,20 @@ Ver.22.01.29 More realistic generation for XingCheng code and SuiShen code
 
 ## 使用
 
-### 1. 使用 GitHub Actions 填报
+### 方法一  使用 GitHub Actions 填报
 #### i. 开始
 点击本项目右上角的`Star`和`Fork`
 
-![gh-1](./img/gh-1.jpg)
+![](./img/gh-1.jpg)
 
 #### ii. 添加 USERS Secret
-Fork 项目后，在自己 Fork 后的项目的页面依次点击 `Settings`-`Secrets`-`New repository secret`
+Fork 项目后，在自己 Fork 后的项目的页面依次点击 `Settings`-`Secrets`-`Actions`-`New repository secret`
 
-![gh-1](./img/gh-2.jpg)
+![](./img/gh-2.jpg)
 
 如图所示， `Name` 处输入 `USERS` ， `Value` 处输入学号和密码，格式为 `学号1,密码1;学号2,密码2...` ，即学号与密码用`英文逗号`分隔开，多个用户之间用`英文分号`分隔开，最后结尾不用加分号，只有一个用户也不用加
 
-![gh-1](./img/gh-3.jpg)
+![](./img/gh-3.jpg)
 
 输入完毕后，点击`Add secret`添加
 
@@ -59,26 +53,28 @@ Secret 的 `Name` 设置为 `SEND` ， `Value` 格式为 `send_api,send_key` ，
 #### iv. 开启 Actions
 如下图所示
 
-![gh-1](./img/gh-4.jpg)
-![gh-1](./img/gh-5.jpg)
+![](./img/gh-4.jpg)
+![](./img/gh-5.jpg)
 
-此时 Actions 开启成功，为确保能够填报成功，程序将会在**每天 6:30 及 12:30** 各执行一次
+此时 Actions 开启成功，为确保能够填报成功，程序将会在 **北京时间 (UTC+8) 每天 6:30 及 12:30** 各执行一次，如需修改填报时间，可在 `.github/workflows/report.yml` 下修改
 
 可以点击 `Run workflow` 测试填报一下，确认可以成功填报
 
-![gh-1](./img/gh-6.jpg)
+![](./img/gh-6.jpg)
 
 #### v. 更新项目
 可以选择安装 GitHub Apps 中的 [Pull App](https://github.com/apps/pull) ，保持你的 Fork 始终最新。
 [![Pull App](https://prod.download/pull-social-svg)](https://github.com/apps/pull)
 
+安装时默认会应用到所有项目，建议改为手动按需选择需要应用的项目。注意该 App 会强制覆盖你对 Fork 项目的操作，如果你有改动（例如修改了 `.github/workflows/report.yml` ），请注意备份
+
 若不安装，当本项目更新后，你 Fork 的项目并不会自动更新，需要手动 `Fetch and merge` 一下，如下图所示，在你 Fork 后的项目页执行该操作
 
-![gh-1](./img/gh-7.jpg)
+![](./img/gh-7.jpg)
 
 你可以 `Watch` 本项目以确保项目更新时能收到消息
 
-### 2. 在自己的服务器上填报
+### 方法二  在自己的服务器上填报
 #### i. 下载/更新
 ```shell
 git clone https://github.com/panghaibin/shuasr.git
@@ -140,7 +136,7 @@ yum install screen
 apt-get install screen
 ```
 
-创建一个名为`shu`的screen会话
+然后创建一个名为`shu`的screen会话
 
 ```shell
 screen -L -S shu
@@ -173,7 +169,7 @@ screen -r shu
 注意 Telegram Bot 的 Key 的格式为 `BOT_TOKEN@CHAT_ID` ，例如 `123456789:mbpSwrgRCr1iLt4MZRYqq0mlko-MGXMcg@987456321`
 
 ## 抢排名模式介绍
-该模式仅支持在自建服务器上使用。功能默认开启，每天24点前会向填报系统重复提交次日的日报信息直到提交成功，以提升排名。如需关闭，修改`config.yaml`中的`grab_mode`值为`False`即可。
+该模式仅支持在自建服务器上使用。功能默认开启，每天凌晨 1 点前会向系统不断提交当日的日报信息直到提交成功，以提升排名。如需关闭，修改`config.yaml`中的`grab_mode`值为`False`即可。
 
 关闭后每天7:30填报一次。
 
@@ -194,7 +190,7 @@ screen -r shu
 
 本项目在 2020 年初用 PHP 编写 ~~（为了抢排名第一）~~ ，返校后为了帮室友上报把源代码改得面目全非 ~~（传说中的屎山）（又不是不能用）~~ 。寒假离校后受下列开源项目启发，用 Python3 对 PHP 编写的源代码进行了重写重构。
 
-本项目仅供学习交流之用，请勿用于非法用途。请遵守当地防疫守则。
+本项目仅供学习交流之用，请勿用于其它用途。请遵守当地防疫守则。
 
 **Take care of yourself, and be well!**
 
