@@ -1,4 +1,4 @@
-![shuasr](https://socialify.git.ci/panghaibin/shuasr/image?description=1&descriptionEditable=Shanghai%20University%20Auto%20SelfReport%20-%20%E4%B8%8A%E6%B5%B7%E5%A4%A7%E5%AD%A6%E5%81%A5%E5%BA%B7%E4%B9%8B%E8%B7%AF%E6%AF%8F%E6%97%A5%E4%B8%80%E6%8A%A5%E8%87%AA%E5%8A%A8%E4%B8%8A%E6%8A%A5%20-%20%E6%94%AF%E6%8C%81%E8%87%AA%E5%8A%A8%E8%A1%A5%E6%8A%A5%20-%20%E5%8F%AF%E4%BD%BF%E7%94%A8GitHub%20Actions%20-%20%E5%8F%AF%E5%88%B7%E6%8E%92%E5%90%8D&font=Source%20Code%20Pro&forks=1&issues=1&language=1&owner=1&pattern=Signal&stargazers=1&theme=Light)
+![shuasr](https://tools.caduo.ml/shuasr-cover.php?v=20220104)
 
 > The program now supports automatic generation of **realistic** XingCheng codes and SuiShen codes.
 > 
@@ -18,6 +18,8 @@
 - 自动获取最新一次填报信息进行上报，如需修改地址等信息，当天手动重新填报一次，程序下次填报将自动采用
 
 - 填报时可自动生成 XingCheng 码和 SuiShen 码
+
+- 自动阅读所有消息，可通过消息推送接口推送必读消息
 
 - 支持 ~~卷王~~ 抢排名模式（需使用自建服务器，不支持在 GitHub Actions 上使用）：
 
@@ -173,18 +175,8 @@ screen -r shu
 
 关闭后每天7:30填报一次。
 
-## TODO
-- [x] ~~自动补报功能~~
-  
-- [x] ~~GitHub Actions~~
- 
-- [x] ~~自动判断是否为上报时间上报~~
-
-- [x] ~~增加多线程支持，以便抢排名(?)~~
-
-- [x] ~~完善在校每日两报的上报~~
-
-- [x] ~~使用命令行添加用户~~
+## 更新日志
+[点击查看](./CHANGELOG.md)
 
 ## 说明
 
