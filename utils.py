@@ -445,7 +445,9 @@ def getLatestInfo(session):
                 ans = [i for i in ans]
         elif 'pnlDangSZS_DangSZS' in h:
             ans = jsLine2Json(report_line[i - 1])['SelectedValueArray']
-        elif 'pImages_HFimgSuiSM' in h:
+
+    for i, h in enumerate(report_line):
+        if 'pImages_HFimgSuiSM' in h:
             try:
                 sui_code = jsLine2Json(report_line[i - 1])['Text']
                 sui_img = jsLine2Json(report_line[i + 1])['ImageUrl']
