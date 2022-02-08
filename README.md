@@ -1,4 +1,4 @@
-![shuasr](https://tools.caduo.ml/shuasr-cover.php?v=20220104)
+![shuasr](https://tools.caduo.ml/shuasr-cover.php?v=20220208)
 
 > The program now supports automatic generation of **realistic** XingCheng codes and SuiShen codes.
 > 
