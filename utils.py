@@ -238,7 +238,10 @@ def generateXingImage(ph_num, position):
     update = base64.b64decode('5pu05paw5LqO77ya').decode('utf-8') + t.strftime("%Y.%m.%d %H:%M:%S")
     tip = base64.b64decode('5oKo5LqO5YmNMTTlpKnlhoXliLDovr7miJbpgJTnu4/vvJo=').decode('utf-8')
 
-    image = Image.open("src/zxn_1.2.bin")
+    if 1644940800 > t.timestamp() > 1643644800:
+        image = Image.open("src/zxn_1.2.bin")
+    else:
+        image = Image.open("src/zxn_1.bin")
     draw = ImageDraw.Draw(image)
     full_width, full_height = image.size
 
