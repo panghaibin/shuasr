@@ -285,6 +285,14 @@ def generateXingImage(ph_num, position):
     _, footer_height = footer_img.size
     image.paste(footer_img, (0, full_height - footer_height))
 
+    icons_img = Image.open("src/zxn_4.bin")
+    icons_width, icons_height = icons_img.size
+    icons_num = int(icons_width / icons_height)
+    random_icon = random.randint(0, icons_num - 1)
+    icon_box = (random_icon * icons_height, 0, (random_icon + 1) * icons_height, icons_height)
+    icon_img = icons_img.crop(icon_box)
+    image.paste(icon_img, (int((full_width - icons_height) / 2), 885))
+
     img_path = '%s_xing.jpg' % t.strftime("%Y%m%d%H%M%S%f")
     image.save(img_path, 'jpeg')
     return img_path
