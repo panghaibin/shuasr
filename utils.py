@@ -386,12 +386,24 @@ def getLatestInfo(session):
 
     in_shanghai = '在上海（校内）'
     in_school = '是'
+    province = '上海'
+    city = '上海'
+    county = '宝山区'
+    address = '上海大学宝山校区'
     in_home = '否'
     for i, h in enumerate(info_line):
         if 'ShiFSH' in h:
             in_shanghai = jsLine2Json(info_line[i - 1])['Text']
         elif 'ShiFZX' in h:
             in_school = jsLine2Json(info_line[i - 1])['SelectedValue']
+        elif 'ddlSheng' in h:
+            province = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
+        elif 'ddlShi' in h:
+            city = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
+        elif 'ddlXian' in h:
+            county = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
+        elif 'XiangXDZ' in h:
+            address = jsLine2Json(info_line[i - 1])['Text']
         elif 'ShiFZJ' in h:
             in_home = jsLine2Json(info_line[i - 1])['SelectedValue']
 
@@ -422,32 +434,18 @@ def getLatestInfo(session):
     _img = '/ShowImage.ashx?squrl=oyhA3XzMDCTMwyYAn6kyLt3hxsAoCfpvYGMSocfVfx2RRyKXq9QDVV5cVuq9mN8Mt%2bxyoS93C' \
            '%2b9qawY41vXjo7H18V%2b08RW%2fWDwSfK2TQ8Qc7ob' \
            '%2fnXpyYlgzh5aNOE9tpHWs9n7P7dTaa6iBSTv3Yt40C9UuPY0edMplSSzgA4DQn0HMJY3R5GihYy5Hr9PeiSbwSeJ3GOY%3d'
-    province = '上海'
-    city = '上海'
-    county = '宝山区'
-    address = '上海大学宝山校区'
     ans = None
     sui_code = xing_code = None
     sui_img = xing_img = None
     for i, h in enumerate(report_line):
-        if 'ddlSheng' in h:
-            province = jsLine2Json(report_line[i - 1])['SelectedValueArray'][0]
-        elif 'ddlShi' in h:
-            city = jsLine2Json(report_line[i - 1])['SelectedValueArray'][0]
-        elif 'ddlXian' in h:
-            county = jsLine2Json(report_line[i - 1])['SelectedValueArray'][0]
-        elif 'XiangXDZ' in h:
-            address = jsLine2Json(report_line[i - 1])['Text']
-        elif 'pnlDangSZS_ckda' in h:
+        if 'pnlDangSZS_ckda' in h:
             text = report_line[i - 1]
             if 'pnlDangSZS_DangSZS' not in text:
                 ans = re.findall(r'答案：(.*)\'', text)[0]
                 ans = [i for i in ans]
         elif 'pnlDangSZS_DangSZS' in h:
             ans = jsLine2Json(report_line[i - 1])['SelectedValueArray']
-
-    for i, h in enumerate(report_line):
-        if 'pImages_HFimgSuiSM' in h:
+        elif 'pImages_HFimgSuiSM' in h:
             try:
                 sui_code = jsLine2Json(report_line[i - 1])['Text']
                 sui_img = jsLine2Json(report_line[i + 1])['ImageUrl']
@@ -466,7 +464,6 @@ def getLatestInfo(session):
                 xing_code, xing_img = getImgCodeByUpload(session, 'xing', view_state, report_url, img_path)
                 os.remove(img_path)
 
-    in_shanghai = '不在上海' if province != '上海' and in_shanghai.startswith('在上海') else in_shanghai
     ans = ['A'] if ans is None or ans == [] else ans
     sui_code = _code if sui_code is None else sui_code
     sui_img = _img if sui_img is None else sui_img
