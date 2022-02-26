@@ -1,5 +1,9 @@
 # 更新日志
 
+## [5.0.6] - 2022-02-09
+### Fixed
+- 修复了上传 XingCheng 码和 SuiShen 码时返回数据的解析错误
+
 ## [5.0.5] - 2022-02-09
 ### Changed
 - 改进生成的 XingCheng 码和 SuiShen 码

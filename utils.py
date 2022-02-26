@@ -361,9 +361,9 @@ def getImgCodeByUpload(session, img_type, view_state, report_url, img_path):
     }
     upload_result = session.post(url=report_url, data=data, files=file).text
     img_upload.close()
-    _ = re.search(r'Text&quot;:&quot;(.*?)&quot;}\);f2', upload_result)
+    _ = re.search(r'Text&quot;:&quot;(.*?)&quot;}\)', upload_result)
     _code = None if _ is None else _.group(1)
-    _ = re.search(r'ImageUrl&quot;:&quot;(.*?)&quot;}\);f3', upload_result)
+    _ = re.search(r'ImageUrl&quot;:&quot;(.*?)&quot;}\)', upload_result)
     _img = None if _ is None else _.group(1)
     return _code, _img
 
