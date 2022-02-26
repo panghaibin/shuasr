@@ -177,7 +177,18 @@ def convertAddress(province, city):
 def updateRiskArea():
     try:
         api_url = base64.b64decode('aHR0cHM6Ly9kaXF1LmdlemhvbmcudmlwL2FwaS5waHA=').decode('utf-8')
-        result = requests.get(api_url).json()
+        i = 0
+        while True:
+            try:
+                result = requests.get(api_url, timeout=30).json()
+                if result['code'] == 0:
+                    break
+            except Exception as e:
+                print(e)
+                i += 1
+                if i > 5:
+                    print('获取风险地区失败')
+                    return False
         result = result['data']
         risk_list = []
         for high in result['highlist']:
