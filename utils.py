@@ -1013,14 +1013,20 @@ def test(config_path, logs_path):
     return True
 
 
-def github():
+def github(get_config=None):
+    users = os.environ['users'].split(';')
+    send = os.environ.get('send', '').split(',')
+    if get_config is not None:
+        if get_config == 'u':
+            print(users[0].split(',')[0])
+        elif get_config == 'p':
+            print(users[0].split(',')[1])
+        return
     updateRiskArea()
     post_day = getTime().strftime("%Y-%m-%d")
     suc_log = []
     xc_log = []
     err_log = []
-    users = os.environ['users'].split(';')
-    send = os.environ.get('send', '').split(',')
     read_msg_results = []
     i = 1
     for user_info in users:

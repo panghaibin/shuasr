@@ -19,6 +19,10 @@ if __name__ == '__main__':
             setSendMsgApi(config)
         elif sys.argv[1] == 'gh':
             github()
+        elif sys.argv[1] == 'gh-vu':
+            github('u')
+        elif sys.argv[1] == 'gh-vp':
+            github('p')
         else:
             print('未定义的参数：%s' % sys.argv[1])
     else:

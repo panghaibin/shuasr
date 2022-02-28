@@ -263,8 +263,8 @@
     ]
   },
   "p1_TongZWDLH": {
-    "Required": false,
-    "Hidden": true,
+    "Required": true,
+    "Hidden": false,
     "Label": "上海同住人员是否有01月12日至01月26日来自<span style='color:red;'>中高风险地区</span>的人",
     "F_Items": [
       [
@@ -278,7 +278,7 @@
         1
       ]
     ],
-    "SelectedValue": null
+    "SelectedValue": "否"
   },
   "p1_CengFWH": {
     "Label": "01月12日至01月26日是否在<span style='color:red;'>中高风险地区</span>逗留过",
