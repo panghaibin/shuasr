@@ -64,7 +64,7 @@ def login(username, password, try_once=False):
             session.mount('https://', adapter)
 
             sso = session.get(url=default_url)
-            session.post(url=sso.url, data=form_data, allow_redirects=False)
+            post_index = session.post(url=sso.url, data=form_data, allow_redirects=False)
             index = session.get(url='https://newsso.shu.edu.cn/oauth/authorize?client_id=WUHWfrntnWYHZfzQ5QvXUCVy'
                                     '&response_type=code&scope=1&redirect_uri=https%3A%2F%2Fselfreport.shu.edu.cn'
                                     '%2FLoginSSO.aspx%3FReturnUrl%3D%252fDefault.aspx&state=')
@@ -83,6 +83,9 @@ def login(username, password, try_once=False):
             elif index.url == notice_url:
                 if readNotice(session, index.text, notice_url, default_url):
                     return session
+            elif 'message.login.passwordError' in post_index.text:
+                print('用户密码错误')
+                return False
             else:
                 print([u.url for u in index.history] + [index.url])
         except Exception as e:
@@ -1039,6 +1042,10 @@ def github(get_config=None):
             i += 1
             read_msg_result['username'] = username
             read_msg_results.append(read_msg_result)
+        else:
+            err_log.append(username)
+            time.sleep(90)
+            continue
         _info = getLatestInfo(session)
         unreported_day = getUnreportedDay(session)
         if len(unreported_day) > 0:
