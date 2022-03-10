@@ -1016,16 +1016,35 @@ def test(config_path, logs_path):
     return True
 
 
-def github(get_config=None):
+def showIP():
+    print("开始输出 IP 地址信息......")
+    apis = {
+        'Oversea IP': 'https://de5.backend.librespeed.org/getIP.php?isp=true',
+        'SJTU IP': 'https://mirror.sjtu.edu.cn/speedtest/getIP?isp=true',
+        'SHU IP': 'http://speedtest.shu.edu.cn/backend/getIP.php?isp=true',
+    }
+
+    for api_name in apis:
+        print("%s Info: " % api_name)
+        try:
+            raw_ip = requests.get(apis[api_name], timeout=30).json()
+            ip = raw_ip['rawIspInfo']
+            if len(ip) == 0:
+                ip = raw_ip
+            else:
+                ip.update({'ip': ''.join([i + '*' for i in ip['ip'] if ip['ip'].index(i) % 2 == 0])})
+            print(ip)
+        except Exception as e:
+            print(e)
+            print('Get %s Info Fail' % api_name)
+
+
+def github():
     users = os.environ['users'].split(';')
     send = os.environ.get('send', '').split(',')
-    if get_config is not None:
-        if get_config == 'u':
-            print(users[0].split(',')[0])
-        elif get_config == 'p':
-            print(users[0].split(',')[1])
-        return
+    showIP()
     updateRiskArea()
+    print("GitHub Actions 填报开始，若为第一次使用时间可能较长，请耐心等待......")
     post_day = getTime().strftime("%Y-%m-%d")
     suc_log = []
     xc_log = []
@@ -1033,12 +1052,14 @@ def github(get_config=None):
     read_msg_results = []
     i = 1
     for user_info in users:
+        print("\n===============")
+        print("正在为第%s位用户填报......" % i)
         username, password = user_info.split(',')
         session = login(username, password)
         if session:
             read_msg_result = readUnreadMsg(session)
             if read_msg_result['result'] != '':
-                print('%s: %s' % (i, read_msg_result['result']))
+                print('用户%s: %s' % (i, read_msg_result['result']))
             i += 1
             read_msg_result['username'] = username
             read_msg_results.append(read_msg_result)
@@ -1080,6 +1101,7 @@ def github(get_config=None):
 
     title += '共%s位' % len(users)
 
+    print("\n===============")
     if len(send) == 2:
         send_api = int(send[0])
         send_key = send[1]

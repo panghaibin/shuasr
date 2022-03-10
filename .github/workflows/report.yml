@@ -21,19 +21,16 @@ jobs:
           users: ${{ secrets.USERS }}
         run: |
           sudo apt update
-          sudo apt install -y openvpn openvpn-systemd-resolved
-          echo "::add-mask::$(python main.py gh-vu)"
-          echo "::add-mask::$(python main.py gh-vp)"
-          echo "ovpn_username=$(python main.py gh-vu)" >> $GITHUB_ENV
-          echo "ovpn_password=$(python main.py gh-vp)" >> $GITHUB_ENV
+          sudo apt-get --assume-yes --no-install-recommends install openvpn
+          sysctl -w net.ipv6.conf.all.disable_ipv6=1
+          python3 ovpn.py
       - name: Connect to VPN
-        uses: "kota65535/github-openvpn-connect-action@v1"
-        with:
-          config_file: .github/vpn/config.ovpn
-          username: ${{ env.ovpn_username }}
-          password: ${{ env.ovpn_password }}
+        run: |
+          touch vpn.log
+          sudo openvpn --config ".github/vpn/config.ovpn" --log "vpn.log" --daemon
       - name: Test a VPN connection
-        timeout-minutes: 1
+        if: always()
+        timeout-minutes: 3
         run: until ping -c1 xk.autoisp.shu.edu.cn; do sleep 2; done
       - name: Report Start
         if: always()
@@ -41,3 +38,14 @@ jobs:
           users: ${{ secrets.USERS }}
           send: ${{ secrets.SEND }}
         run: "python main.py gh"
+      - name: Kill VPN connection
+        if: always()
+        run: |
+          sudo chmod 777 vpn.log
+          sudo killall openvpn
+      - name: Upload VPN logs
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: VPN logs
+          path: vpn.log
