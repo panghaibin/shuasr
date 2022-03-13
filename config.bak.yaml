@@ -1,8 +1,9 @@
 # 0: 未设置
 # 1: Server酱 https://sct.ftqq.com/
-# 2: 推送加（hxtrip域名下） https://pushplus.hxtrip.com/
+# 2: 该接口已弃用 推送加（hxtrip域名下） https://pushplus.hxtrip.com/
 # 3: Telegram Bot 介绍见 ./Telegram_bot.md
 # 4: PushDear https://github.com/easychen/pushdeer
+# 5: 推送加PushPlus http://www.pushplus.plus/
 send_api: 0
 send_key: ""
 # 抢排名模式

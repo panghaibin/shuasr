@@ -765,18 +765,8 @@ def sendMsg(title, desp, api, key):
             result = json.loads(text)
             return result['code'] == 0
         elif api == 2:
-            url = 'http://pushplus.hxtrip.com/send'
-            data = {
-                "token": key,
-                "title": title,
-                "content": desp.replace("\n\n", "<br>"),
-            }
-            body = json.dumps(data).encode(encoding='utf-8')
-            headers = {'Content-Type': 'application/json',
-                       'accept': 'application/json'}
-            text = requests.post(url, data=body, headers=headers).text
-            result = json.loads(text)
-            return result['code'] == 200
+            print('该消息推送接口已弃用，请更换其它接口')
+            return False
         elif api == 3:
             tg_bot_key, tg_chat_id = key.split('@')
             url = 'https://api.telegram.org/bot%s/sendMessage' % tg_bot_key
@@ -797,6 +787,19 @@ def sendMsg(title, desp, api, key):
             text = requests.post(url, data=data).text
             result = json.loads(text)
             return result['code'] == 0
+        elif api == 5:
+            url = "http://www.pushplus.plus/send"
+            data = {
+                'token': key,
+                'title': title,
+                'content': desp,
+                'template': 'markdown'
+            }
+            headers = {'Content-Type': 'application/json'}
+            body = json.dumps(data).encode(encoding='utf-8')
+            text = requests.post(url, data=body, headers=headers).text
+            result = json.loads(text)
+            return result['code'] == 200
 
     except Exception as e:
         print(text)
@@ -935,10 +938,14 @@ def setSendMsgApi(config_path):
         return False
     with open(config_path, 'r', encoding='utf-8') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
-    send_msg_api = ['未设置',
-                    '方糖气球 https://sct.ftqq.com/',
-                    '推送加 https://pushplus.hxtrip.com/',
-                    'Telegram Bot (Key 的格式为 `BOT_TOKEN@CHAT_ID` )']
+    send_msg_api = [
+        '未设置',
+        '方糖气球 https://sct.ftqq.com/',
+        '（该接口已弃用）推送加 https://pushplus.hxtrip.com/',
+        'Telegram Bot (Key 的格式为 `BOT_TOKEN@CHAT_ID` )',
+        'PushDeer https://github.com/easychen/pushdeer'
+        '推送加PushPlus http://www.pushplus.plus/',
+    ]
     send_api = config.get('send_api', 0)
     send_key = config.get('send_key', '')
     print('当前消息发送平台设置为：%s' % send_msg_api[send_api])
@@ -955,6 +962,8 @@ def setSendMsgApi(config_path):
             continue
         if send_api not in range(1, len(send_msg_api)):
             print('输入有误，重新输入')
+        elif send_api == 2:
+            print('该接口已弃用，请使用其它推送平台')
         else:
             break
     config['send_api'] = send_api
@@ -1016,6 +1025,11 @@ def test(config_path, logs_path):
     return True
 
 
+def gh_print(string=''):
+    print("\n===============")
+    print(string) if string != '' else 0
+
+
 def showIP():
     print("开始输出 IP 地址信息......")
     apis = {
@@ -1025,15 +1039,16 @@ def showIP():
     }
 
     for api_name in apis:
-        print("%s Info: " % api_name)
+        gh_print("%s Info: " % api_name)
         try:
             raw_ip = requests.get(apis[api_name], timeout=30).json()
             ip = raw_ip['rawIspInfo']
             if len(ip) == 0:
                 ip = raw_ip
             else:
-                ip.update({'ip': ''.join([i + '*' for i in ip['ip'] if ip['ip'].index(i) % 2 == 0])})
-            print(ip)
+                _ = ip['ip']
+                ip.update({'ip': _[:int(len(_) / 2)] + '*' * int(len(_) / 2 + 1)})
+            print(json.dumps(ip, ensure_ascii=False, indent=4, sort_keys=True))
         except Exception as e:
             print(e)
             print('Get %s Info Fail' % api_name)
@@ -1042,9 +1057,9 @@ def showIP():
 def github():
     users = os.environ['users'].split(';')
     send = os.environ.get('send', '').split(',')
+    gh_print("GitHub Actions 填报开始，若为第一次使用时间可能较长，请耐心等待......")
     showIP()
     updateRiskArea()
-    print("GitHub Actions 填报开始，若为第一次使用时间可能较长，请耐心等待......")
     post_day = getTime().strftime("%Y-%m-%d")
     suc_log = []
     xc_log = []
@@ -1052,34 +1067,35 @@ def github():
     read_msg_results = []
     i = 1
     for user_info in users:
-        print("\n===============")
-        print("正在为第%s位用户填报......" % i)
+        gh_print("正在为第%s位用户填报......" % i)
         username, password = user_info.split(',')
         session = login(username, password)
+        i += 1
         if session:
             read_msg_result = readUnreadMsg(session)
             if read_msg_result['result'] != '':
                 print('用户%s: %s' % (i, read_msg_result['result']))
-            i += 1
             read_msg_result['username'] = username
             read_msg_results.append(read_msg_result)
+            _info = getLatestInfo(session)
+            unreported_day = getUnreportedDay(session)
+            if len(unreported_day) > 0:
+                print('%s****%s有%s天未填报，开始补报' % (username[:2], username[-2:], len(unreported_day)))
+                reportUnreported(session, _info, unreported_day)
+            _form = getReportForm(post_day, _info)
+            report_result = reportSingleUser(session, _form)
         else:
-            err_log.append(username)
-            time.sleep(90)
-            continue
-        _info = getLatestInfo(session)
-        unreported_day = getUnreportedDay(session)
-        if len(unreported_day) > 0:
-            print('%s****%s有%s天未填报，开始补报' % (username[:2], username[-2:], len(unreported_day)))
-            reportUnreported(session, _info, unreported_day)
-        _form = getReportForm(post_day, _info)
-        report_result = reportSingleUser(session, _form)
+            report_result = 0
+
         if report_result == 1:
+            print('填报成功')
             suc_log.append(username)
         elif report_result == -3:
             xc_log.append(username)
         else:
+            print('填报失败')
             err_log.append(username)
+        print("该用户填报结束，开始休眠90s......")
         time.sleep(90)
 
     title = '每日一报'
@@ -1097,11 +1113,11 @@ def github():
         for username in err_log:
             desp += '用户%s填报失败\n\n' % username
         title += '%s位失败，' % len(err_log)
-        desp += '请尽快查看控制台输出确定失败原因'
+        desp += '请尽快查看 GitHub Actions 日志输出确定失败原因'
 
     title += '共%s位' % len(users)
 
-    print("\n===============")
+    gh_print()
     if len(send) == 2:
         send_api = int(send[0])
         send_key = send[1]
@@ -1123,7 +1139,7 @@ def github():
             print('%s****%s' % (log[:2], log[-2:]))
 
     if err_log or xc_log:
-        raise Exception
+        exit(1)
 
 
 def isTimeToReport():

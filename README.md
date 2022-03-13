@@ -162,9 +162,10 @@ screen -r shu
 | 接口代号 | 名称| 官网 |
 | :---: | :---: | :---: |
 | 1 | Server酱 | https://sct.ftqq.com/ |
-| 2 | 推送加（hxtrip域名下） | https://pushplus.hxtrip.com/ |
+| ~~2~~ | ~~推送加（hxtrip域名下）~~ | ~~https://pushplus.hxtrip.com/~~ 该接口已停用 |
 | 3 | Telegram Bot | 需自行创建`Bot`，[查看创建方法](./Telegram_bot.md)|
 | 4 | PushDeer（开发中，未完善） | https://github.com/easychen/pushdeer |
+| 5 | 推送加PushPlus | https://www.pushplus.plus/ |
 
 请前往任意官网注册得到`key`后即可在本项目中使用，在 GitHub Actions 中使用时注意接口代号正确设置。
 

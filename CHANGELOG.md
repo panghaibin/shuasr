@@ -1,5 +1,13 @@
 # 更新日志
 
+## [5.3.0] - 2022-03-13
+### Added
+- 新增推送加PushPlus消息推送接口 [https://www.pushplus.plus/](https://www.pushplus.plus/)
+### Changed
+- 优化 GitHub Actions 日志输出提示
+### Removed
+- 由于推送加（hxtrip域名下）的消息推送接口已长期处于不可用状态，因此弃用该接口
+
 ## [5.2.0] - 2022-03-10
 ### Added
 - GitHub Actions 增加运行时提示
