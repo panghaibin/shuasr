@@ -24,11 +24,9 @@ jobs:
           sudo apt-get --assume-yes --no-install-recommends install openvpn
           sysctl -w net.ipv6.conf.all.disable_ipv6=1
           python3 ovpn.py
-      - name: Connect to VPN
-        run: |
           touch vpn.log
           sudo openvpn --config ".github/vpn/config.ovpn" --log "vpn.log" --daemon
-      - name: Test a VPN connection
+      - name: Test VPN connection
         if: always()
         timeout-minutes: 3
         run: until ping -c1 xk.autoisp.shu.edu.cn; do sleep 2; done
@@ -37,7 +35,7 @@ jobs:
         env:
           users: ${{ secrets.USERS }}
           send: ${{ secrets.SEND }}
-        run: "python main.py gh"
+        run: "python -u main.py gh"
       - name: Kill VPN connection
         if: always()
         run: |

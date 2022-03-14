@@ -72,21 +72,25 @@ def login(username, password, try_once=False):
             notice_url = 'https://selfreport.shu.edu.cn/DayReportNotice.aspx'
             view_msg_url = 'https://selfreport.shu.edu.cn/ViewMessage.aspx'
             if index.url == default_url and index.status_code == 200:
+                if '需要更新' in index.text:
+                    cleanIndex(session, index.text, 'cancel_archive_dialog', default_url, default_url)
                 return session
             elif index.url.startswith(view_msg_url):
                 view_times = 0
-                while view_times < 5:
+                while view_times < 10:
                     index = session.get(url=default_url)
                     view_times += 1
                     if index.url == default_url:
+                        print('阅读了%s条必读消息' % view_times)
                         return session
             elif index.url == notice_url:
-                if readNotice(session, index.text, notice_url, default_url):
+                if cleanIndex(session, index.text, 'read_notice', notice_url, default_url):
                     return session
             elif 'message.login.passwordError' in post_index.text:
                 print('用户密码错误')
                 return False
             else:
+                print('出现未知错误，历史记录调试信息：')
                 print([u.url for u in index.history] + [index.url])
         except Exception as e:
             print(e)
@@ -102,19 +106,35 @@ def login(username, password, try_once=False):
         time.sleep(60)
 
 
-def readNotice(session, notice_html, notice_url, index_url):
-    view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', notice_html).group(1)
-    view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', notice_html).group(1)
-    form_data = {'__EVENTTARGET': 'p1$ctl01$btnSubmit',
-                 '__EVENTARGUMENT': '',
-                 '__VIEWSTATE': view_state,
-                 '__VIEWSTATEGENERATOR': view_state_generator,
-                 'F_TARGET': 'p1_ctl01_btnSubmit',
-                 'p1_ctl00_Collapsed': 'false',
-                 'p1_Collapsed': 'false',
-                 'F_STATE': 'eyJwMV9jdGwwMCI6eyJJRnJhbWVBdHRyaWJ1dGVzIjp7fX0sInAxIjp7IklGcmFtZUF0dHJpYnV0ZXMiOnt9fX0=',
-                 }
-    index = session.post(url=notice_url, data=form_data)
+def cleanIndex(session, html, target, target_url, index_url):
+    view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', html).group(1)
+    view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', html).group(1)
+    form_data = {
+        '__VIEWSTATE': view_state,
+        '__VIEWSTATEGENERATOR': view_state_generator,
+    }
+    if target == 'read_notice':
+        form_data.update({
+            '__EVENTTARGET': 'p1$ctl01$btnSubmit',
+            '__EVENTARGUMENT': '',
+            'F_TARGET': 'p1_ctl01_btnSubmit',
+            'p1_ctl00_Collapsed': 'false',
+            'p1_Collapsed': 'false',
+            'F_STATE': 'eyJwMV9jdGwwMCI6eyJJRnJhbWVBdHRyaWJ1dGVzIjp7fX0sInAxIjp7IklGcmFtZUF0dHJpYnV0ZXMiOnt9fX0=',
+        })
+    elif target == 'cancel_archive_dialog':
+        form_data.update({
+            '__EVENTTARGET': '',
+            '__EVENTARGUMENT': 'EArchiveCancel',
+            'frmConfirm_ContentPanel1_Collapsed': 'false',
+            'frmConfirm_Collapsed': 'false',
+            'frmConfirm_Hidden': 'true',
+            'F_STATE': 'eyJmcm1Db25maXJtX0NvbnRlbnRQYW5lbDEiOnsiSUZyYW1lQXR0cmlidXRlF_STATEcyI6e319LCJmcm1Db25maXJtIjp'
+                       '7IklGcmFtZUF0dHJpYnV0ZXMiOnt9fX0=',
+        })
+    else:
+        return False
+    index = session.post(url=target_url, data=form_data)
     if index.url == index_url:
         return True
 
@@ -720,7 +740,7 @@ def reportAllUsers(config_path, logs_path, post_day):
 
     logs_time = getTime().strftime("%Y-%m-%d %H:%M:%S")
     read_msg_results = []
-    for username in users:
+    for i, username in enumerate(users):
         session = login(username, users[username][0])
         if not session:
             logs = updateLogs(logs, logs_time, username, -1)
@@ -738,7 +758,8 @@ def reportAllUsers(config_path, logs_path, post_day):
         _form = getReportForm(post_day, _info)
         report_result = reportSingleUser(session, _form)
         logs = updateLogs(logs, logs_time, username, report_result)
-        time.sleep(60)
+        if i < len(users) - 1:
+            time.sleep(60)
     saveLogs(logs_path, logs)
     sendAllReadMsgResult(read_msg_results, send_msg['api'], send_msg['key'])
     time.sleep(5)
@@ -1065,16 +1086,14 @@ def github():
     xc_log = []
     err_log = []
     read_msg_results = []
-    i = 1
-    for user_info in users:
-        gh_print("正在为第%s位用户填报......" % i)
+    for i, user_info in enumerate(users):
+        gh_print("正在为第%s位用户填报......" % (i + 1))
         username, password = user_info.split(',')
         session = login(username, password)
-        i += 1
         if session:
             read_msg_result = readUnreadMsg(session)
             if read_msg_result['result'] != '':
-                print('用户%s: %s' % (i, read_msg_result['result']))
+                print(read_msg_result['result'])
             read_msg_result['username'] = username
             read_msg_results.append(read_msg_result)
             _info = getLatestInfo(session)
@@ -1095,8 +1114,11 @@ def github():
         else:
             print('填报失败')
             err_log.append(username)
-        print("该用户填报结束，开始休眠90s......")
-        time.sleep(90)
+        if i < len(users) - 1:
+            print("该用户填报结束，开始休眠90s......")
+            time.sleep(90)
+        else:
+            gh_print("所有用户填报结束")
 
     title = '每日一报'
     desp = ''

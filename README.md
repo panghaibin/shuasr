@@ -110,21 +110,21 @@ python3 main.py send
 添加设置完毕用户及消息发送API后，建议先执行以下命令测试
 
 ```shell
-python3 main.py test
+python3 -u main.py test
 ```
 
 该命令会将所有用户立即上报一次，如控制台无异常输出且能收到消息推送，说明设置无误。若出现异常报错有可能是健康之路已改版，等待更新或向我提PR。
 
 运行以下命令，程序将自行检查是否在上报时间内，并自动进行上报
 ```shell
-python3 main.py
+python3 -u main.py
 ```
 
 #### v. 进程守护
 启动程序后若关闭控制台程序会自动退出，因此需要进程守护。进程守护的方式有多种，如使用`nohup`命令：
 
 ```shell
-nohup /usr/bin/python3 /root/shuasr/main.py > /root/shuasr/output.log 2>&1 &
+nohup /usr/bin/python3 -u /root/shuasr/main.py > /root/shuasr/output.log 2>&1 &
 ```
 
 另外也可以用`screen`，下面以`screen`为例介绍用法。

@@ -1,5 +1,13 @@
 # 更新日志
 
+## [5.3.1] - 2022-03-14
+### Fixed
+- 以无缓冲输出方式在 GitHub Actions 上运行，修复无法及时查看日志的问题
+### Added
+- 登录后自动关闭是否更新档案的对话框
+### Changed
+- 优化多用户下的休眠间隔
+
 ## [5.3.0] - 2022-03-13
 ### Added
 - 新增推送加PushPlus消息推送接口 [https://www.pushplus.plus/](https://www.pushplus.plus/)
