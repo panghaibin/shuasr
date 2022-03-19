@@ -156,6 +156,27 @@
     ],
     "SelectedValue": null
   },
+  "p1_XiaoQu": {
+    "Hidden": false,
+    "F_Items": [
+      [
+        "宝山",
+        "宝山",
+        1
+      ],
+      [
+        "延长",
+        "延长",
+        1
+      ],
+      [
+        "嘉定",
+        "嘉定",
+        1
+      ]
+    ],
+    "SelectedValue": null
+  },
   "p1_ddlSheng": {
     "Hidden": false,
     "F_Items": [

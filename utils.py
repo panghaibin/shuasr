@@ -140,7 +140,8 @@ def cleanIndex(session, html, target, target_url, index_url):
 
 
 def generateFState(json_file, post_day=None, province=None, city=None, county=None, address=None, in_shanghai=None,
-                   in_school=None, in_home=None, sui_img=None, sui_code=None, xing_img=None, xing_code=None, ans=None):
+                   in_school=None, in_home=None, sui_img=None, sui_code=None, xing_img=None, xing_code=None, ans=None,
+                   campus=None):
     with open(json_file, 'r', encoding='utf-8') as f:
         json_data = json.load(f)
 
@@ -170,6 +171,7 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
     json_data['p1_pImages_imgXingCM']['ImageUrl'] = xing_img
 
     json_data['p1_pnlDangSZS_DangSZS']['SelectedValueArray'] = ans
+    json_data['p1_XiaoQu']['SelectedValue'] = campus
 
     fstate = base64.b64encode(json.dumps(json_data).encode("utf-8")).decode("utf-8")
     return fstate
@@ -541,12 +543,21 @@ def getReportForm(post_day, info):
     xing_img = info['xing_img']
     ans = info['ans']
 
+    campus = None
+    if in_school == '是':
+        if '静安' in county:
+            campus = '延长'
+        elif '嘉定' in county:
+            campus = '嘉定'
+        else:
+            campus = '宝山'
+
     # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
     f_state = generateFState(abs_path + '/once.json', post_day=post_day, province=province, city=city, county=county,
                              address=address, in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
                              sui_code=sui_code, sui_img=sui_img, xing_img=xing_img, xing_code=xing_code,
-                             ans=ans)
+                             ans=ans, campus=campus)
 
     report_form = {
         '__EVENTTARGET': even_target,
@@ -569,6 +580,7 @@ def getReportForm(post_day, info):
         'p1$ddlGuoJia': '选择国家',
         'p1$ShiFSH': in_shanghai,
         'p1$ShiFZX': in_school,
+        'p1$XiaoQu': campus,
         'p1$ddlSheng$Value': province,
         'p1$ddlSheng': province,
         'p1$ddlShi$Value': city,
@@ -1047,7 +1059,8 @@ def test(config_path, logs_path):
 
 
 def gh_print(string=''):
-    print("\n===============")
+    print()
+    print("=" * 15)
     print(string) if string != '' else 0
 
 
@@ -1099,7 +1112,7 @@ def github():
             _info = getLatestInfo(session)
             unreported_day = getUnreportedDay(session)
             if len(unreported_day) > 0:
-                print('%s****%s有%s天未填报，开始补报' % (username[:2], username[-2:], len(unreported_day)))
+                print('该用户有%s天未填报，开始补报' % len(unreported_day))
                 reportUnreported(session, _info, unreported_day)
             _form = getReportForm(post_day, _info)
             report_result = reportSingleUser(session, _form)
@@ -1259,10 +1272,11 @@ def grabRankUsers(config_path, logs_path, post_day):
 
     temp = {}
 
-    for username in users:
+    for i, username in enumerate(users):
         temp[username] = threading.Thread(target=grabRank, args=(username, users[username][0], post_day))
         temp[username].start()
-        time.sleep(2 * 60)
+        if i < len(users) - 1:
+            time.sleep(2 * 60)
     for username in users:
         temp[username].join()
 
