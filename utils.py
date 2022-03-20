@@ -186,13 +186,11 @@ def convertAddress(province, city):
         city = ''
     elif province == "广西":
         province += "壮族自治区"
-    elif province == "内蒙古":
-        province += "自治区"
     elif province == "宁夏":
         province += "回族自治区"
     elif province == "新疆":
         province += "维吾尔自治区"
-    elif province == "西藏":
+    elif province in ["西藏", "内蒙古"]:
         province += "自治区"
     else:
         province += "省"
@@ -276,10 +274,7 @@ def generateXingImage(ph_num, position):
     update = base64.b64decode('5pu05paw5LqO77ya').decode('utf-8') + t.strftime("%Y.%m.%d %H:%M:%S")
     tip = base64.b64decode('5oKo5LqO5YmNMTTlpKnlhoXliLDovr7miJbpgJTnu4/vvJo=').decode('utf-8')
 
-    if 1644940800 > t.timestamp() > 1643644800:
-        image = Image.open("src/zxn_1.2.bin")
-    else:
-        image = Image.open("src/zxn_1.bin")
+    image = Image.open("src/zxn_1.bin")
     draw = ImageDraw.Draw(image)
     full_width, full_height = image.size
 
@@ -416,7 +411,7 @@ def jsLine2Json(js):
     return json.loads(js[js.find('=') + 1:])
 
 
-def getLatestInfo(session):
+def getLatestInfo(session, force_upload=False):
     history_url = 'https://selfreport.shu.edu.cn/ReportHistory.aspx'
     index = session.get(url=history_url).text
     js_str = re.search('f2_state=(.*?);', index).group(1)
@@ -432,6 +427,7 @@ def getLatestInfo(session):
 
     in_shanghai = '在上海（校内）'
     in_school = '是'
+    campus = '宝山'
     province = '上海'
     city = '上海'
     county = '宝山区'
@@ -453,17 +449,19 @@ def getLatestInfo(session):
         elif 'ShiFZJ' in h:
             in_home = jsLine2Json(info_line[i - 1])['SelectedValue']
 
-    p_info_url = 'https://selfreport.shu.edu.cn/PersonInfo.aspx'
-    p_info_html = session.get(url=p_info_url).text
-    p_info_line = html2JsLine(p_info_html)
-
-    phone_number = '18888888888'
-    name = '***'
-    for i, h in enumerate(p_info_line):
-        if 'ShouJHM' in h:
-            phone_number = jsLine2Json(p_info_line[i - 1])['Text']
-        elif 'XingMing' in h:
-            name = jsLine2Json(p_info_line[i - 1])['Text']
+    if '（校内）' in in_shanghai and in_school == '是':
+        for i, h in enumerate(info_line):
+            if 'XiaoQu' in h:
+                try:
+                    campus = jsLine2Json(info_line[i - 1])['Text']
+                except (KeyError, json.JSONDecodeError):
+                    if county == '静安区':
+                        campus = '延长'
+                    elif county == '嘉定区':
+                        campus = '嘉定'
+                    else:
+                        campus = '宝山'
+                break
 
     report_url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
     report_html = session.get(url=report_url).text
@@ -471,56 +469,66 @@ def getLatestInfo(session):
     _ = re.search(r'ok:\'F\.f_disable\(\\\'(.*?)\\\'\);__doPostBack\(\\\'(.*?)\\\',\\\'\\\'\);\',', report_html)
     f_target = _.group(1)
     even_target = _.group(2)
-
     view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', report_html).group(1)
     view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', report_html).group(1)
 
-    report_line = html2JsLine(report_html)
     _code = 'odrp1Za3DEU='
     _img = '/ShowImage.ashx?squrl=oyhA3XzMDCTMwyYAn6kyLt3hxsAoCfpvYGMSocfVfx2RRyKXq9QDVV5cVuq9mN8Mt%2bxyoS93C' \
            '%2b9qawY41vXjo7H18V%2b08RW%2fWDwSfK2TQ8Qc7ob' \
            '%2fnXpyYlgzh5aNOE9tpHWs9n7P7dTaa6iBSTv3Yt40C9UuPY0edMplSSzgA4DQn0HMJY3R5GihYy5Hr9PeiSbwSeJ3GOY%3d'
-    ans = None
+    ans = ['A']
     sui_code = xing_code = None
     sui_img = xing_img = None
-    for i, h in enumerate(report_line):
-        if 'pnlDangSZS_ckda' in h:
-            text = report_line[i - 1]
-            if 'pnlDangSZS_DangSZS' not in text:
-                ans = re.findall(r'答案：(.*)\'', text)[0]
-                ans = [i for i in ans]
-        elif 'pnlDangSZS_DangSZS' in h:
-            ans = jsLine2Json(report_line[i - 1])['SelectedValueArray']
-        elif 'pImages_HFimgSuiSM' in h:
-            try:
-                sui_code = jsLine2Json(report_line[i - 1])['Text']
-                sui_img = jsLine2Json(report_line[i + 1])['ImageUrl']
-            except (KeyError, json.JSONDecodeError):
-                img_path = generateSuiImage(name)
-                sui_code, sui_img = getImgCodeByUpload(session, 'sui', view_state, report_url, img_path)
-                os.remove(img_path)
-        elif 'pImages_HFimgXingCM' in h:
-            try:
-                xing_code = jsLine2Json(report_line[i - 1])['Text']
-                xing_img = jsLine2Json(report_line[i + 1])['ImageUrl']
-            except (KeyError, json.JSONDecodeError):
-                position = convertAddress(province, city)
-                position = checkRiskPosition(position)
-                img_path = generateXingImage(phone_number, position)
-                xing_code, xing_img = getImgCodeByUpload(session, 'xing', view_state, report_url, img_path)
-                os.remove(img_path)
 
-    ans = ['A'] if ans is None or ans == [] else ans
+    if '（校内）' not in in_shanghai or force_upload:
+        report_line = html2JsLine(report_html)
+        for i, h in enumerate(report_line):
+            if 'pImages_HFimgSuiSM' in h:
+                try:
+                    sui_code = jsLine2Json(report_line[i - 1])['Text']
+                    sui_img = jsLine2Json(report_line[i + 1])['ImageUrl']
+                except (KeyError, json.JSONDecodeError):
+                    sui_code, sui_img = None, None
+            elif 'pImages_HFimgXingCM' in h:
+                try:
+                    xing_code = jsLine2Json(report_line[i - 1])['Text']
+                    xing_img = jsLine2Json(report_line[i + 1])['ImageUrl']
+                except (KeyError, json.JSONDecodeError):
+                    xing_code, xing_img = None, None
+        if sui_code is None or xing_code is None:
+            p_info_url = 'https://selfreport.shu.edu.cn/PersonInfo.aspx'
+            p_info_html = session.get(url=p_info_url).text
+            p_info_line = html2JsLine(p_info_html)
+
+            phone_number = '18888888888'
+            name = '***'
+            for i, h in enumerate(p_info_line):
+                if 'ShouJHM' in h:
+                    phone_number = jsLine2Json(p_info_line[i - 1])['Text']
+                elif 'XingMing' in h:
+                    name = jsLine2Json(p_info_line[i - 1])['Text']
+
+            sui_img_path = generateSuiImage(name)
+            sui_code, sui_img = getImgCodeByUpload(session, 'sui', view_state, report_url, sui_img_path)
+            os.remove(sui_img_path)
+
+            position = convertAddress(province, city)
+            position = checkRiskPosition(position)
+            xing_img_path = generateXingImage(phone_number, position)
+            xing_code, xing_img = getImgCodeByUpload(session, 'xing', view_state, report_url, xing_img_path)
+            os.remove(xing_img_path)
+
     sui_code = _code if sui_code is None else sui_code
     sui_img = _img if sui_img is None else sui_img
     xing_code = _code if xing_code is None else xing_code
     xing_img = _img if xing_img is None else xing_img
 
-    info = dict(vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target,
-                province=province, city=city, county=county, address=address,
-                in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
-                sui_code=sui_code, sui_img=sui_img, xing_code=xing_code, xing_img=xing_img,
-                ans=ans)
+    info = dict(
+        vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target,
+        in_shanghai=in_shanghai, in_school=in_school, campus=campus, in_home=in_home,
+        province=province, city=city, county=county, address=address,
+        sui_code=sui_code, sui_img=sui_img, xing_code=xing_code, xing_img=xing_img, ans=ans
+    )
 
     return info
 
@@ -534,6 +542,7 @@ def getReportForm(post_day, info):
     address = info['address']
     in_shanghai = info['in_shanghai']
     in_school = info['in_school']
+    campus = info['campus']
     in_home = info['in_home']
     f_target = info['f_target']
     even_target = info['even_target']
@@ -543,21 +552,13 @@ def getReportForm(post_day, info):
     xing_img = info['xing_img']
     ans = info['ans']
 
-    campus = None
-    if in_school == '是':
-        if '静安' in county:
-            campus = '延长'
-        elif '嘉定' in county:
-            campus = '嘉定'
-        else:
-            campus = '宝山'
-
     # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
-    f_state = generateFState(abs_path + '/once.json', post_day=post_day, province=province, city=city, county=county,
-                             address=address, in_shanghai=in_shanghai, in_school=in_school, in_home=in_home,
-                             sui_code=sui_code, sui_img=sui_img, xing_img=xing_img, xing_code=xing_code,
-                             ans=ans, campus=campus)
+    f_state = generateFState(
+        json_file=abs_path + '/once.json', post_day=post_day, province=province, city=city, county=county,
+        address=address, in_shanghai=in_shanghai, in_school=in_school, campus=campus, in_home=in_home,
+        sui_code=sui_code, sui_img=sui_img, xing_img=xing_img, xing_code=xing_code, ans=ans
+    )
 
     report_form = {
         '__EVENTTARGET': even_target,
@@ -721,14 +722,14 @@ def reportSingleUser(session, form):
         report_times += 1
         if report_times > 5:
             debug_key = ['__EVENTTARGET', 'p1$pnlDangSZS$DangSZS', 'p1$BaoSRQ', 'p1$ShiFSH', 'p1$ShiFZX', 'p1$ShiFZJ',
-                         'F_TARGET']
+                         'F_TARGET', 'p1$XiaoQu']
             debug_privacy_key = ['p1$ddlSheng$Value', 'p1$ddlSheng', 'p1$ddlShi$Value', 'p1$ddlShi', 'p1$ddlXian$Value',
                                  'p1$ddlXian', 'p1$XiangXDZ', 'p1$pImages$HFimgSuiSM', 'p1$pImages$HFimgXingCM']
             debug_value = dict([(key, form[key]) for key in debug_key])
             debug_privacy_value = dict([(key, f'***{str(form[key])[-1]}, length: {len(form[key])}')
                                         for key in debug_privacy_key])
             debug_value.update(debug_privacy_value)
-            print('调试信息：\n', debug_value)
+            print('调试信息：\n', json.dumps(debug_value, ensure_ascii=False, indent=4, sort_keys=True))
             return 0
         time.sleep(5)
 
@@ -766,9 +767,14 @@ def reportAllUsers(config_path, logs_path, post_day):
         unreported_day = getUnreportedDay(session)
         if len(unreported_day) > 0:
             print('%s有%s天未填报，开始补报' % (username, len(unreported_day)))
+            _info = getLatestInfo(session, force_upload=True)
             reportUnreported(session, _info, unreported_day)
         _form = getReportForm(post_day, _info)
         report_result = reportSingleUser(session, _form)
+        if report_result != 1:
+            _info = getLatestInfo(session, force_upload=True)
+            _form = getReportForm(post_day, _info)
+            report_result = reportSingleUser(session, _form)
         logs = updateLogs(logs, logs_time, username, report_result)
         if i < len(users) - 1:
             time.sleep(60)
@@ -1113,9 +1119,14 @@ def github():
             unreported_day = getUnreportedDay(session)
             if len(unreported_day) > 0:
                 print('该用户有%s天未填报，开始补报' % len(unreported_day))
+                _info = getLatestInfo(session, force_upload=True)
                 reportUnreported(session, _info, unreported_day)
             _form = getReportForm(post_day, _info)
             report_result = reportSingleUser(session, _form)
+            if report_result != 1:
+                _info = getLatestInfo(session, force_upload=True)
+                _form = getReportForm(post_day, _info)
+                report_result = reportSingleUser(session, _form)
         else:
             report_result = 0
 
@@ -1221,7 +1232,7 @@ def grabRank(username, password, post_day):
 
     try_times = 0
     while True:
-        _info = getLatestInfo(session)
+        _info = getLatestInfo(session, force_upload=True)
         form = getReportForm(post_day, _info)
         if form:
             break
@@ -1240,7 +1251,7 @@ def grabRank(username, password, post_day):
 
     while True:
         now = getTime()
-        if (now.hour == 0 and now.minute == 59 and now.second >= 55) or now.hour != 0:
+        if (now.hour == 0 and now.minute == 59 and now.second >= 50) or now.hour != 0:
             try_times = 0
             while True:
                 report_result = session.post(url=url, data=form)
