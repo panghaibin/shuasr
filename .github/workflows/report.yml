@@ -22,7 +22,6 @@ jobs:
         run: |
           sudo apt update
           sudo apt-get --assume-yes --no-install-recommends install openvpn
-          sysctl -w net.ipv6.conf.all.disable_ipv6=1
           python3 ovpn.py
           touch vpn.log
           sudo openvpn --config ".github/vpn/config.ovpn" --log "vpn.log" --daemon
