@@ -482,20 +482,21 @@ def getLatestInfo(session, force_upload=False):
 
     if '（校内）' not in in_shanghai or force_upload:
         report_line = html2JsLine(report_html)
+        require_upload = False
         for i, h in enumerate(report_line):
             if 'pImages_HFimgSuiSM' in h:
                 try:
                     sui_code = jsLine2Json(report_line[i - 1])['Text']
                     sui_img = jsLine2Json(report_line[i + 1])['ImageUrl']
                 except (KeyError, json.JSONDecodeError):
-                    sui_code, sui_img = None, None
+                    require_upload = True
             elif 'pImages_HFimgXingCM' in h:
                 try:
                     xing_code = jsLine2Json(report_line[i - 1])['Text']
                     xing_img = jsLine2Json(report_line[i + 1])['ImageUrl']
                 except (KeyError, json.JSONDecodeError):
-                    xing_code, xing_img = None, None
-        if sui_code is None or xing_code is None:
+                    require_upload = True
+        if require_upload:
             p_info_url = 'https://selfreport.shu.edu.cn/PersonInfo.aspx'
             p_info_html = session.get(url=p_info_url).text
             p_info_line = html2JsLine(p_info_html)
@@ -518,10 +519,10 @@ def getLatestInfo(session, force_upload=False):
             xing_code, xing_img = getImgCodeByUpload(session, 'xing', view_state, report_url, xing_img_path)
             os.remove(xing_img_path)
 
-    sui_code = _code if sui_code is None else sui_code
-    sui_img = _img if sui_img is None else sui_img
-    xing_code = _code if xing_code is None else xing_code
-    xing_img = _img if xing_img is None else xing_img
+        sui_code = _code if sui_code is None else sui_code
+        sui_img = _img if sui_img is None else sui_img
+        xing_code = _code if xing_code is None else xing_code
+        xing_img = _img if xing_img is None else xing_img
 
     info = dict(
         vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target,
@@ -726,7 +727,7 @@ def reportSingleUser(session, form):
             debug_privacy_key = ['p1$ddlSheng$Value', 'p1$ddlSheng', 'p1$ddlShi$Value', 'p1$ddlShi', 'p1$ddlXian$Value',
                                  'p1$ddlXian', 'p1$XiangXDZ', 'p1$pImages$HFimgSuiSM', 'p1$pImages$HFimgXingCM']
             debug_value = dict([(key, form[key]) for key in debug_key])
-            debug_privacy_value = dict([(key, f'***{str(form[key])[-1]}, length: {len(form[key])}')
+            debug_privacy_value = dict([(key, f'***{str(form[key])[-1]}, length: {len(str(form[key]))}')
                                         for key in debug_privacy_key])
             debug_value.update(debug_privacy_value)
             print('调试信息：\n', json.dumps(debug_value, ensure_ascii=False, indent=4, sort_keys=True))
