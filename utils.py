@@ -161,8 +161,9 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
 
     json_data['p1_XiangXDZ']['Text'] = address
 
-    json_data['p1_ShiFSH']['SelectedValue'] = in_shanghai
-    json_data['p1_ShiFZX']['SelectedValue'] = in_school
+    json_data['p1_P_GuoNei_ShiFSH']['SelectedValue'] = in_shanghai
+    json_data['p1_P_GuoNei_ShiFZX']['SelectedValue'] = in_school
+    json_data['p1_P_GuoNei_XiaoQu']['SelectedValue'] = campus
     json_data['p1_ShiFZJ']['SelectedValue'] = in_home
 
     json_data['p1_pImages_HFimgSuiSM']['Text'] = sui_code
@@ -171,7 +172,6 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
     json_data['p1_pImages_imgXingCM']['ImageUrl'] = xing_img
 
     json_data['p1_pnlDangSZS_DangSZS']['SelectedValueArray'] = ans
-    json_data['p1_XiaoQu']['SelectedValue'] = campus
 
     fstate = base64.b64encode(json.dumps(json_data).encode("utf-8")).decode("utf-8")
     return fstate
@@ -382,7 +382,7 @@ def generateSuiImage(name):
 
 
 def getImgCodeByUpload(session, img_type, view_state, report_url, img_path):
-    img_type_dict = {'sui': 'p1$pImages$fileSuiSM', 'xing': 'p1$pImages$fileXingCM'}
+    img_type_dict = {'sui': 'p1$P_GuoNei$pImages$fileSuiSM', 'xing': 'p1$P_GuoNei$pImages$fileXingCM'}
     img_upload = open(img_path, 'rb')
     data = {
         '__EVENTTARGET': img_type_dict[img_type],
@@ -580,9 +580,9 @@ def getReportForm(post_day, info):
         'p1$GuoNei': '国内',
         'p1$ddlGuoJia$Value': '-1',
         'p1$ddlGuoJia': '选择国家',
-        'p1$ShiFSH': in_shanghai,
-        'p1$ShiFZX': in_school,
-        'p1$XiaoQu': campus,
+        'p1$P_GuoNei$ShiFSH': in_shanghai,
+        'p1$P_GuoNei$ShiFZX': in_school,
+        'p1$P_GuoNei$XiaoQu': campus,
         'p1$ddlSheng$Value': province,
         'p1$ddlSheng': province,
         'p1$ddlShi$Value': city,
@@ -591,8 +591,8 @@ def getReportForm(post_day, info):
         'p1$ddlXian': county,
         'p1$XiangXDZ': address,
         'p1$ShiFZJ': in_home,
-        'p1$pImages$HFimgSuiSM': sui_code,
-        'p1$pImages$HFimgXingCM': xing_code,
+        'p1$P_GuoNei$pImages$HFimgSuiSM': sui_code,
+        'p1$P_GuoNei$pImages$HFimgXingCM': xing_code,
         'p1$FengXDQDL': '否',
         'p1$TongZWDLH': '否',
         'p1$CengFWH': '否',
