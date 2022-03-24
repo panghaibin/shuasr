@@ -1,23 +1,25 @@
-![shuasr](https://tools.caduo.ml/shuasr-cover.php?v=20220208)
+![shuasr](https://tools.caduo.ml/shuasr-cover.php?v=20220325.3)
 
-> The program now supports automatic generation of **realistic** XingCheng codes and SuiShen codes.
-> 
-> The location information of the XingCheng code comes from the address in the SHU SelfReport system, and the green QR code in the SuiShen code is generated randomly each time.
+本项目可每天自动检测您是否已填报某校的每日一报，如果未填报，则可根据上次信息自动填报，并**提醒您下次不要忘记填报 : )**
+
+![remider](./img/remider.jpg)
+
+***项目仅供学习交流之用，请勿用于其它用途。请遵守当地防疫守则。***
 
 项目地址：<https://github.com/panghaibin/shuasr>
 
 ## 特色
 - 支持在 GitHub Actions 或自建服务器上使用
 
-- 多用户功能，可为多人填报
+- 多用户功能，可为多人提醒
 
-- 支持[多种消息推送接口](#填报结果消息推送介绍)，可将上报结果仅发送给一人
+- 支持[多种消息推送接口](#提醒结果消息推送介绍)，可将上报结果仅发送给一人
 
-- 实现了自动补报功能，填报时自动检测是否需要补报
+- 实现了自动补报功能，提醒时自动检测是否需要补报
 
-- 自动获取最新一次填报信息进行上报，如需修改地址等信息，当天手动重新填报一次，程序下次填报将自动采用
+- 自动获取最新一次填报信息进行提醒，如需修改地址等信息，当天手动重新填报一次，程序下次提醒将自动采用
 
-- 填报时可自动生成 XingCheng 码和 SuiShen 码
+- 提醒时可根据实际情况，自动生成一些原本需要截屏的图片
 
 - 自动阅读所有消息，可通过消息推送接口推送必读消息
 
@@ -27,7 +29,7 @@
 
 ## 使用
 
-### 方法一  使用 GitHub Actions 填报
+### 方法一  使用 GitHub Actions 提醒
 #### i. 开始
 点击本项目右上角的`Star`和`Fork`
 
@@ -46,11 +48,11 @@ Fork 项目后，在自己 Fork 后的项目的页面依次点击 `Settings`-`Se
 
 #### iii. 添加 SEND Secret （可选）
 
-需要在第三方消息推送接口申请 key 后，采用同样的方法配置该 Secret。配置后可在每次 GitHub Actions 执行填报后，将填报结果发送给自己。
+需要在第三方消息推送接口申请 key 后，采用同样的方法配置该 Secret。配置后可在每次 GitHub Actions 执行提醒后，将提醒结果发送给自己。
 
 Secret 的 `Name` 设置为 `SEND` ， `Value` 格式为 `send_api,send_key` ， `send_api` 代表消息推送接口代号， `send_key` 代表消息推送接口密钥。例如： `2,5e58d2264821c69ebcd46c448e7f5fe6` ， `3,123456789:mbpSwrgRCr1iLt4MZRYqq0mlko-MGXMcg@987456321` 等。
 
-对于支持的消息推送接口及其代号查询，可参考 [填报结果消息推送介绍](#填报结果消息推送介绍)。
+对于支持的消息推送接口及其代号查询，可参考 [提醒结果消息推送介绍](#提醒结果消息推送介绍)。
 
 #### iv. 开启 Actions
 如下图所示
@@ -58,9 +60,9 @@ Secret 的 `Name` 设置为 `SEND` ， `Value` 格式为 `send_api,send_key` ，
 ![](./img/gh-4.jpg)
 ![](./img/gh-5.jpg)
 
-此时 Actions 开启成功，为确保能够填报成功，程序将会在 **北京时间 (UTC+8) 每天 6:30 及 12:30** 各执行一次，如需修改填报时间，可在 `.github/workflows/report.yml` 下修改
+此时 Actions 开启成功，为确保能够提醒成功，程序将会在 **北京时间 (UTC+8) 每天 6:30 及 12:30** 各执行一次，如需修改提醒时间，可在 `.github/workflows/report.yml` 下修改
 
-可以点击 `Run workflow` 测试填报一下，确认可以成功填报
+可以点击 `Run workflow` 测试提醒一下，确认可以成功提醒
 
 ![](./img/gh-6.jpg)
 
@@ -76,7 +78,7 @@ Secret 的 `Name` 设置为 `SEND` ， `Value` 格式为 `send_api,send_key` ，
 
 你可以 `Watch` 本项目以确保项目更新时能收到消息
 
-### 方法二  在自己的服务器上填报
+### 方法二  在自己的服务器上提醒
 #### i. 下载/更新
 ```shell
 git clone https://github.com/panghaibin/shuasr.git
@@ -101,7 +103,7 @@ python3 main.py add
 python3 main.py send
 ```
 
-推送API设置可参考 [填报结果消息推送介绍](#填报结果消息推送介绍)
+推送API设置可参考 [提醒结果消息推送介绍](#提醒结果消息推送介绍)
 
 ##### 方法二：手动修改配置文件 
 修改目录下`config.bak.yaml`文件名为`config.yaml`，按照文件所写格式修改填写。
@@ -156,7 +158,7 @@ screen -r shu
 
 即可
 
-## 填报结果消息推送介绍
+## 提醒结果消息推送介绍
 目前支持以下消息推送服务：
 
 | 接口代号 | 名称| 官网 |
@@ -174,7 +176,7 @@ screen -r shu
 ## 抢排名模式介绍
 该模式仅支持在自建服务器上使用。功能默认开启，每天凌晨 1 点前会向系统不断提交当日的日报信息直到提交成功，以提升排名。如需关闭，修改`config.yaml`中的`grab_mode`值为`False`即可。
 
-关闭后每天7:30填报一次。
+关闭后每天7:30提醒一次。
 
 ## 更新日志
 [点击查看](./CHANGELOG.md)
@@ -183,7 +185,7 @@ screen -r shu
 
 本项目在 2020 年初用 PHP 编写 ~~（为了抢排名第一）~~ ，返校后为了帮室友上报把源代码改得面目全非 ~~（传说中的屎山）（又不是不能用）~~ 。寒假离校后受下列开源项目启发，用 Python3 对 PHP 编写的源代码进行了重写重构。
 
-本项目仅供学习交流之用，请勿用于其它用途。请遵守当地防疫守则。
+***本项目仅供学习交流之用，请勿用于其它用途。请遵守当地防疫守则。***
 
 **Take care of yourself, and be well!**
 

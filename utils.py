@@ -472,15 +472,15 @@ def getLatestInfo(session, force_upload=False):
     view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', report_html).group(1)
     view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', report_html).group(1)
 
-    _code = 'odrp1Za3DEU='
-    _img = '/ShowImage.ashx?squrl=oyhA3XzMDCTMwyYAn6kyLt3hxsAoCfpvYGMSocfVfx2RRyKXq9QDVV5cVuq9mN8Mt%2bxyoS93C' \
-           '%2b9qawY41vXjo7H18V%2b08RW%2fWDwSfK2TQ8Qc7ob' \
-           '%2fnXpyYlgzh5aNOE9tpHWs9n7P7dTaa6iBSTv3Yt40C9UuPY0edMplSSzgA4DQn0HMJY3R5GihYy5Hr9PeiSbwSeJ3GOY%3d'
     ans = ['A']
     sui_code = xing_code = None
     sui_img = xing_img = None
 
     if '（校内）' not in in_shanghai or force_upload:
+        _code = 'odrp1Za3DEU='
+        _img = '/ShowImage.ashx?squrl=oyhA3XzMDCTMwyYAn6kyLt3hxsAoCfpvYGMSocfVfx2RRyKXq9QDVV5cVuq9mN8Mt%2bxyoS93C' \
+               '%2b9qawY41vXjo7H18V%2b08RW%2fWDwSfK2TQ8Qc7ob' \
+               '%2fnXpyYlgzh5aNOE9tpHWs9n7P7dTaa6iBSTv3Yt40C9UuPY0edMplSSzgA4DQn0HMJY3R5GihYy5Hr9PeiSbwSeJ3GOY%3d'
         report_line = html2JsLine(report_html)
         require_upload = False
         for i, h in enumerate(report_line):
@@ -722,13 +722,19 @@ def reportSingleUser(session, form):
             print(report_result.text)
         report_times += 1
         if report_times > 5:
-            debug_key = ['__EVENTTARGET', 'p1$pnlDangSZS$DangSZS', 'p1$BaoSRQ', 'p1$ShiFSH', 'p1$ShiFZX', 'p1$ShiFZJ',
-                         'F_TARGET', 'p1$XiaoQu']
-            debug_privacy_key = ['p1$ddlSheng$Value', 'p1$ddlSheng', 'p1$ddlShi$Value', 'p1$ddlShi', 'p1$ddlXian$Value',
-                                 'p1$ddlXian', 'p1$XiangXDZ', 'p1$pImages$HFimgSuiSM', 'p1$pImages$HFimgXingCM']
-            debug_value = dict([(key, form[key]) for key in debug_key])
-            debug_privacy_value = dict([(key, f'***{str(form[key])[-1]}, length: {len(str(form[key]))}')
-                                        for key in debug_privacy_key])
+            debug_key = [
+                '__EVENTTARGET', 'p1$pnlDangSZS$DangSZS', 'p1$BaoSRQ', 'p1$P_GuoNei$ShiFSH', 'p1$P_GuoNei$ShiFZX',
+                'p1$ShiFZJ', 'F_TARGET', 'p1$P_GuoNei$XiaoQu'
+            ]
+            debug_privacy_key = [
+                'p1$ddlSheng$Value', 'p1$ddlSheng', 'p1$ddlShi$Value', 'p1$ddlShi', 'p1$ddlXian$Value', 'p1$ddlXian',
+                'p1$XiangXDZ', 'p1$P_GuoNei$pImages$HFimgSuiSM', 'p1$P_GuoNei$pImages$HFimgXingCM'
+            ]
+            debug_value = dict([(key, form.get(key, None)) for key in debug_key])
+            debug_privacy_value = dict(
+                [(key, f'***{str(form.get(key, None))[-1]}, length: {len(str(form.get(key, None)))}')
+                    for key in debug_privacy_key]
+            )
             debug_value.update(debug_privacy_value)
             print('调试信息：\n', json.dumps(debug_value, ensure_ascii=False, indent=4, sort_keys=True))
             return 0
@@ -794,6 +800,7 @@ def getSendApi(config_path):
 
 def sendMsg(title, desp, api, key):
     text = ''
+    title += '，下次不要忘记填报哦~'
     try:
         if api == 1:
             url = "http://sctapi.ftqq.com/%s.send" % key
@@ -1252,7 +1259,7 @@ def grabRank(username, password, post_day):
 
     while True:
         now = getTime()
-        if (now.hour == 0 and now.minute == 59 and now.second >= 50) or now.hour != 0:
+        if (now.hour == 0 and now.minute == 59 and now.second >= 57) or now.hour != 0:
             try_times = 0
             while True:
                 report_result = session.post(url=url, data=form)
