@@ -29,7 +29,7 @@ jobs:
           if [ -f "./use_ovpn" ]; then echo "use_ovpn=1" >> $GITHUB_ENV; fi
 
       - name: Configure OpenVPN
-        if: ${{ env.use_ovpn == "1" }}
+        if: ${{ env.use_ovpn == 1 }}
         env:
           users: ${{ secrets.USERS }}
         run: |
@@ -39,24 +39,24 @@ jobs:
           touch vpn.log
 
       - name: Connect and Test OpenVPN Connection
-        if: ${{ env.use_ovpn == "1" }}
+        if: ${{ env.use_ovpn == 1 }}
         run: sudo ./ovpn.sh
 
       - name: Report Start With OpenVPN
-        if: ${{ env.use_ovpn == "1" }}
+        if: ${{ env.use_ovpn == 1 }}
         env:
           users: ${{ secrets.USERS }}
           send: ${{ secrets.SEND }}
         run: "python -u main.py gh"
 
       - name: Kill OpenVPN Connection
-        if: ${{ env.use_ovpn == "1" }}
+        if: ${{ env.use_ovpn == 1 }}
         run: |
           sudo chmod 777 vpn.log
           sudo killall openvpn
 
       - name: Upload VPN logs
-        if: ${{ env.use_ovpn == "1" }}
+        if: ${{ env.use_ovpn == 1 }}
         uses: actions/upload-artifact@v2
         with:
           name: VPN logs
