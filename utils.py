@@ -1098,7 +1098,7 @@ def logPrint(string=''):
 
 def sleepCountdown(seconds):
     for i in range(seconds, 0, -5):
-        print("总计休眠%s秒，还剩余%s秒" % (seconds, i))
+        print("休眠剩余%s秒" % i)
         time.sleep(5 if i > 5 else i)
     print("休眠结束")
 
@@ -1111,6 +1111,7 @@ def showIP():
         'SHU IP': 'http://speedtest.shu.edu.cn/backend/getIP.php?isp=true',
     }
 
+    ovpn = False
     for api_name in apis:
         logPrint("%s Info: " % api_name)
         try:
@@ -1118,6 +1119,8 @@ def showIP():
             ip = raw_ip['rawIspInfo']
             if len(ip) == 0:
                 ip = raw_ip
+                if api_name == 'SHU IP':
+                    ovpn = True
             else:
                 _ = ip['ip']
                 ip.update({'ip': _[:int(len(_) / 2)] + '*' * int(len(_) / 2 + 1)})
@@ -1125,6 +1128,7 @@ def showIP():
         except Exception as e:
             print(e)
             print('Get %s Info Fail' % api_name)
+    return ovpn
 
 
 def github():
@@ -1137,10 +1141,11 @@ def github():
         print('确保使用的是英文逗号和分号，且用户密码中也不包含英文逗号或分号')
         raise
     logPrint("GitHub Actions 填报开始，若为第一次使用时间可能较长，请耐心等待......")
-    showIP()
+    ovpn = showIP()
+    logPrint('已接入校内VPN') if ovpn else logPrint('未接入校内VPN')
     updateRiskArea()
     fake_ip = '59.79.' + '.'.join(str(random.randint(0, 255)) for _ in range(2))
-    logPrint('生成的随机IP: %s' % fake_ip)
+    logPrint('生成了随机IP: %s' % fake_ip)
     post_day = getTime().strftime("%Y-%m-%d")
     suc_log = []
     xc_log = []
@@ -1190,12 +1195,16 @@ def github():
         elif report_result == -3:
             xc_log.append(username)
         elif report_result == -4:
-            logPrint('IP地址被限制，将尝试连接校内VPN后再次填报......')
-            print('休眠30s')
-            with open('use_ovpn', 'w') as f:
-                f.write('1')
-            sleepCountdown(30)
-            exit(0)
+            if not os.path.exists('use_ovpn'):
+                logPrint('IP地址被限制，将尝试连接校内VPN后再次填报......')
+                print('休眠30s')
+                with open('use_ovpn', 'w') as f:
+                    f.write('1')
+                sleepCountdown(30)
+                exit(0)
+            else:
+                print('连接校内VPN失败，填报失败') if not ovpn else print('填报失败，失败代码 -4')
+                err_log.append(username)
         else:
             print('填报失败')
             err_log.append(username)
