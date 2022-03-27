@@ -723,7 +723,7 @@ def reportSingleUser(session, form):
         report_result = session.post(url=url, data=form)
         if '提交成功' in report_result.text:
             return 1
-        elif XCM in report_result.text:
+        elif '请上传' in report_result.text and '图片' in report_result.text:
             return -3
         elif 'p1_ctl01_btnReturn' in report_result.text and 'F.alert' not in report_result.text:
             # 表示当前IP被限制
@@ -1111,7 +1111,7 @@ def showIP():
         'SHU IP': 'http://speedtest.shu.edu.cn/backend/getIP.php?isp=true',
     }
 
-    ovpn = False
+    ovpn_connected = False
     for api_name in apis:
         logPrint("%s Info: " % api_name)
         try:
@@ -1120,7 +1120,7 @@ def showIP():
             if len(ip) == 0:
                 ip = raw_ip
                 if api_name == 'SHU IP':
-                    ovpn = True
+                    ovpn_connected = True
             else:
                 _ = ip['ip']
                 ip.update({'ip': _[:int(len(_) / 2)] + '*' * int(len(_) / 2 + 1)})
@@ -1128,7 +1128,7 @@ def showIP():
         except Exception as e:
             print(e)
             print('Get %s Info Fail' % api_name)
-    return ovpn
+    return ovpn_connected
 
 
 def github():
@@ -1141,11 +1141,14 @@ def github():
         print('确保使用的是英文逗号和分号，且用户密码中也不包含英文逗号或分号')
         raise
     logPrint("GitHub Actions 填报开始，若为第一次使用时间可能较长，请耐心等待......")
-    ovpn = showIP()
-    logPrint('已接入校内VPN') if ovpn else logPrint('未接入校内VPN')
     updateRiskArea()
-    fake_ip = '59.79.' + '.'.join(str(random.randint(0, 255)) for _ in range(2))
-    logPrint('生成了随机IP: %s' % fake_ip)
+    ovpn_connected = showIP()
+    logPrint('已接入校内VPN') if ovpn_connected else logPrint('未接入校内VPN')
+    if not ovpn_connected:
+        fake_ip = '59.79.' + '.'.join(str(random.randint(0, 255)) for _ in range(2))
+        print('生成了随机IP: %s' % fake_ip)
+    else:
+        fake_ip = None
     post_day = getTime().strftime("%Y-%m-%d")
     suc_log = []
     xc_log = []
@@ -1165,10 +1168,11 @@ def github():
         session = login(username, password)
         if session:
             print('登录成功')
-            headers = {
-                'X-Forwarded-For': fake_ip,
-            }
-            session.headers.update(headers)
+            if fake_ip is not None:
+                headers = {
+                    'X-Forwarded-For': fake_ip,
+                }
+                session.headers.update(headers)
             read_msg_result = readUnreadMsg(session)
             if read_msg_result['result'] != '':
                 print(read_msg_result['result'])
@@ -1190,23 +1194,23 @@ def github():
             report_result = 0
 
         if report_result == 1:
-            print('填报成功')
+            print('***填报成功')
             suc_log.append(username)
         elif report_result == -3:
             xc_log.append(username)
         elif report_result == -4:
             if not os.path.exists('use_ovpn'):
-                logPrint('IP地址被限制，将尝试连接校内VPN后再次填报......')
-                print('休眠30s')
+                logPrint('IP地址被限制，无法填报。将尝试连接校内VPN后再次填报......')
                 with open('use_ovpn', 'w') as f:
                     f.write('1')
+                print('休眠30s')
                 sleepCountdown(30)
                 exit(0)
             else:
-                print('连接校内VPN失败，填报失败') if not ovpn else print('填报失败，失败代码 -4')
+                print('***连接校内VPN失败，填报失败') if not ovpn_connected else print('***填报失败，失败代码 -4')
                 err_log.append(username)
         else:
-            print('填报失败')
+            print('***填报失败')
             err_log.append(username)
         if i < len(users) - 1:
             print("该用户填报结束，开始休眠90s......")
