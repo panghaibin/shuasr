@@ -81,12 +81,12 @@ def login(username, password, try_once=False):
                     index = session.get(url=default_url)
                     view_times += 1
                     if index.url == default_url:
-                        print('阅读了%s条必读消息' % view_times)
+                        print('已阅读%s条强制消息' % view_times)
                         return session
             elif index.url == notice_url:
                 if cleanIndex(session, index.text, 'read_notice', notice_url, default_url):
                     return session
-            elif 'message.login.passwordError' in post_index.text:
+            elif 'message.login.passwordError' in post_index.text and login_times > 2:
                 print('用户密码错误')
                 return False
             else:
@@ -657,8 +657,15 @@ def readUnreadMsg(session):
     red_count = unread_msg['red_count']
     read_result = ''
     if blue_count + red_count > 0:
+        print('检测到未读消息')
         for i in (unread_msg['blue_url'] + unread_msg['red_url']):
-            session.get(url=i, allow_redirects=False)
+            print('正在阅读第%s条消息' % i)
+            try:
+                session.get(url=i, allow_redirects=False, timeout=10)
+            except Exception as e:
+                print(e)
+                pass
+            time.sleep(1)
         read_result = '阅读了'
         read_result += '%s条非必读消息' % blue_count if blue_count > 0 else ''
         read_result += '，%s条必读消息' % red_count if red_count > 0 else ''
@@ -760,31 +767,39 @@ def reportAllUsers(config_path, logs_path, post_day):
 
     logs_time = getTime().strftime("%Y-%m-%d %H:%M:%S")
     read_msg_results = []
+    logPrint('%s 开始填报所有用户' % logs_time)
     for i, username in enumerate(users):
+        logPrint('开始填报 %s' % username)
         session = login(username, users[username][0])
-        if not session:
-            logs = updateLogs(logs, logs_time, username, -1)
-            time.sleep(60)
-            continue
-        read_msg_result = readUnreadMsg(session)
-        read_msg_result['username'] = username
-        read_msg_results.append(read_msg_result)
+        if session:
+            read_msg_result = readUnreadMsg(session)
+            read_msg_result['username'] = username
+            read_msg_results.append(read_msg_result)
 
-        _info = getLatestInfo(session)
-        unreported_day = getUnreportedDay(session)
-        if len(unreported_day) > 0:
-            print('%s有%s天未填报，开始补报' % (username, len(unreported_day)))
-            _info = getLatestInfo(session, force_upload=True)
-            reportUnreported(session, _info, unreported_day)
-        _form = getReportForm(post_day, _info)
-        report_result = reportSingleUser(session, _form)
-        if report_result != 1:
-            _info = getLatestInfo(session, force_upload=True)
+            _info = getLatestInfo(session)
+            unreported_day = getUnreportedDay(session)
+            if len(unreported_day) > 0:
+                print('%s有%s天未填报，开始补报' % (username, len(unreported_day)))
+                _info = getLatestInfo(session, force_upload=True)
+                reportUnreported(session, _info, unreported_day)
             _form = getReportForm(post_day, _info)
             report_result = reportSingleUser(session, _form)
+            if report_result != 1:
+                _info = getLatestInfo(session, force_upload=True)
+                _form = getReportForm(post_day, _info)
+                report_result = reportSingleUser(session, _form)
+        else:
+            report_result = -1
         logs = updateLogs(logs, logs_time, username, report_result)
+        if report_result == 1:
+            print('填报成功')
+        else:
+            print('填报失败')
         if i < len(users) - 1:
+            print("该用户填报结束，开始休眠60s......")
             time.sleep(60)
+        else:
+            logPrint("所有用户填报结束")
     saveLogs(logs_path, logs)
     sendAllReadMsgResult(read_msg_results, send_msg['api'], send_msg['key'])
     time.sleep(5)
@@ -1072,7 +1087,7 @@ def test(config_path, logs_path):
     return True
 
 
-def gh_print(string=''):
+def logPrint(string=''):
     print()
     print("=" * 15)
     print(string) if string != '' else 0
@@ -1087,7 +1102,7 @@ def showIP():
     }
 
     for api_name in apis:
-        gh_print("%s Info: " % api_name)
+        logPrint("%s Info: " % api_name)
         try:
             raw_ip = requests.get(apis[api_name], timeout=30).json()
             ip = raw_ip['rawIspInfo']
@@ -1103,9 +1118,15 @@ def showIP():
 
 
 def github():
-    users = os.environ['users'].split(';')
-    send = os.environ.get('send', '').split(',')
-    gh_print("GitHub Actions 填报开始，若为第一次使用时间可能较长，请耐心等待......")
+    try:
+        users = os.environ['users'].split(';')
+        send = os.environ.get('send', '').split(',')
+    except Exception as e:
+        print(e)
+        print('获取 GitHub Actions Secrets 变量出错，请尝试重新设置！')
+        print('确保使用的是英文逗号和分号，且用户密码中也不包含英文逗号或分号')
+        raise
+    logPrint("GitHub Actions 填报开始，若为第一次使用时间可能较长，请耐心等待......")
     showIP()
     updateRiskArea()
     post_day = getTime().strftime("%Y-%m-%d")
@@ -1114,8 +1135,15 @@ def github():
     err_log = []
     read_msg_results = []
     for i, user_info in enumerate(users):
-        gh_print("正在为第%s位用户填报......" % (i + 1))
-        username, password = user_info.split(',')
+        logPrint("正在为第%s位用户填报......" % (i + 1))
+        try:
+            username, password = user_info.split(',')
+        except Exception as e:
+            print(e)
+            print('解析用户名和密码失败！')
+            print('确保使用的是英文逗号和分号，且用户密码中也不包含英文逗号或分号')
+            print('注意分号仅在间隔多个用户时才需要使用，USERS变量设置的内容末尾不需要带上分号')
+            continue
         session = login(username, password)
         if session:
             read_msg_result = readUnreadMsg(session)
@@ -1150,7 +1178,7 @@ def github():
             print("该用户填报结束，开始休眠90s......")
             time.sleep(90)
         else:
-            gh_print("所有用户填报结束")
+            logPrint("所有用户填报结束")
 
     title = '每日一报'
     desp = ''
@@ -1171,7 +1199,7 @@ def github():
 
     title += '共%s位' % len(users)
 
-    gh_print()
+    logPrint()
     if len(send) == 2:
         send_api = int(send[0])
         send_key = send[1]
@@ -1291,6 +1319,7 @@ def grabRankUsers(config_path, logs_path, post_day):
 
     temp = {}
 
+    logPrint('开始抢%s排名......' % post_day)
     for i, username in enumerate(users):
         temp[username] = threading.Thread(target=grabRank, args=(username, users[username][0], post_day))
         temp[username].start()
@@ -1308,6 +1337,7 @@ def grabRankUsers(config_path, logs_path, post_day):
     saveLogs(logs_path, logs)
     sendAllReadMsgResult(READ_MSG_RESULTS, send_msg['api'], send_msg['key'])
     time.sleep(5)
+    print('抢%s排名结束' % post_day)
     return True
 
 

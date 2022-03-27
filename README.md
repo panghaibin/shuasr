@@ -2,7 +2,7 @@
 
 本项目可每天自动检测您是否已填报某校的每日一报，如果未填报，则可根据上次信息自动填报，并**提醒您下次不要忘记填报 : )**
 
-![remider](./img/remider.jpg)
+![reminder](./img/reminder.jpg)
 
 ***项目仅供学习交流之用，请勿用于其它用途。请遵守当地防疫守则。***
 
@@ -58,15 +58,26 @@ Secret 的 `Name` 设置为 `SEND` ， `Value` 格式为 `send_api,send_key` ，
 如下图所示
 
 ![](./img/gh-4.jpg)
+
 ![](./img/gh-5.jpg)
 
 此时 Actions 开启成功，为确保能够提醒成功，程序将会在 **北京时间 (UTC+8) 每天 6:30 及 12:30** 各执行一次，如需修改提醒时间，可在 `.github/workflows/report.yml` 下修改
 
-可以点击 `Run workflow` 测试提醒一下，确认可以成功提醒
+可以点击 `Run workflow` 测试提醒一下，确认可以成功提醒。
 
 ![](./img/gh-6.jpg)
 
-#### v. 更新项目
+开启后，刷新页面，可以看到出现一个新的 Workflow ，左侧黄色转圈表示正在执行，点击可查看运行详情。
+
+![](img/gh-8.png)
+
+![](img/gh-9.png)
+
+此时进入到该 Workflow 的日志输出页面，它分为几个步骤依次执行，正常情况下各个步骤都应该是执行无误的。其中 Report Start 的步骤即为本程序开始执行的步骤，可以关注该步骤的执行情况。
+
+![](img/gh-10.png)
+
+#### v. 如何更新本项目
 可以选择安装 GitHub Apps 中的 [Pull App](https://github.com/apps/pull) ，保持你的 Fork 始终最新。
 [![Pull App](https://prod.download/pull-social-svg)](https://github.com/apps/pull)
 
@@ -76,9 +87,16 @@ Secret 的 `Name` 设置为 `SEND` ， `Value` 格式为 `send_api,send_key` ，
 
 ![](./img/gh-7.jpg)
 
-你可以 `Watch` 本项目以确保项目更新时能收到消息
+你可以 `Watch` 本项目以确保项目更新时能收到消息。如果更新不及时，旧的程序很有可能无法继续使用
 
 ### 方法二  在自己的服务器上提醒
+此方法适用于自己有服务器，或者在自己电脑上运行的用户，已经配置好 GitHub Actions 的用户可跳过此部分
+
+<details>
+<summary>
+展开全文
+</summary>
+
 #### i. 下载/更新
 ```shell
 git clone https://github.com/panghaibin/shuasr.git
@@ -115,7 +133,7 @@ python3 main.py send
 python3 -u main.py test
 ```
 
-该命令会将所有用户立即上报一次，如控制台无异常输出且能收到消息推送，说明设置无误。若出现异常报错有可能是健康之路已改版，等待更新或向我提PR。
+该命令会将所有用户立即测试一次，请关注控制台输出。如控制台无异常输出且能收到消息推送，说明设置无误。若出现异常报错有可能是健康之路已改版，等待更新或向我提PR。
 
 运行以下命令，程序将自行检查是否在上报时间内，并自动进行上报
 ```shell
@@ -157,6 +175,7 @@ screen -r shu
 ```
 
 即可
+</details>
 
 ## 提醒结果消息推送介绍
 目前支持以下消息推送服务：
