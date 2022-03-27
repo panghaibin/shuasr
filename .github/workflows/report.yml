@@ -19,7 +19,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Report Start Without OpenVPN
+      - name: Report Without OpenVPN
         if: always()
         env:
           users: ${{ secrets.USERS }}
@@ -42,7 +42,7 @@ jobs:
         if: ${{ env.use_ovpn == 1 }}
         run: sudo ./ovpn.sh
 
-      - name: Report Start With OpenVPN
+      - name: Report With OpenVPN
         if: ${{ env.use_ovpn == 1 }}
         env:
           users: ${{ secrets.USERS }}
