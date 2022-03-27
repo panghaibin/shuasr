@@ -1229,7 +1229,7 @@ def github():
         for username in err_log:
             desp += '用户%s填报失败\n\n' % username
         title += '%s位失败，' % len(err_log)
-        desp += '请尽快查看 GitHub Actions 日志输出确定失败原因'
+        desp += '请尽快查看GitHub Actions日志输出确定失败原因\n\n如因学校网站改版导致的失败，可前往项目主页查看是否已适配更新'
 
     title += '共%s位' % len(users)
 
