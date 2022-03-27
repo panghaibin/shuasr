@@ -1096,6 +1096,13 @@ def logPrint(string=''):
     print(string) if string != '' else 0
 
 
+def sleepCountdown(seconds):
+    for i in range(seconds, 0, -5):
+        print("总计休眠%s秒，还剩余%s秒" % (seconds, i))
+        time.sleep(5 if i > 5 else i)
+    print("休眠结束")
+
+
 def showIP():
     print("开始输出 IP 地址信息......")
     apis = {
@@ -1132,6 +1139,8 @@ def github():
     logPrint("GitHub Actions 填报开始，若为第一次使用时间可能较长，请耐心等待......")
     showIP()
     updateRiskArea()
+    fake_ip = '202.121.' + '.'.join(str(random.randint(0, 255)) for _ in range(2))
+    logPrint('生成的随机IP: %s' % fake_ip)
     post_day = getTime().strftime("%Y-%m-%d")
     suc_log = []
     xc_log = []
@@ -1149,8 +1158,6 @@ def github():
             continue
         session = login(username, password)
         if session:
-            fake_ip = '202.121.' + '.'.join(str(random.randint(0, 255)) for _ in range(2))
-            print('生成的随机IP: %s' % fake_ip)
             headers = {
                 'X-Forwarded-For': fake_ip,
             }
@@ -1185,14 +1192,14 @@ def github():
             print('休眠30s')
             with open('use_ovpn', 'w') as f:
                 f.write('1')
-            time.sleep(30)
+            sleepCountdown(30)
             exit(0)
         else:
             print('填报失败')
             err_log.append(username)
         if i < len(users) - 1:
             print("该用户填报结束，开始休眠90s......")
-            time.sleep(90)
+            sleepCountdown(90)
         else:
             logPrint("所有用户填报结束")
 
