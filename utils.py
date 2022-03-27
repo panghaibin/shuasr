@@ -1146,6 +1146,14 @@ def github():
             continue
         session = login(username, password)
         if session:
+            fake_ip = '59.79.16.5'
+            headers = {
+                'X-Forwarded-For': fake_ip,
+                'HTTP_CLIENT_IP': fake_ip,
+                'HTTP_X_FORWARDED_FOR': fake_ip,
+                'REMOTE_ADDR': fake_ip,
+            }
+            session.headers.update(headers)
             read_msg_result = readUnreadMsg(session)
             if read_msg_result['result'] != '':
                 print(read_msg_result['result'])

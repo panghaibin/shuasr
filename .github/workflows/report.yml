@@ -16,31 +16,31 @@ jobs:
       - run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Configure OpenVPN
-        env:
-          users: ${{ secrets.USERS }}
-        run: |
-          sudo apt update
-          sudo apt-get --assume-yes --no-install-recommends install openvpn
-          python3 ovpn.py
-          touch vpn.log
-      - name: Connect and Test OpenVPN Connection
-        if: always()
-        run: sudo ./ovpn.sh
+#      - name: Configure OpenVPN
+#        env:
+#          users: ${{ secrets.USERS }}
+#        run: |
+#          sudo apt update
+#          sudo apt-get --assume-yes --no-install-recommends install openvpn
+#          python3 ovpn.py
+#          touch vpn.log
+#      - name: Connect and Test OpenVPN Connection
+#        if: always()
+#        run: sudo ./ovpn.sh
       - name: Report Start
         if: always()
         env:
           users: ${{ secrets.USERS }}
           send: ${{ secrets.SEND }}
         run: "python -u main.py gh"
-      - name: Kill OpenVPN Connection
-        if: always()
-        run: |
-          sudo chmod 777 vpn.log
-          sudo killall openvpn
-      - name: Upload VPN logs
-        uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: VPN logs
-          path: vpn.log
+#      - name: Kill OpenVPN Connection
+#        if: always()
+#        run: |
+#          sudo chmod 777 vpn.log
+#          sudo killall openvpn
+#      - name: Upload VPN logs
+#        uses: actions/upload-artifact@v2
+#        if: always()
+#        with:
+#          name: VPN logs
+#          path: vpn.log
