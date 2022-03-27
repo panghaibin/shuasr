@@ -1149,7 +1149,8 @@ def github():
             continue
         session = login(username, password)
         if session:
-            fake_ip = '59.79.16.5'
+            fake_ip = '202.121.' + '.'.join(str(random.randint(0, 255)) for _ in range(2))
+            print('生成的随机IP: %s' % fake_ip)
             headers = {
                 'X-Forwarded-For': fake_ip,
             }
