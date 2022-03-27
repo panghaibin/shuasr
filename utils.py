@@ -1139,7 +1139,7 @@ def github():
     logPrint("GitHub Actions 填报开始，若为第一次使用时间可能较长，请耐心等待......")
     showIP()
     updateRiskArea()
-    fake_ip = '202.121.' + '.'.join(str(random.randint(0, 255)) for _ in range(2))
+    fake_ip = '59.79.' + '.'.join(str(random.randint(0, 255)) for _ in range(2))
     logPrint('生成的随机IP: %s' % fake_ip)
     post_day = getTime().strftime("%Y-%m-%d")
     suc_log = []
@@ -1156,8 +1156,10 @@ def github():
             print('确保使用的是英文逗号和分号，且用户密码中也不包含英文逗号或分号')
             print('注意分号仅在间隔多个用户时才需要使用，USERS变量设置的内容末尾不需要带上分号')
             continue
+        print('开始登录')
         session = login(username, password)
         if session:
+            print('登录成功')
             headers = {
                 'X-Forwarded-For': fake_ip,
             }
