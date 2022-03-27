@@ -1149,14 +1149,11 @@ def github():
             continue
         session = login(username, password)
         if session:
-            fake_ip = '59.79.16.5'
-            headers = {
-                'X-Forwarded-For': fake_ip,
-                # 'HTTP_CLIENT_IP': fake_ip,
-                # 'HTTP_X_FORWARDED_FOR': fake_ip,
-                # 'REMOTE_ADDR': fake_ip,
-            }
-            session.headers.update(headers)
+            # fake_ip = '59.79.16.5'
+            # headers = {
+            #     'X-Forwarded-For': fake_ip,
+            # }
+            # session.headers.update(headers)
             read_msg_result = readUnreadMsg(session)
             if read_msg_result['result'] != '':
                 print(read_msg_result['result'])
@@ -1182,6 +1179,11 @@ def github():
             suc_log.append(username)
         elif report_result == -3:
             xc_log.append(username)
+        elif report_result == -4:
+            print('IP地址被限制，将尝试连接校内VPN后再次填报')
+            with open('use_ovpn', 'w') as f:
+                f.write('1')
+            exit(0)
         else:
             print('填报失败')
             err_log.append(username)
