@@ -658,14 +658,14 @@ def readUnreadMsg(session):
     read_result = ''
     if blue_count + red_count > 0:
         print('检测到未读消息')
-        for i in (unread_msg['blue_url'] + unread_msg['red_url']):
-            print('正在阅读第%s条消息' % i)
+        for i, msg_url in enumerate(unread_msg['blue_url'] + unread_msg['red_url']):
+            print('正在阅读第%s条消息' % (i + 1))
             try:
-                session.get(url=i, allow_redirects=False, timeout=10)
+                session.get(url=msg_url, allow_redirects=False, timeout=10)
             except Exception as e:
                 print(e)
                 pass
-            time.sleep(1)
+            time.sleep(0.5)
         read_result = '阅读了'
         read_result += '%s条非必读消息' % blue_count if blue_count > 0 else ''
         read_result += '，%s条必读消息' % red_count if red_count > 0 else ''
@@ -1106,20 +1106,20 @@ def sleepCountdown(seconds):
 def showIP():
     print("开始输出 IP 地址信息......")
     apis = {
-        'Oversea IP': 'https://de5.backend.librespeed.org/getIP.php?isp=true',
-        'SJTU IP': 'https://mirror.sjtu.edu.cn/speedtest/getIP?isp=true',
-        'SHU IP': 'http://speedtest.shu.edu.cn/backend/getIP.php?isp=true',
+        'Oversea': 'https://de5.backend.librespeed.org/getIP.php?isp=true',
+        'SJTU': 'https://mirror.sjtu.edu.cn/speedtest/getIP?isp=true',
+        'SHU': 'http://speedtest.shu.edu.cn/backend/getIP.php?isp=true',
     }
 
     ovpn_connected = False
     for api_name in apis:
-        logPrint("%s Info: " % api_name)
+        logPrint("%s IP Info: " % api_name)
         try:
             raw_ip = requests.get(apis[api_name], timeout=30).json()
             ip = raw_ip['rawIspInfo']
             if len(ip) == 0:
                 ip = raw_ip
-                if api_name == 'SHU IP':
+                if api_name == 'SHU':
                     ovpn_connected = True
             else:
                 _ = ip['ip']
@@ -1127,7 +1127,7 @@ def showIP():
             print(json.dumps(ip, ensure_ascii=False, indent=4, sort_keys=True))
         except Exception as e:
             print(e)
-            print('Get %s Info Fail' % api_name)
+            print('Get %s IP Info Fail' % api_name)
     return ovpn_connected
 
 
@@ -1140,7 +1140,7 @@ def github():
         print('获取 GitHub Actions Secrets 变量出错，请尝试重新设置！')
         print('确保使用的是英文逗号和分号，且用户密码中也不包含英文逗号或分号')
         raise
-    logPrint("GitHub Actions 填报开始，若为第一次使用时间可能较长，请耐心等待......")
+    logPrint("GitHub Actions 填报开始\n若为第一次使用，耗时可能较长，请耐心等待......")
     updateRiskArea()
     ovpn_connected = showIP()
     logPrint('已接入校内VPN') if ovpn_connected else logPrint('未接入校内VPN')
