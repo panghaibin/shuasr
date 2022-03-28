@@ -346,7 +346,7 @@ def generateSuiImage(name):
     clock_font = ImageFont.truetype('src/NotoSansSC-Regular.otf', 32)
     name_font = ImageFont.truetype('src/NotoSansSC-Bold.otf', 56)
     time1_font = ImageFont.truetype('src/NotoSansSC-Regular.otf', 40)
-    time2_font = ImageFont.truetype('src/NotoSansSC-Regular.otf', 48)
+    time2_font = ImageFont.truetype('src/NotoSansSC-Bold.otf', 48)
 
     name_width, _ = draw.textsize(name, name_font)
     time1_width, time1_height = draw.textsize(time1, time1_font)
