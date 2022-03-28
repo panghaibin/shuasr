@@ -1097,9 +1097,9 @@ def logPrint(string=''):
 
 
 def sleepCountdown(seconds):
-    for i in range(seconds, 0, -5):
+    for i in range(seconds, 0, -10):
         print("休眠剩余%s秒" % i)
-        time.sleep(5 if i > 5 else i)
+        time.sleep(10 if i > 10 else i)
     print("休眠结束")
 
 

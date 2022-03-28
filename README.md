@@ -2,7 +2,9 @@
 
 本项目可每天自动检测您是否已填报某校的每日一报，如果未填报，则可根据上次信息自动填报，并**提醒您下次不要忘记填报 : )**
 
-![reminder](./img/reminder.jpg)
+<p align="center">
+<img alt="reminder" src="./img/reminder.jpg"/>
+</p>
 
 ***项目仅供学习交流之用，请勿用于其它用途。请遵守当地防疫守则。***
 
@@ -15,7 +17,11 @@
 
   - 在 GitHub Actions 上使用时将模拟随机IP，以此暂时绕过IP屏蔽
 
-  - 连接学校 VPN 再填报功能依然保留，若模拟IP方法失效或填报失败，将自动进行连接；支持在连接 VPN 时失败自动重连
+  - 连接学校 VPN 再提醒功能依然保留，作为备用方案。若模拟IP方法失效或提醒失败，将自动进行连接后再次进行提醒
+  
+  - 连接 VPN 时，支持失败自动重连，若失败次数超过3次，将自动退出
+  
+  - 在 GitHub Actions 上使用时，建议[安装 Pull App](#自动更新) 实现自动更新
 
 - 多用户功能，可为多人提醒
 
@@ -79,17 +85,25 @@ Secret 的 `Name` 设置为 `SEND` ， `Value` 格式为 `send_api,send_key` ，
 
 ![](img/gh-9.png)
 
-此时进入到该 Workflow 的日志输出页面，它分为几个步骤依次执行，正常情况下各个步骤都应该是执行无误的。其中 Report Start 的步骤即为本程序开始执行的步骤，可以关注该步骤的执行情况。
+此时进入到该 Workflow 的日志输出页面，它分为几个步骤依次执行，正常情况下各个步骤都应该是执行无误的。各步骤的功能如其名称所示，其中名称带有 Report 的步骤即为本程序开始执行的步骤，可以关注该步骤的执行情况，其执行进度可实时输出查看
 
 ![](img/gh-10.png)
 
 #### v. 如何更新本项目
-可以选择安装 GitHub Apps 中的 [Pull App](https://github.com/apps/pull) ，保持你的 Fork 始终最新。
-[![Pull App](https://prod.download/pull-social-svg)](https://github.com/apps/pull)
+##### 自动更新
+安装 GitHub Apps 中的 [Pull App](https://github.com/apps/pull) ，保持你的 Fork 始终最新
+<p align="center">
+<a href="https://github.com/apps/pull"><img alt="Pull App" height="50%" src="https://prod.download/pull-social-svg" width="50%" /></a>
+</p>
 
-安装时默认会应用到所有项目，建议改为手动按需选择需要应用的项目。注意该 App 会强制覆盖你对 Fork 项目的操作，如果你有改动（例如修改了 `.github/workflows/report.yml` ），请注意备份
+点击打开后进入到 Pull App 的主页，点击右侧的 `Install` 按钮进入安装页面。如下所示，安装时默认会应用到所有项目，可改为仅应用到本项目的 Fork
 
-若不安装，当本项目更新后，你 Fork 的项目并不会自动更新，需要手动 `Fetch and merge` 一下，如下图所示，在你 Fork 后的项目页执行该操作
+![](img/gh-11.jpg)
+
+注意该 App 会强制覆盖你对 Fork 项目的操作，如果你有改动（例如修改了 `.github/workflows/report.yml` ），请注意备份
+
+##### 手动更新
+若不安装 Pull App ，当本项目更新后，你 Fork 的项目并不会自动更新。每次本程序更新后，如下图所示，在你 Fork 后的项目页，需要手动点击 `Fetch and merge` 一下，才能更新
 
 ![](./img/gh-7.jpg)
 

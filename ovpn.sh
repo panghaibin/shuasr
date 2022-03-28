@@ -7,7 +7,7 @@ while true; do
   test_times=0
   while true; do
     if ping -c1 xk.autoisp.shu.edu.cn; then
-      echo "OpenVPN 已成功连接"
+      echo "OpenVPN已成功连接"
       exit 0
     else
       test_times=$((test_times + 1))
@@ -35,8 +35,8 @@ while true; do
     sleep_time=$((RANDOM % 900 + 300))
   fi
   echo "开始休眠 $sleep_time 秒"
-  for ((i = 0; i < sleep_time; i = i + 5)); do
-    echo -ne "休眠中，剩余秒数：$((sleep_time - i))         \r"
-    sleep 5
+  for ((i = 0; i < sleep_time; i = i + 10)); do
+    echo -ne "休眠剩余：$((sleep_time - i))         \r"
+    sleep 10
   done
 done
