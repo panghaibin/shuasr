@@ -86,9 +86,10 @@ def login(username, password, try_once=False):
             elif index.url == notice_url:
                 if cleanIndex(session, index.text, 'read_notice', notice_url, default_url):
                     return session
-            elif 'message.login.passwordError' in post_index.text and login_times > 2:
-                print('用户密码错误')
-                return False
+            elif 'message.login.passwordError' in post_index.text:
+                if login_times > 2:
+                    print('用户密码错误')
+                    return False
             else:
                 print('出现未知错误，历史记录调试信息：')
                 print([u.url for u in index.history] + [index.url])
