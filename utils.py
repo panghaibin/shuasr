@@ -1262,6 +1262,9 @@ def github():
     if err_log or xc_log:
         exit(1)
 
+    if len(suc_log + err_log + xc_log) < len(users):
+        exit(1)
+
 
 def isTimeToReport():
     now = getTime()
