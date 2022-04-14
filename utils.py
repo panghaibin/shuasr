@@ -477,7 +477,7 @@ def getLatestInfo(session, force_upload=False):
     sui_code = xing_code = None
     sui_img = xing_img = None
 
-    if '（校内）' not in in_shanghai or force_upload:
+    if force_upload:
         _code = 'odrp1Za3DEU='
         _img = '/ShowImage.ashx?squrl=oyhA3XzMDCTMwyYAn6kyLt3hxsAoCfpvYGMSocfVfx2RRyKXq9QDVV5cVuq9mN8Mt%2bxyoS93C' \
                '%2b9qawY41vXjo7H18V%2b08RW%2fWDwSfK2TQ8Qc7ob' \
@@ -712,12 +712,14 @@ def reportUnreported(session, info, unreported_day):
     print('补报结束')
 
 
-def reportSingleUser(session, form):
+def reportSingleUser(session, form, try_times=None, sleep_time=None, ignore_maintain=False):
     if not session:
         return -1
     if not form:
         return -2
 
+    try_times = 5 if try_times is None else try_times
+    sleep_time = 5 if sleep_time is None else sleep_time
     url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
     report_times = 0
     while True:
@@ -729,10 +731,11 @@ def reportSingleUser(session, form):
         elif 'p1_ctl01_btnReturn' in report_result.text and 'F.alert' not in report_result.text:
             # 表示当前IP被限制
             return -4
-        else:
-            print(report_result.text)
+        elif '维护' in report_result.text and not ignore_maintain:
+            return -5
         report_times += 1
-        if report_times > 5:
+        # print('填报失败，第%s次尝试' % report_times)
+        if report_times > try_times:
             debug_key = [
                 '__EVENTTARGET', 'p1$pnlDangSZS$DangSZS', 'p1$BaoSRQ', 'p1$P_GuoNei$ShiFSH', 'p1$P_GuoNei$ShiFZX',
                 'p1$ShiFZJ', 'F_TARGET', 'p1$P_GuoNei$XiaoQu'
@@ -744,12 +747,16 @@ def reportSingleUser(session, form):
             debug_value = dict([(key, form.get(key, None)) for key in debug_key])
             debug_privacy_value = dict(
                 [(key, f'***{str(form.get(key, None))[-1]}, length: {len(str(form.get(key, None)))}')
-                    for key in debug_privacy_key]
+                 for key in debug_privacy_key]
             )
             debug_value.update(debug_privacy_value)
             print('调试信息：\n', json.dumps(debug_value, ensure_ascii=False, indent=4, sort_keys=True))
+            print(report_result.text)
             return 0
-        time.sleep(5)
+        if sleep_time == 0:
+            continue
+        else:
+            time.sleep(sleep_time)
 
 
 def getUsers(config_path):
@@ -1306,11 +1313,9 @@ def grabRank(username, password, post_day):
     read_msg_result['username'] = username
     READ_MSG_RESULTS.append(read_msg_result)
 
-    url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
-
     try_times = 0
     while True:
-        _info = getLatestInfo(session, force_upload=True)
+        _info = getLatestInfo(session, force_upload=False)
         form = getReportForm(post_day, _info)
         if form:
             break
@@ -1329,20 +1334,17 @@ def grabRank(username, password, post_day):
 
     while True:
         now = getTime()
-        if (now.hour == 0 and now.minute == 59 and now.second >= 57) or now.hour != 0:
-            try_times = 0
-            while True:
-                report_result = session.post(url=url, data=form)
-                if '提交成功' in report_result.text:
-                    GRAB_LOGS['success'].append(username)
-                    return True
-                # else:
-                #     print(report_result.text)
-                try_times += 1
-                if try_times > 800:
-                    print(report_result.text)
-                    GRAB_LOGS['fail'].append(username)
-                    return False
+        if (now.hour == 0 and now.minute == 59 and now.second >= 56) or now.hour != 0:
+            report_result = reportSingleUser(session, form, try_times=800, sleep_time=0, ignore_maintain=True)
+            if report_result == 1:
+                GRAB_LOGS['success'].append(username)
+                return True
+            else:
+                _info = getLatestInfo(session, force_upload=True)
+                form = getReportForm(post_day, _info)
+                reportSingleUser(session, form)
+                GRAB_LOGS['fail'].append(username)
+                return False
         time.sleep(0.5)
 
 
