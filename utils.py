@@ -199,7 +199,7 @@ def convertAddress(province, city):
 
 
 def fetchRiskArea():
-    api_url = 'https://github.com/panghaibin/RiskLevelAPI/raw/main/Archive/latest.json'
+    api_url = 'https://github.com/panghaibin/RiskLevelAPI/raw/api/latest.json'
     mirrors = [
         '',
         'https://ghproxy.com/',
