@@ -198,33 +198,36 @@ def convertAddress(province, city):
     return province + city
 
 
-def updateRiskArea():
-    try:
-        api_url = base64.b64decode('aHR0cHM6Ly9kaXF1LmdlemhvbmcudmlwL2FwaS5waHA=').decode('utf-8')
-        i = 0
-        while True:
+def fetchRiskArea():
+    api_url = 'https://github.com/panghaibin/RiskLevelAPI/raw/main/Archive/latest.json'
+    mirrors = [
+        '',
+        'https://ghproxy.com/',
+        'https://gh.api.99988866.xyz/',
+    ]
+    for i in range(3 * len(mirrors)):
+        for mirror in mirrors:
+            url = mirror + api_url
             try:
-                result = requests.get(api_url, timeout=30).json()
+                result = requests.get(url, timeout=10).json()
                 if result['code'] == 0:
-                    break
-                else:
-                    i += 1
+                    return result['data']
             except Exception as e:
-                print(e)
-                i += 1
-            if i > 5:
-                print('获取风险地区失败')
-                return False
-        result = result['data']
-        risk_list = []
-        for high in result['highlist']:
-            risk_list.append(high['area_name'].replace(' ', ''))
-        for middle in result['middlelist']:
-            risk_list.append(middle['area_name'].replace(' ', ''))
-        with open('src/risk_area.json', 'w', encoding='utf-8') as f:
-            json.dump(risk_list, f)
-    except Exception as e:
-        print(e)
+                print(url, e)
+    return False
+
+
+def updateRiskArea():
+    result = fetchRiskArea()
+    if result is False:
+        return False
+    risk_list = []
+    for high in result.get('highlist', []):
+        risk_list.append(high['area_name'].replace(' ', ''))
+    for middle in result.get('middlelist', []):
+        risk_list.append(middle['area_name'].replace(' ', ''))
+    with open('src/risk_area.json', 'w', encoding='utf-8') as f:
+        json.dump(risk_list, f)
 
 
 def checkRiskPosition(position):
