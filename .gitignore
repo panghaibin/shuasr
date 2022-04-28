@@ -1,4 +1,6 @@
 # 项目文件
+pcr.yaml
+pcr_result_md5.txt
 config.yaml
 test.py
 src/risk_area.json

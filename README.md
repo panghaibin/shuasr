@@ -13,6 +13,8 @@
 [查看更新日志](./CHANGELOG.md)
 
 ## 特色
+- **[新增]** 核酸检测结果监控功能，核酸结果出具后可及时通知用户，详见 [核酸检测结果监控说明](PCR_Checker.md)
+
 - 支持在 GitHub Actions 或自建服务器上使用
 
   - 在 GitHub Actions 上使用时将模拟随机IP，以此暂时绕过IP屏蔽

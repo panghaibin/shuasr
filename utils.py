@@ -877,6 +877,8 @@ def sendMsg(title, desp, api, key):
             text = requests.post(url, data=body, headers=headers).text
             result = json.loads(text)
             return result['code'] == 200
+        else:
+            return False
 
     except Exception as e:
         print(text)
