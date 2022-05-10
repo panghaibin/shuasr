@@ -18,6 +18,18 @@ else:
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 
+def _sleep():
+    os_sleep = os.getenv('sleep_time', '')
+    os_sleep = 5 if os_sleep == '' else os_sleep
+    if os_sleep == 'random':
+        sleep_time = random.randint(2 * 60, 30 * 60)
+    else:
+        sleep_time = int(os_sleep)
+    logging.info(f'休眠 {sleep_time}s，约{sleep_time // 60}分钟')
+    sleep(sleep_time)
+    logging.info("休眠结束")
+
+
 def compress_img(img_path):
     cps_time = getTime().strftime('%M%S%f')
     new_img_path = img_path.replace('.jpg', f'_{cps_time}_compress.jpg')
@@ -154,6 +166,7 @@ def main():
 
 
 if __name__ == '__main__':
+    _sleep()
     if main():
         exit(0)
     else:
