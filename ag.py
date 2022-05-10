@@ -151,7 +151,7 @@ def upload_Ag_img(username, password):
     if '上传成功' in result:
         title += '上传成功'
         logging.info(title)
-        desp = now + '\n\n' + title
+        desp = f'{now}\n\n{id_num[:-3]}{title}'
         send_result = sendMsg(title, desp, send_api['api'], send_api['key'])
     else:
         title += '上传失败'
@@ -159,7 +159,7 @@ def upload_Ag_img(username, password):
         result = result.split('F.alert')[-1]
         result = result.split('&#39;')[1]
         logging.info(result)
-        desp = now + '\n\n' + title + '\n\n' + result
+        desp = f'{now}\n\n{id_num[:-3]}{title}\n\n{result}'
         send_result = sendMsg(title, desp, send_api['api'], send_api['key'])
     logging.info('消息发送成功') if send_result else logging.info('消息发送失败')
     img.close()
@@ -168,12 +168,15 @@ def upload_Ag_img(username, password):
 
 def main():
     users = getUsers(config)
-    for i, j in enumerate(users.items()):
+    users = [(user, id_num) for user in users for id_num in users[user]]
+    random.shuffle(users)
+    for i, j in enumerate(users):
         username, password = j
-        password = password[0]
         upload_Ag_img(username, password)
         if i < len(users) - 1:
-            sleep(5 * 60)
+            sleep_time = random.randint(5, 10)
+            logging.info(f'休眠{sleep_time}分钟')
+            sleep(sleep_time * 60)
 
 
 if __name__ == '__main__':
