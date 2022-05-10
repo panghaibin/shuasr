@@ -8,9 +8,7 @@ import random
 import logging
 import datetime
 from time import sleep
-from PIL import Image
-from PIL import ImageOps
-from PIL import ImageEnhance
+from PIL import Image, ImageOps, ImageEnhance
 from utils import abs_path, getUsers, login, html2JsLine, jsLine2Json, getTime, sendMsg, getSendApi
 
 if os.path.exists(abs_path + '/ag.yaml'):
