@@ -9,6 +9,7 @@ import logging
 import datetime
 from time import sleep
 from PIL import Image
+from PIL import ImageOps
 from PIL import ImageEnhance
 from utils import abs_path, getUsers, login, html2JsLine, jsLine2Json, getTime, sendMsg, getSendApi
 
@@ -33,6 +34,7 @@ def _sleep():
 
 def compress_img(img_path):
     cur_img = Image.open(img_path)
+    cur_img = ImageOps.exif_transpose(cur_img)
     raw_width, raw_height = cur_img.size
     angle = random.randint(1, 6)
     cur_img = cur_img.rotate(angle, expand=True)
