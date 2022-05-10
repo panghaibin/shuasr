@@ -2,6 +2,7 @@
 import os
 import re
 import json
+import math
 import base64
 import random
 import logging
@@ -32,11 +33,23 @@ def _sleep():
 
 def compress_img(img_path):
     cur_img = Image.open(img_path)
+    raw_width, raw_height = cur_img.size
+    angle = random.randint(1, 6)
+    cur_img = cur_img.rotate(angle, expand=True)
+    new_width, new_height = cur_img.size
+    blank_width = int(math.tan(math.radians(angle)) * raw_height + 10)
+    blank_height = int(math.tan(math.radians(angle)) * raw_width + 10)
+    left = blank_width
+    top = blank_height
+    right = new_width - blank_width
+    bottom = new_height - blank_height
+    cur_img = cur_img.crop((left, top, right, bottom))
+
     width, height = cur_img.size
     crop_width = width * 0.90
     crop_height = height * 0.90
-    left = random.randint(0, width - crop_width)
-    top = random.randint(0, height - crop_height)
+    left = random.randint(0, int(width - crop_width))
+    top = random.randint(0, int(height - crop_height))
     right = left + crop_width
     bottom = top + crop_height
     cur_img = cur_img.crop((left, top, right, bottom))
@@ -51,16 +64,14 @@ def compress_img(img_path):
     target_size = 3 * 1024 * 1024
     quality = 90
     step = 5
-    always_compress = False
 
     cur_img.save(new_img_path)
     cur_img_size = os.path.getsize(new_img_path)
-    while cur_img_size > target_size and quality > 10 or always_compress:
+    while cur_img_size > target_size and quality > 10:
         cur_img.save(new_img_path, quality=quality, optimize=True)
         cur_img = Image.open(new_img_path)
         cur_img_size = os.path.getsize(new_img_path)
         quality -= step
-        always_compress = False
 
     return new_img_path
 
