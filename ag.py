@@ -31,13 +31,6 @@ def _sleep():
 
 
 def compress_img(img_path):
-    cps_time = getTime().strftime('%M%S%f')
-    new_img_path = img_path.replace('.jpg', f'_{cps_time}_compress.jpg')
-    target_size = 3 * 1024 * 1024
-    quality = 90
-    step = 5
-    always_compress = False
-
     cur_img = Image.open(img_path)
     width, height = cur_img.size
     crop_width = width * 0.90
@@ -52,6 +45,13 @@ def compress_img(img_path):
     cur_img = bri_enhancer.enhance(random.randint(8, 12) / 10)
     col_enhancer = ImageEnhance.Color(cur_img)
     cur_img = col_enhancer.enhance(random.randint(9, 11) / 10)
+
+    cps_time = getTime().strftime('%M%S%f')
+    new_img_path = img_path.replace('.jpg', f'_{cps_time}_compress.jpg')
+    target_size = 3 * 1024 * 1024
+    quality = 90
+    step = 5
+    always_compress = False
 
     cur_img.save(new_img_path)
     cur_img_size = os.path.getsize(new_img_path)
@@ -138,16 +138,16 @@ def upload_Ag_img(username, password):
     title = f'{id_num[-3:]}的第{test_times}次结果'
     now = t.strftime('%Y-%m-%d %H:%M:%S')
     if '上传成功' in result:
-        logging.info(f'{id_num[-3:]}上传成功')
         title += '上传成功'
+        logging.info(title)
         desp = now + '\n\n' + title
         send_result = sendMsg(title, desp, send_api['api'], send_api['key'])
     else:
-        logging.info(f'{id_num[-3:]}上传失败')
+        title += '上传失败'
+        logging.info(title)
         result = result.split('F.alert')[-1]
         result = result.split('&#39;')[1]
         logging.info(result)
-        title += '上传失败'
         desp = now + '\n\n' + title + '\n\n' + result
         send_result = sendMsg(title, desp, send_api['api'], send_api['key'])
     logging.info('消息发送成功') if send_result else logging.info('消息发送失败')
