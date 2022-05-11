@@ -157,7 +157,14 @@ def upload_Ag_img(username, password):
         'p1$P_Upload$FileHeSJCBG': (f'{id_num}.jpg', img, 'image/jpeg', {'Content-Type': 'image/jpeg'}),
     }
     ag_upload = 'https://selfreport.shu.edu.cn/HSJC/HeSJCSelfUploads.aspx'
-    result = session.post(url=ag_upload, data=report_form, files=file).text
+
+    upload_times = 0
+    while True:
+        sleep(5)
+        result = session.post(url=ag_upload, data=report_form, files=file).text
+        upload_times += 1
+        if '上传成功' in result or upload_times >= 2:
+            break
 
     send_api = getSendApi(config)
     title = f'{id_num[-3:]}的第{test_times}次结果'
