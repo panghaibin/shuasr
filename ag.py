@@ -166,7 +166,7 @@ def upload_Ag_img(username, password):
         sleep(5)
         result = session.post(url=ag_upload, data=report_form, files=file).text
         upload_times += 1
-        if '上传成功' in result or test_date_check in result or upload_times >= 2:
+        if '上传成功' in result or test_date_check in result or '更新失败' in result or upload_times >= 2:
             break
         logging.info(result)
 
@@ -175,17 +175,18 @@ def upload_Ag_img(username, password):
     now = t.strftime('%Y-%m-%d %H:%M:%S')
     if '上传成功' in result or test_date_check in result:
         title += '上传成功'
-        logging.info(title)
         desp = f'{now}\n\n{id_num[:-3]}{title}'
-        send_result = sendMsg(title, desp, send_api['api'], send_api['key'])
+    elif '更新失败' in result:
+        title += '已上传过'
+        desp = f'{now}\n\n{id_num[:-3]}{title}'
     else:
         title += '上传失败'
-        logging.info(title)
         logging.info(result)
         result = result.split('F.alert')[-1]
         result = result.split('&#39;')[1]
         desp = f'{now}\n\n{id_num[:-3]}{title}\n\n{result}'
-        send_result = sendMsg(title, desp, send_api['api'], send_api['key'])
+    logging.info(title)
+    send_result = sendMsg(title, desp, send_api['api'], send_api['key'])
     logging.info('消息发送成功') if send_result else logging.info('消息发送失败')
     img.close()
     os.remove(img_path)
@@ -199,7 +200,7 @@ def main():
         username, password = j
         upload_Ag_img(username, password)
         if i < len(users) - 1:
-            sleep_time = 5 if os.getenv('sleep_time', '') == '' else random.randint(5, 10)
+            sleep_time = random.randint(5, 10)
             logging.info(f'休眠{sleep_time}分钟')
             sleep(sleep_time * 60)
 
