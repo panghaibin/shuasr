@@ -92,8 +92,10 @@ def upload_Ag_img(username, password):
     view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', ag_html).group(1)
 
     notice_url = 'https://selfreport.shu.edu.cn/HSJC/kydaynotice.aspx'
+    notice_html = session.get(url=notice_url).text
+    notice_event_target = re.search(r'Submit\',name:\'(.*?)\',disabled:true', notice_html).group(1)
     notice_form = {
-        '__EVENTTARGET': 'p1$ctl01$btnSubmit',
+        '__EVENTTARGET': notice_event_target,
         '__EVENTARGUMENT': '',
         '__VIEWSTATE': view_state,
         '__VIEWSTATEGENERATOR': view_state_generator,
@@ -102,11 +104,12 @@ def upload_Ag_img(username, password):
         'p1_Collapsed': 'false',
         'F_STATE': 'eyJwMV9jdGwwMCI6eyJJRnJhbWVBdHRyaWJ1dGVzIjp7fX0sInAxIjp7IklGcmFtZUF0dHJpYnV0ZXMiOnt9fX0=',
     }
-    session.post(url=notice_url, data=notice_form)
+    notice_result = session.post(url=notice_url, data=notice_form).text
 
     t = getTime()
     t -= datetime.timedelta(minutes=2)
     test_date = t.strftime('%Y-%m-%d %H:%M')
+    test_date_check = f'{t.year}/{t.month}/{t.day} {t.hour}:{t.minute}'
     test_times = "1" if getTime().hour < 12 else "2"
 
     id_num = username
@@ -163,13 +166,14 @@ def upload_Ag_img(username, password):
         sleep(5)
         result = session.post(url=ag_upload, data=report_form, files=file).text
         upload_times += 1
-        if '上传成功' in result or upload_times >= 2:
+        if '上传成功' in result or test_date_check in result or upload_times >= 2:
             break
+        logging.info(result)
 
     send_api = getSendApi(config)
     title = f'{id_num[-3:]}的第{test_times}次结果'
     now = t.strftime('%Y-%m-%d %H:%M:%S')
-    if '上传成功' in result:
+    if '上传成功' in result or test_date_check in result:
         title += '上传成功'
         logging.info(title)
         desp = f'{now}\n\n{id_num[:-3]}{title}'
