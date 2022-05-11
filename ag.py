@@ -76,6 +76,26 @@ def compress_img(img_path):
     return new_img_path
 
 
+def read_notice(session, notice_url, view_state, view_state_generator):
+    notice_html = session.get(url=notice_url).text
+    notice_event_target = re.search(r'Submit\',name:\'(.*?)\',disabled:true', notice_html).group(1)
+    notice_form = {
+        '__EVENTTARGET': notice_event_target,
+        '__EVENTARGUMENT': '',
+        '__VIEWSTATE': view_state,
+        '__VIEWSTATEGENERATOR': view_state_generator,
+        'F_TARGET': 'p1_ctl01_btnSubmit',
+        'p1_ctl00_Collapsed': 'false',
+        'p1_Collapsed': 'false',
+        'F_STATE': 'eyJwMV9jdGwwMCI6eyJJRnJhbWVBdHRyaWJ1dGVzIjp7fX0sInAxIjp7IklGcmFtZUF0dHJpYnV0ZXMiOnt9fX0=',
+    }
+    notice_result = session.post(url=notice_url, data=notice_form)
+    if 'HeSJCSelfUploads.aspx' in notice_result.url:
+        return True
+    else:
+        return False
+
+
 def upload_Ag_img(username, password):
     session = login(username, password)
     if not session:
@@ -90,27 +110,11 @@ def upload_Ag_img(username, password):
     even_target = 'p1$P_Upload$btnUploadImage'
     view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', ag_html).group(1)
     view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', ag_html).group(1)
-
-    notice_url = 'https://selfreport.shu.edu.cn/HSJC/kydaynotice.aspx'
-    notice_html = session.get(url=notice_url).text
-    notice_event_target = re.search(r'Submit\',name:\'(.*?)\',disabled:true', notice_html).group(1)
-    notice_form = {
-        '__EVENTTARGET': notice_event_target,
-        '__EVENTARGUMENT': '',
-        '__VIEWSTATE': view_state,
-        '__VIEWSTATEGENERATOR': view_state_generator,
-        'F_TARGET': 'p1_ctl01_btnSubmit',
-        'p1_ctl00_Collapsed': 'false',
-        'p1_Collapsed': 'false',
-        'F_STATE': 'eyJwMV9jdGwwMCI6eyJJRnJhbWVBdHRyaWJ1dGVzIjp7fX0sInAxIjp7IklGcmFtZUF0dHJpYnV0ZXMiOnt9fX0=',
-    }
-    notice_result = session.post(url=notice_url, data=notice_form).text
-
     t = getTime()
     t -= datetime.timedelta(minutes=2)
     test_date = t.strftime('%Y-%m-%d %H:%M')
-    test_date_check = f'{t.year}/{t.month}/{t.day} {t.hour}:{t.minute}'
     test_times = "1" if getTime().hour < 12 else "2"
+    test_check = f'当天第{test_times}次({t.year}/{t.month}/{t.day}'
 
     id_num = username
     name = ""
@@ -166,14 +170,17 @@ def upload_Ag_img(username, password):
         sleep(5)
         result = session.post(url=ag_upload, data=report_form, files=file).text
         upload_times += 1
-        if '上传成功' in result or test_date_check in result or '更新失败' in result or upload_times >= 2:
+        if '上传成功' in result or test_check in result or '更新失败' in result or upload_times >= 3:
             break
+        elif '.aspx' in result.split('&#39;')[1]:
+            notice_url = 'https://selfreport.shu.edu.cn' + result.split('&#39;')[1]
+            read_notice(session, notice_url, view_state, view_state_generator)
         logging.info(result)
 
     send_api = getSendApi(config)
     title = f'{id_num[-3:]}的第{test_times}次结果'
     now = t.strftime('%Y-%m-%d %H:%M:%S')
-    if '上传成功' in result or test_date_check in result:
+    if '上传成功' in result or test_check in result:
         title += '上传成功'
         desp = f'{now}\n\n{id_num[:-3]}{title}'
     elif '更新失败' in result:
