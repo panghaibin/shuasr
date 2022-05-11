@@ -90,6 +90,20 @@ def upload_Ag_img(username, password):
     even_target = 'p1$P_Upload$btnUploadImage'
     view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', ag_html).group(1)
     view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', ag_html).group(1)
+
+    notice_url = 'https://selfreport.shu.edu.cn/HSJC/kydaynotice.aspx'
+    notice_form = {
+        '__EVENTTARGET': 'p1$ctl01$btnSubmit',
+        '__EVENTARGUMENT': '',
+        '__VIEWSTATE': view_state,
+        '__VIEWSTATEGENERATOR': view_state_generator,
+        'F_TARGET': 'p1_ctl01_btnSubmit',
+        'p1_ctl00_Collapsed': 'false',
+        'p1_Collapsed': 'false',
+        'F_STATE': 'eyJwMV9jdGwwMCI6eyJJRnJhbWVBdHRyaWJ1dGVzIjp7fX0sInAxIjp7IklGcmFtZUF0dHJpYnV0ZXMiOnt9fX0=',
+    }
+    session.post(url=notice_url, data=notice_form)
+
     t = getTime()
     t -= datetime.timedelta(minutes=2)
     test_date = t.strftime('%Y-%m-%d %H:%M')
