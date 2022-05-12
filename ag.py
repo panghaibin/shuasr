@@ -80,6 +80,20 @@ def compress_img(img_path):
     return new_img_path
 
 
+def archive_img(id_num, img_name, uploaded_img_path):
+    archive_path = f'{abs_path}/ag_archive'
+    if not os.path.exists(archive_path):
+        os.mkdir(archive_path)
+    archive_id_path = f'{archive_path}/{id_num}'
+    if not os.path.exists(archive_id_path):
+        os.mkdir(archive_id_path)
+    new_img_path = f'{archive_id_path}/{img_name}'
+    with open(uploaded_img_path, 'rb') as f:
+        img_data = f.read()
+    with open(new_img_path, 'wb') as f:
+        f.write(img_data)
+
+
 def read_notice(session, notice_url, view_state, view_state_generator):
     notice_html = session.get(url=notice_url).text
     notice_event_target = re.search(r'Submit\',name:\'(.*?)\',disabled:true', notice_html).group(1)
@@ -122,6 +136,7 @@ def upload_Ag_img(username, password):
     test_date = t.strftime('%Y-%m-%d %H:%M')
     test_times = "1" if getTime().hour < 12 else "2"
     test_check = f'当天第{test_times}次({t.year}/{t.month}/{t.day}'
+    archive_img_name = f'IMG_{t.strftime("%Y%m%d_%H%M%S")}.jpg'
 
     id_num = username
     name = ""
@@ -168,7 +183,7 @@ def upload_Ag_img(username, password):
     img_path = compress_img(img_path)
     img = open(img_path, 'rb')
     file = {
-        'p1$P_Upload$FileHeSJCBG': (f'{id_num}.jpg', img, 'image/jpeg', {'Content-Type': 'image/jpeg'}),
+        'p1$P_Upload$FileHeSJCBG': (archive_img_name, img, 'image/jpeg', {'Content-Type': 'image/jpeg'}),
     }
     ag_upload = 'https://selfreport.shu.edu.cn/HSJC/HeSJCSelfUploads.aspx'
 
@@ -183,12 +198,14 @@ def upload_Ag_img(username, password):
             notice_url = 'https://selfreport.shu.edu.cn' + result.split('&#39;')[1]
             read_notice(session, notice_url, view_state, view_state_generator)
         logging.info(result)
+    img.close()
 
     title = f'{id_num}的第{test_times}次结果'
     now = t.strftime('%Y-%m-%d %H:%M:%S')
     if '上传成功' in result or test_check in result:
         title += '上传成功'
         SUCCESS.append(f'{now}\n\n{title}')
+        archive_img(id_num, archive_img_name, img_path)
     elif '更新失败' in result:
         title += '已上传过'
         UPLOADED.append(f'{now}\n\n{title}')
@@ -199,7 +216,6 @@ def upload_Ag_img(username, password):
         result = result.split('&#39;')[1]
         FAIL.append(f'{now}\n\n{title}\n\n{result}')
     logging.info(title)
-    img.close()
     os.remove(img_path)
 
 
