@@ -11,6 +11,10 @@ from time import sleep
 from PIL import Image, ImageOps, ImageEnhance
 from utils import abs_path, getUsers, login, html2JsLine, jsLine2Json, getTime, sendMsg, getSendApi
 
+SUCCESS = []
+UPLOADED = []
+FAIL = []
+
 if os.path.exists(abs_path + '/ag.yaml'):
     config = abs_path + '/ag.yaml'
 else:
@@ -97,6 +101,9 @@ def read_notice(session, notice_url, view_state, view_state_generator):
 
 
 def upload_Ag_img(username, password):
+    global SUCCESS
+    global FAIL
+    global UPLOADED
     session = login(username, password)
     if not session:
         logging.info('登录失败')
@@ -177,24 +184,21 @@ def upload_Ag_img(username, password):
             read_notice(session, notice_url, view_state, view_state_generator)
         logging.info(result)
 
-    send_api = getSendApi(config)
-    title = f'{id_num[-3:]}的第{test_times}次结果'
+    title = f'{id_num}的第{test_times}次结果'
     now = t.strftime('%Y-%m-%d %H:%M:%S')
     if '上传成功' in result or test_check in result:
         title += '上传成功'
-        desp = f'{now}\n\n{id_num[:-3]}{title}'
+        SUCCESS.append(f'{now}\n\n{title}')
     elif '更新失败' in result:
         title += '已上传过'
-        desp = f'{now}\n\n{id_num[:-3]}{title}'
+        UPLOADED.append(f'{now}\n\n{title}')
     else:
         title += '上传失败'
         logging.info(result)
         result = result.split('F.alert')[-1]
         result = result.split('&#39;')[1]
-        desp = f'{now}\n\n{id_num[:-3]}{title}\n\n{result}'
+        FAIL.append(f'{now}\n\n{title}\n\n{result}')
     logging.info(title)
-    send_result = sendMsg(title, desp, send_api['api'], send_api['key'])
-    logging.info('消息发送成功') if send_result else logging.info('消息发送失败')
     img.close()
     os.remove(img_path)
 
@@ -210,6 +214,12 @@ def main():
             sleep_time = random.randint(5, 10)
             logging.info(f'休眠{sleep_time}分钟')
             sleep(sleep_time * 60)
+
+    send_api = getSendApi(config)
+    title = f'{len(SUCCESS)}个成功，{len(UPLOADED)}个已上传过，{len(FAIL)}个失败'
+    desp = '\n\n'.join(SUCCESS) + '\n\n' + '\n\n'.join(UPLOADED) + '\n\n' + '\n\n'.join(FAIL)
+    send_result = sendMsg(title, desp, send_api['api'], send_api['key'])
+    logging.info('消息发送成功') if send_result else logging.info('消息发送失败')
 
 
 if __name__ == '__main__':
