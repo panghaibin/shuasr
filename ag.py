@@ -83,16 +83,15 @@ class AgUpload:
         self.session = None
         self._login()
         self.id_num = username
+
         self.img_path = None
         self.archive_img_name = None
         self.img = None
 
-        self.report_even_target = None
         self.view_state = None
         self.view_state_generator = None
         self.t = getTime()
         self.t -= datetime.timedelta(minutes=2)
-        self.test_date = None
         self.test_times = None
         self.test_check = None
         self.report_form = None
@@ -141,13 +140,13 @@ class AgUpload:
         ag_url = 'https://selfreport.shu.edu.cn/HSJC/HeSJCSelfUploads.aspx'
         ag_html = self.session.get(url=ag_url).text
 
-        self.report_even_target = 'p1$P_Upload$btnUploadImage'
+        report_even_target = 'p1$P_Upload$btnUploadImage'
         self.view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', ag_html).group(1)
         self.view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', ag_html).group(1)
         t = getTime()
         t -= datetime.timedelta(minutes=2)
         self.t = t
-        self.test_date = t.strftime('%Y-%m-%d %H:%M')
+        test_date = t.strftime('%Y-%m-%d %H:%M')
         self.test_times = "1" if getTime().hour < 12 else "2"
         self.test_check = f'当天第{self.test_times}次({t.year}/{t.month}/{t.day}'
         self.archive_img_name = f'IMG_{t.strftime("%Y%m%d_%H%M%S")}.jpg'
@@ -163,12 +162,12 @@ class AgUpload:
         ag_json = json.loads(base64.b64decode(ag_b64str).decode('utf-8'))
         ag_json['p1_GongHao']['Text'] = self.id_num
         ag_json['p1_XingMing']['Text'] = name
-        ag_json['p1_P_Upload_HeSJCRQ']['Text'] = self.test_date
+        ag_json['p1_P_Upload_HeSJCRQ']['Text'] = test_date
         ag_json['p1_P_Upload_CiShu']['SelectedValue'] = self.test_times
         fstate = base64.b64encode(json.dumps(ag_json, ensure_ascii=False).encode("utf-8")).decode("utf-8")
 
         self.report_form = {
-            '__EVENTTARGET': self.report_even_target,
+            '__EVENTTARGET': report_even_target,
             '__EVENTARGUMENT': '',
             '__VIEWSTATE': self.view_state,
             '__VIEWSTATEGENERATOR': self.view_state_generator,
@@ -176,7 +175,7 @@ class AgUpload:
             'p1$P_Upload$ShenTZK': b'\xe5\x90\xa6'.decode(),
             'p1$P_Upload$JianCLX': b'\xe6\x8a\x97\xe5\x8e\x9f'.decode(),
             'p1$P_Upload$CaiYFS': b'\xe9\xbc\xbb\xe8\x85\x94\xe6\x8b\xad\xe5\xad\x90'.decode(),
-            'p1$P_Upload$HeSJCRQ': self.test_date,
+            'p1$P_Upload$HeSJCRQ': test_date,
             'p1$P_Upload$CiShu': self.test_times,
             'p1$P_Upload$JianCJG': b'\xe9\x98\xb4\xe6\x80\xa7'.decode(),
             'p1_P_Upload_ctl00_Collapsed': 'false',
