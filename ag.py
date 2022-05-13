@@ -120,7 +120,7 @@ class AgUpload:
             img_data = f.read()
         with open(new_img_path, 'wb') as f:
             f.write(img_data)
-    
+
     def read_notice(self, notice_url):
         notice_html = self.session.get(url=notice_url).text
         notice_event_target = re.search(r'Submit\',name:\'(.*?)\',disabled:true', notice_html).group(1)
@@ -139,11 +139,11 @@ class AgUpload:
             return True
         else:
             return False
-    
+
     def get_report_form(self):
         ag_url = 'https://selfreport.shu.edu.cn/HSJC/HeSJCSelfUploads.aspx'
         ag_html = self.session.get(url=ag_url).text
-    
+
         self.report_even_target = 'p1$P_Upload$btnUploadImage'
         self.view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', ag_html).group(1)
         self.view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', ag_html).group(1)
@@ -154,14 +154,14 @@ class AgUpload:
         self.test_times = "1" if getTime().hour < 12 else "2"
         self.test_check = f'当天第{self.test_times}次({t.year}/{t.month}/{t.day}'
         self.archive_img_name = f'IMG_{t.strftime("%Y%m%d_%H%M%S")}.jpg'
-    
+
         name = ""
         ag_line = html2JsLine(ag_html)
         for i, line in enumerate(ag_line):
             if 'p1_XingMing' in line:
                 name = jsLine2Json(ag_line[i - 1])['Text']
                 break
-    
+
         ag_b64str = 'eyJwMV9Hb25nSGFvIjogeyJUZXh0IjogIiJ9LCAicDFfWGluZ01pbmciOiB7IlRleHQiOiAiIn0sICJwMV9QX1VwbG9hZF9DaGVuZ051byI6IHsiQ2hlY2tlZCI6IHRydWV9LCAicDFfUF9VcGxvYWRfY3RsMDAiOiB7IklGcmFtZUF0dHJpYnV0ZXMiOiB7fX0sICJwMV9QX1VwbG9hZF9TaGVuVFpLIjogeyJGX0l0ZW1zIjogW1si5ZCmIiwgIjxzcGFuIHN0eWxlPSdjb2xvcjpncmVlbic+5peg5Lul5LiK55eH54q2KE5vKTwvc3Bhbj4iLCAxXSwgWyLmmK8iLCAiPHNwYW4gc3R5bGU9J2NvbG9yOnJlZCc+5pyJ5Lul5LiK55eH54q25LmL5LiAKFllcyk8L3NwYW4+IiwgMV1dLCAiU2VsZWN0ZWRWYWx1ZSI6ICLlkKYifSwgInAxX1BfVXBsb2FkX0ppYW5DTFgiOiB7IkZfSXRlbXMiOiBbWyLmipfljp8iLCAiPHNwYW4gc3R5bGU9J2ZvbnQtd2VpZ2h0OmJvbGRlcjsnPuaKl+WOnyhBbnRpZ2VuIFRlc3QpPC9zcGFuPiIsIDFdLCBbIuaguOmFuCIsICLmoLjphbgoTnVjbGVpYyBBY2lkIFRlc3QpIiwgMV1dLCAiU2VsZWN0ZWRWYWx1ZSI6ICLmipfljp8ifSwgInAxX1BfVXBsb2FkX0NhaVlGUyI6IHsiRl9JdGVtcyI6IFtbIum8u+iFlOaLreWtkCIsICLpvLvohZTmi63lrZAoTm9zZSkiLCAxXSwgWyLpvLvlkr3mi63lrZAiLCAi6by75ZK95out5a2QKE5vc2UrVGhyb2F0KSIsIDFdLCBbIuWPo+iFlOaLreWtkCIsICLlj6PohZTmi63lrZAoVGhyb2F0KSIsIDFdXSwgIlNlbGVjdGVkVmFsdWUiOiAi6by76IWU5out5a2QIn0sICJwMV9QX1VwbG9hZF9IZVNKQ1JRIjogeyJUZXh0IjogIiJ9LCAicDFfUF9VcGxvYWRfQ2lTaHUiOiB7IkZfSXRlbXMiOiBbWyIxIiwgIuesrDHmrKEoRmlyc3QpIiwgMV0sIFsiMiIsICLnrKwy5qyhKFNlY29uZCkiLCAxXSwgWyIzIiwgIuesrDPmrKEoVGhpcmQpIiwgMV1dLCAiU2VsZWN0ZWRWYWx1ZSI6ICIxIn0sICJwMV9QX1VwbG9hZF9KaWFuQ0pHIjogeyJGX0l0ZW1zIjogW1si6Zi05oCnIiwgIjxzcGFuIHN0eWxlPSdjb2xvcjpncmVlbic+6Zi05oCnKE5lZ2F0aXZlKTwvc3Bhbj4iLCAxXSwgWyLpmLPmgKciLCAiPHNwYW4gc3R5bGU9J2NvbG9yOnJlZCc+6Ziz5oCnKFBvc2l0aXZlKTwvc3Bhbj4iLCAxXSwgWyLml6DmlYgiLCAi5peg5pWIKEludmFsaWQpIiwgMV0sIFsi5pqC5peg57uT5p6cIiwgIuaaguaXoOe7k+aenChObyBSZXN1bHQpIiwgMV1dLCAiU2VsZWN0ZWRWYWx1ZSI6ICLpmLTmgKcifSwgInAxX1BfVXBsb2FkIjogeyJJRnJhbWVBdHRyaWJ1dGVzIjoge319LCAicDFfR3JpZERhdGEiOiB7IlJlY29yZENvdW50IjogMCwgIkZfUm93cyI6IFtdLCAiSUZyYW1lQXR0cmlidXRlcyI6IHt9fSwgInAxIjogeyJJRnJhbWVBdHRyaWJ1dGVzIjoge319LCAiV19TaG93UGljIjogeyJJRnJhbWVBdHRyaWJ1dGVzIjoge319fQ=='
         ag_json = json.loads(base64.b64decode(ag_b64str).decode('utf-8'))
         ag_json['p1_GongHao']['Text'] = self.id_num
@@ -169,7 +169,7 @@ class AgUpload:
         ag_json['p1_P_Upload_HeSJCRQ']['Text'] = self.test_date
         ag_json['p1_P_Upload_CiShu']['SelectedValue'] = self.test_times
         fstate = base64.b64encode(json.dumps(ag_json, ensure_ascii=False).encode("utf-8")).decode("utf-8")
-    
+
         self.report_form = {
             '__EVENTTARGET': self.report_even_target,
             '__EVENTARGUMENT': '',
@@ -204,16 +204,16 @@ class AgUpload:
             'p1$P_Upload$FileHeSJCBG': (self.archive_img_name, self.img, 'image/jpeg', {'Content-Type': 'image/jpeg'}),
         }
         self.img_path = img_path
-    
+
     def upload_Ag_img(self):
         global SUCCESS
         global FAIL
         global UPLOADED
-    
+
         self.get_report_form()
         self.get_img_file()
         ag_upload = 'https://selfreport.shu.edu.cn/HSJC/HeSJCSelfUploads.aspx'
-    
+
         upload_times = 0
         while True:
             sleep(5)
@@ -231,7 +231,7 @@ class AgUpload:
             self.get_img_file()
 
         self.img.close()
-    
+
         title = f'{self.id_num}的第{self.test_times}次结果'
         now = self.t.strftime('%Y-%m-%d %H:%M:%S')
         if '上传成功' in result or self.test_check in result:
