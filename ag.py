@@ -11,10 +11,6 @@ from time import sleep
 from PIL import Image, ImageOps, ImageEnhance
 from utils import abs_path, getUsers, login, html2JsLine, jsLine2Json, getTime, sendMsg, getSendApi
 
-SUCCESS = []
-UPLOADED = []
-FAIL = []
-
 if os.path.exists(abs_path + '/ag.yaml'):
     config = abs_path + '/ag.yaml'
 else:
@@ -85,7 +81,7 @@ class AgUpload:
         self.username = username
         self.password = password
         self.session = None
-        self.login()
+        self._login()
         self.id_num = username
         self.img_path = None
         self.archive_img_name = None
@@ -94,21 +90,22 @@ class AgUpload:
         self.report_even_target = None
         self.view_state = None
         self.view_state_generator = None
-        self.t = None
+        self.t = getTime()
+        self.t -= datetime.timedelta(minutes=2)
         self.test_date = None
         self.test_times = None
         self.test_check = None
         self.report_form = None
         self.file_form = None
 
-    def login(self):
+    def _login(self):
         self.session = login(self.username, self.password)
         if not self.session:
             logging.error(f'登录失败，用户名：{self.username}')
             return False
         return True
 
-    def archive_img(self):
+    def _archive_img(self):
         archive_path = f'{abs_path}/ag_archive'
         if not os.path.exists(archive_path):
             os.mkdir(archive_path)
@@ -121,7 +118,7 @@ class AgUpload:
         with open(new_img_path, 'wb') as f:
             f.write(img_data)
 
-    def read_notice(self, notice_url):
+    def _read_notice(self, notice_url):
         notice_html = self.session.get(url=notice_url).text
         notice_event_target = re.search(r'Submit\',name:\'(.*?)\',disabled:true', notice_html).group(1)
         notice_form = {
@@ -140,7 +137,7 @@ class AgUpload:
         else:
             return False
 
-    def get_report_form(self):
+    def _get_report_form(self):
         ag_url = 'https://selfreport.shu.edu.cn/HSJC/HeSJCSelfUploads.aspx'
         ag_html = self.session.get(url=ag_url).text
 
@@ -150,7 +147,7 @@ class AgUpload:
         t = getTime()
         t -= datetime.timedelta(minutes=2)
         self.t = t
-        self.test_date = self.t.strftime('%Y-%m-%d %H:%M')
+        self.test_date = t.strftime('%Y-%m-%d %H:%M')
         self.test_times = "1" if getTime().hour < 12 else "2"
         self.test_check = f'当天第{self.test_times}次({t.year}/{t.month}/{t.day}'
         self.archive_img_name = f'IMG_{t.strftime("%Y%m%d_%H%M%S")}.jpg'
@@ -194,7 +191,7 @@ class AgUpload:
             'X-FineUI-Ajax': 'true',
         }
 
-    def get_img_file(self):
+    def _get_img_file(self):
         img_list = os.listdir(abs_path + '/ag_img/')
         img_path = random.choice(img_list)
         img_path = abs_path + '/ag_img/' + img_path
@@ -205,13 +202,13 @@ class AgUpload:
         }
         self.img_path = img_path
 
-    def upload_Ag_img(self):
-        global SUCCESS
-        global FAIL
-        global UPLOADED
+    def upload(self):
+        now = self.t.strftime('%Y-%m-%d %H:%M:%S')
+        if self.session is None:
+            return 'fail', f'{now}\n\n{self.id_num} 登录失败'
 
-        self.get_report_form()
-        self.get_img_file()
+        self._get_report_form()
+        self._get_img_file()
         ag_upload = 'https://selfreport.shu.edu.cn/HSJC/HeSJCSelfUploads.aspx'
 
         upload_times = 0
@@ -223,56 +220,70 @@ class AgUpload:
                 break
             elif '.aspx' in result.split('&#39;')[1]:
                 notice_url = 'https://selfreport.shu.edu.cn' + result.split('&#39;')[1]
-                self.read_notice(notice_url)
+                self._read_notice(notice_url)
             logging.info(result)
-            self.get_report_form()
+            self._get_report_form()
             self.img.close()
             os.remove(self.img_path)
-            self.get_img_file()
+            self._get_img_file()
 
         self.img.close()
 
         title = f'{self.id_num}的第{self.test_times}次结果'
-        now = self.t.strftime('%Y-%m-%d %H:%M:%S')
         if '上传成功' in result or self.test_check in result:
             title += '上传成功'
-            SUCCESS.append(f'{now}\n\n{title}')
-            self.archive_img()
+            return_ = 'success', f'{now}\n\n{title}'
+            self._archive_img()
         elif '更新失败' in result:
             title += '已上传过'
-            UPLOADED.append(f'{now}\n\n{title}')
+            return_ = 'uploaded', f'{now}\n\n{title}'
         else:
             title += '上传失败'
             logging.info(result)
             result = result.split('F.alert')[-1]
             result = result.split('&#39;')[1]
-            FAIL.append(f'{now}\n\n{title}\n\n{result}')
+            return_ = 'fail', f'{now}\n\n{title}\n\n{result}'
         logging.info(title)
         os.remove(self.img_path)
+        return return_
 
 
-def main():
-    users = getUsers(config)
-    users = [(user, id_num) for user in users for id_num in users[user]]
-    random.shuffle(users)
-    for i, j in enumerate(users):
-        username, password = j
-        AgUpload(username, password).upload_Ag_img()
-        if i < len(users) - 1:
-            sleep_time = random.randint(5, 10)
-            logging.info(f'休眠{sleep_time}分钟')
-            sleep(sleep_time * 60)
+class Main:
+    def __init__(self):
+        self.SUCCESS = []
+        self.UPLOADED = []
+        self.FAIL = []
+        self.status_map = {
+            'success': self.SUCCESS,
+            'uploaded': self.UPLOADED,
+            'fail': self.FAIL,
+        }
 
-    send_api = getSendApi(config)
-    title = f'{len(SUCCESS)}个成功，{len(UPLOADED)}个已上传过，{len(FAIL)}个失败'
-    desp = '\n\n'.join(SUCCESS + UPLOADED + FAIL)
-    send_result = sendMsg(title, desp, send_api['api'], send_api['key'])
-    logging.info('消息发送成功') if send_result else logging.info('消息发送失败')
+    def run(self):
+        users = getUsers(config)
+        users = [(username, password) for username in users for password in users[username]]
+        random.shuffle(users)
+        for i, j in enumerate(users):
+            username, password = j
+            status, desp = AgUpload(username, password).upload()
+            self.status_map[status].append(desp)
+            if i < len(users) - 1:
+                sleep_time = random.randint(5, 10)
+                logging.info(f'休眠{sleep_time}分钟')
+                sleep(sleep_time * 60)
+
+        send_api = getSendApi(config)
+        title = f'{len(self.SUCCESS)}个成功，{len(self.UPLOADED)}个已上传过，{len(self.FAIL)}个失败'
+        desp = '\n\n'.join(self.SUCCESS + self.UPLOADED + self.FAIL)
+        send_result = sendMsg(title, desp, send_api['api'], send_api['key'])
+        logging.info('消息发送成功') if send_result else logging.info('消息发送失败')
+        if len(self.FAIL):
+            return False
+        return True
 
 
 if __name__ == '__main__':
     _sleep()
-    if main():
+    if Main().run():
         exit(0)
-    else:
-        exit(1)
+    exit(1)
