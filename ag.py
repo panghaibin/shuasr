@@ -288,9 +288,9 @@ class Main:
                 sleep(sleep_time * 60)
 
         send_api = getSendApi(config)
-        title = 'AgUpload '
+        title = 'AgUpload'
         title += f'{len(self.SUCCESS)}个成功' if self.SUCCESS else ''
-        title += f'{len(self.UPLOADED)}个已上传' if self.UPLOADED else ''
+        title += f'{len(self.UPLOADED)}个已上传过' if self.UPLOADED else ''
         title += f'{len(self.FAIL)}个失败' if self.FAIL else ''
         desp = '\n\n'.join(self.SUCCESS + self.UPLOADED + self.FAIL)
         send_result = sendMsg(title, desp, send_api['api'], send_api['key'])
