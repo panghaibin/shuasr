@@ -205,11 +205,19 @@ class AgUpload:
     def upload(self):
         now = self.t.strftime('%Y-%m-%d %H:%M:%S')
         if self.session is None:
-            return 'fail', f'{now}\n\n{self.id_num} 登录失败'
+            title = f'{self.id_num}登录失败'
+            logging.error(title)
+            return 'fail', f'{now}\n\n{title}'
 
         self._get_report_form()
         self._get_img_file()
+        title = f'{self.id_num}的第{self.test_times}次结果'
         ag_upload = 'https://selfreport.shu.edu.cn/HSJC/HeSJCSelfUploads.aspx'
+        ag_html = self.session.get(ag_upload).text
+        if self.test_check in ag_html:
+            title += '已上传过'
+            logging.info(title)
+            return 'uploaded', f'{now}\n\n{title}'
 
         upload_times = 0
         while True:
@@ -229,7 +237,6 @@ class AgUpload:
 
         self.img.close()
 
-        title = f'{self.id_num}的第{self.test_times}次结果'
         if '上传成功' in result or self.test_check in result:
             title += '上传成功'
             return_ = 'success', f'{now}\n\n{title}'
