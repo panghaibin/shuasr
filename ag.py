@@ -80,143 +80,180 @@ def compress_img(img_path):
     return new_img_path
 
 
-def archive_img(id_num, img_name, uploaded_img_path):
-    archive_path = f'{abs_path}/ag_archive'
-    if not os.path.exists(archive_path):
-        os.mkdir(archive_path)
-    archive_id_path = f'{archive_path}/{id_num}'
-    if not os.path.exists(archive_id_path):
-        os.mkdir(archive_id_path)
-    new_img_path = f'{archive_id_path}/{img_name}'
-    with open(uploaded_img_path, 'rb') as f:
-        img_data = f.read()
-    with open(new_img_path, 'wb') as f:
-        f.write(img_data)
+class AgUpload:
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+        self.session = None
+        self.login()
+        self.id_num = username
+        self.img_path = None
+        self.archive_img_name = None
+        self.img = None
 
+        self.report_even_target = None
+        self.view_state = None
+        self.view_state_generator = None
+        self.t = None
+        self.test_date = None
+        self.test_times = None
+        self.test_check = None
+        self.report_form = None
+        self.file_form = None
 
-def read_notice(session, notice_url, view_state, view_state_generator):
-    notice_html = session.get(url=notice_url).text
-    notice_event_target = re.search(r'Submit\',name:\'(.*?)\',disabled:true', notice_html).group(1)
-    notice_form = {
-        '__EVENTTARGET': notice_event_target,
-        '__EVENTARGUMENT': '',
-        '__VIEWSTATE': view_state,
-        '__VIEWSTATEGENERATOR': view_state_generator,
-        'F_TARGET': 'p1_ctl01_btnSubmit',
-        'p1_ctl00_Collapsed': 'false',
-        'p1_Collapsed': 'false',
-        'F_STATE': 'eyJwMV9jdGwwMCI6eyJJRnJhbWVBdHRyaWJ1dGVzIjp7fX0sInAxIjp7IklGcmFtZUF0dHJpYnV0ZXMiOnt9fX0=',
-    }
-    notice_result = session.post(url=notice_url, data=notice_form)
-    if 'HeSJCSelfUploads.aspx' in notice_result.url:
+    def login(self):
+        self.session = login(self.username, self.password)
+        if not self.session:
+            logging.error(f'登录失败，用户名：{self.username}')
+            return False
         return True
-    else:
-        return False
 
+    def archive_img(self):
+        archive_path = f'{abs_path}/ag_archive'
+        if not os.path.exists(archive_path):
+            os.mkdir(archive_path)
+        archive_id_path = f'{archive_path}/{self.id_num}'
+        if not os.path.exists(archive_id_path):
+            os.mkdir(archive_id_path)
+        new_img_path = f'{archive_id_path}/{self.archive_img_name}'
+        with open(self.img_path, 'rb') as f:
+            img_data = f.read()
+        with open(new_img_path, 'wb') as f:
+            f.write(img_data)
+    
+    def read_notice(self, notice_url):
+        session = self.session
+        notice_html = session.get(url=notice_url).text
+        notice_event_target = re.search(r'Submit\',name:\'(.*?)\',disabled:true', notice_html).group(1)
+        notice_form = {
+            '__EVENTTARGET': notice_event_target,
+            '__EVENTARGUMENT': '',
+            '__VIEWSTATE': self.view_state,
+            '__VIEWSTATEGENERATOR': self.view_state_generator,
+            'F_TARGET': 'p1_ctl01_btnSubmit',
+            'p1_ctl00_Collapsed': 'false',
+            'p1_Collapsed': 'false',
+            'F_STATE': 'eyJwMV9jdGwwMCI6eyJJRnJhbWVBdHRyaWJ1dGVzIjp7fX0sInAxIjp7IklGcmFtZUF0dHJpYnV0ZXMiOnt9fX0=',
+        }
+        notice_result = session.post(url=notice_url, data=notice_form)
+        if 'HeSJCSelfUploads.aspx' in notice_result.url:
+            return True
+        else:
+            return False
+    
+    def get_report_form(self):
+        session = self.session
+        ag_url = 'https://selfreport.shu.edu.cn/HSJC/HeSJCSelfUploads.aspx'
+        ag_html = session.get(url=ag_url).text
+        logging.info('获取页面成功')
+    
+        self.report_even_target = 'p1$P_Upload$btnUploadImage'
+        self.view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', ag_html).group(1)
+        self.view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', ag_html).group(1)
+        t = getTime()
+        t -= datetime.timedelta(minutes=2)
+        self.t = t
+        self.test_date = self.t.strftime('%Y-%m-%d %H:%M')
+        self.test_times = "1" if getTime().hour < 12 else "2"
+        self.test_check = f'当天第{self.test_times}次({t.year}/{t.month}/{t.day}'
+        self.archive_img_name = f'IMG_{t.strftime("%Y%m%d_%H%M%S")}.jpg'
+    
+        name = ""
+        ag_line = html2JsLine(ag_html)
+        for i, line in enumerate(ag_line):
+            if 'p1_XingMing' in line:
+                name = jsLine2Json(ag_line[i - 1])['Text']
+                break
+    
+        ag_b64str = 'eyJwMV9Hb25nSGFvIjogeyJUZXh0IjogIiJ9LCAicDFfWGluZ01pbmciOiB7IlRleHQiOiAiIn0sICJwMV9QX1VwbG9hZF9DaGVuZ051byI6IHsiQ2hlY2tlZCI6IHRydWV9LCAicDFfUF9VcGxvYWRfY3RsMDAiOiB7IklGcmFtZUF0dHJpYnV0ZXMiOiB7fX0sICJwMV9QX1VwbG9hZF9TaGVuVFpLIjogeyJGX0l0ZW1zIjogW1si5ZCmIiwgIjxzcGFuIHN0eWxlPSdjb2xvcjpncmVlbic+5peg5Lul5LiK55eH54q2KE5vKTwvc3Bhbj4iLCAxXSwgWyLmmK8iLCAiPHNwYW4gc3R5bGU9J2NvbG9yOnJlZCc+5pyJ5Lul5LiK55eH54q25LmL5LiAKFllcyk8L3NwYW4+IiwgMV1dLCAiU2VsZWN0ZWRWYWx1ZSI6ICLlkKYifSwgInAxX1BfVXBsb2FkX0ppYW5DTFgiOiB7IkZfSXRlbXMiOiBbWyLmipfljp8iLCAiPHNwYW4gc3R5bGU9J2ZvbnQtd2VpZ2h0OmJvbGRlcjsnPuaKl+WOnyhBbnRpZ2VuIFRlc3QpPC9zcGFuPiIsIDFdLCBbIuaguOmFuCIsICLmoLjphbgoTnVjbGVpYyBBY2lkIFRlc3QpIiwgMV1dLCAiU2VsZWN0ZWRWYWx1ZSI6ICLmipfljp8ifSwgInAxX1BfVXBsb2FkX0NhaVlGUyI6IHsiRl9JdGVtcyI6IFtbIum8u+iFlOaLreWtkCIsICLpvLvohZTmi63lrZAoTm9zZSkiLCAxXSwgWyLpvLvlkr3mi63lrZAiLCAi6by75ZK95out5a2QKE5vc2UrVGhyb2F0KSIsIDFdLCBbIuWPo+iFlOaLreWtkCIsICLlj6PohZTmi63lrZAoVGhyb2F0KSIsIDFdXSwgIlNlbGVjdGVkVmFsdWUiOiAi6by76IWU5out5a2QIn0sICJwMV9QX1VwbG9hZF9IZVNKQ1JRIjogeyJUZXh0IjogIiJ9LCAicDFfUF9VcGxvYWRfQ2lTaHUiOiB7IkZfSXRlbXMiOiBbWyIxIiwgIuesrDHmrKEoRmlyc3QpIiwgMV0sIFsiMiIsICLnrKwy5qyhKFNlY29uZCkiLCAxXSwgWyIzIiwgIuesrDPmrKEoVGhpcmQpIiwgMV1dLCAiU2VsZWN0ZWRWYWx1ZSI6ICIxIn0sICJwMV9QX1VwbG9hZF9KaWFuQ0pHIjogeyJGX0l0ZW1zIjogW1si6Zi05oCnIiwgIjxzcGFuIHN0eWxlPSdjb2xvcjpncmVlbic+6Zi05oCnKE5lZ2F0aXZlKTwvc3Bhbj4iLCAxXSwgWyLpmLPmgKciLCAiPHNwYW4gc3R5bGU9J2NvbG9yOnJlZCc+6Ziz5oCnKFBvc2l0aXZlKTwvc3Bhbj4iLCAxXSwgWyLml6DmlYgiLCAi5peg5pWIKEludmFsaWQpIiwgMV0sIFsi5pqC5peg57uT5p6cIiwgIuaaguaXoOe7k+aenChObyBSZXN1bHQpIiwgMV1dLCAiU2VsZWN0ZWRWYWx1ZSI6ICLpmLTmgKcifSwgInAxX1BfVXBsb2FkIjogeyJJRnJhbWVBdHRyaWJ1dGVzIjoge319LCAicDFfR3JpZERhdGEiOiB7IlJlY29yZENvdW50IjogMCwgIkZfUm93cyI6IFtdLCAiSUZyYW1lQXR0cmlidXRlcyI6IHt9fSwgInAxIjogeyJJRnJhbWVBdHRyaWJ1dGVzIjoge319LCAiV19TaG93UGljIjogeyJJRnJhbWVBdHRyaWJ1dGVzIjoge319fQ=='
+        ag_json = json.loads(base64.b64decode(ag_b64str).decode('utf-8'))
+        ag_json['p1_GongHao']['Text'] = self.id_num
+        ag_json['p1_XingMing']['Text'] = name
+        ag_json['p1_P_Upload_HeSJCRQ']['Text'] = self.test_date
+        ag_json['p1_P_Upload_CiShu']['SelectedValue'] = self.test_times
+        fstate = base64.b64encode(json.dumps(ag_json, ensure_ascii=False).encode("utf-8")).decode("utf-8")
+    
+        self.report_form = {
+            '__EVENTTARGET': self.report_even_target,
+            '__EVENTARGUMENT': '',
+            '__VIEWSTATE': self.view_state,
+            '__VIEWSTATEGENERATOR': self.view_state_generator,
+            'p1$P_Upload$ChengNuo': 'p1_P_Upload_ChengNuo',
+            'p1$P_Upload$ShenTZK': b'\xe5\x90\xa6'.decode(),
+            'p1$P_Upload$JianCLX': b'\xe6\x8a\x97\xe5\x8e\x9f'.decode(),
+            'p1$P_Upload$CaiYFS': b'\xe9\xbc\xbb\xe8\x85\x94\xe6\x8b\xad\xe5\xad\x90'.decode(),
+            'p1$P_Upload$HeSJCRQ': self.test_date,
+            'p1$P_Upload$CiShu': self.test_times,
+            'p1$P_Upload$JianCJG': b'\xe9\x98\xb4\xe6\x80\xa7'.decode(),
+            'p1_P_Upload_ctl00_Collapsed': 'false',
+            'p1_P_Upload_Collapsed': 'false',
+            'p1_GridData_Collapsed': 'false',
+            'p1_GridData_HiddenColumns': '["p1_GridData_ctl00"]',
+            'p1_Collapsed': 'false',
+            'W_ShowPic_Collapsed': 'false',
+            'W_ShowPic_Hidden': 'true',
+            'F_STATE': fstate,
+            'F_TARGET': 'p1_P_Upload_btnUploadImage',
+            'X-FineUI-Ajax': 'true',
+        }
 
-def upload_Ag_img(username, password):
-    global SUCCESS
-    global FAIL
-    global UPLOADED
-    session = login(username, password)
-    if not session:
-        logging.info('登录失败')
-        return False
-    logging.info('登录成功')
+    def get_img_file(self):
+        img_list = os.listdir(abs_path + '/ag_img/')
+        img_path = random.choice(img_list)
+        img_path = abs_path + '/ag_img/' + img_path
+        img_path = compress_img(img_path)
+        self.img = open(img_path, 'rb')
+        self.file_form = {
+            'p1$P_Upload$FileHeSJCBG': (self.archive_img_name, self.img, 'image/jpeg', {'Content-Type': 'image/jpeg'}),
+        }
+        self.img_path = img_path
+    
+    def upload_Ag_img(self):
+        global SUCCESS
+        global FAIL
+        global UPLOADED
 
-    ag_url = 'https://selfreport.shu.edu.cn/HSJC/HeSJCSelfUploads.aspx'
-    ag_html = session.get(url=ag_url).text
-    logging.info('获取页面成功')
+        session = self.session
+    
+        self.get_report_form()
+        self.get_img_file()
+        ag_upload = 'https://selfreport.shu.edu.cn/HSJC/HeSJCSelfUploads.aspx'
+    
+        upload_times = 0
+        while True:
+            sleep(5)
+            result = session.post(url=ag_upload, data=self.report_form, files=self.file_form).text
+            upload_times += 1
+            if '上传成功' in result or self.test_check in result or '更新失败' in result or upload_times >= 3:
+                break
+            elif '.aspx' in result.split('&#39;')[1]:
+                notice_url = 'https://selfreport.shu.edu.cn' + result.split('&#39;')[1]
+                self.read_notice(notice_url)
+            logging.info(result)
+            self.get_report_form()
+            self.img.close()
+            os.remove(self.img_path)
+            self.get_img_file()
 
-    even_target = 'p1$P_Upload$btnUploadImage'
-    view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', ag_html).group(1)
-    view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', ag_html).group(1)
-    t = getTime()
-    t -= datetime.timedelta(minutes=2)
-    test_date = t.strftime('%Y-%m-%d %H:%M')
-    test_times = "1" if getTime().hour < 12 else "2"
-    test_check = f'当天第{test_times}次({t.year}/{t.month}/{t.day}'
-    archive_img_name = f'IMG_{t.strftime("%Y%m%d_%H%M%S")}.jpg'
-
-    id_num = username
-    name = ""
-    ag_line = html2JsLine(ag_html)
-    for i, line in enumerate(ag_line):
-        if 'p1_XingMing' in line:
-            name = jsLine2Json(ag_line[i - 1])['Text']
-            break
-
-    ag_b64str = 'eyJwMV9Hb25nSGFvIjogeyJUZXh0IjogIiJ9LCAicDFfWGluZ01pbmciOiB7IlRleHQiOiAiIn0sICJwMV9QX1VwbG9hZF9DaGVuZ051byI6IHsiQ2hlY2tlZCI6IHRydWV9LCAicDFfUF9VcGxvYWRfY3RsMDAiOiB7IklGcmFtZUF0dHJpYnV0ZXMiOiB7fX0sICJwMV9QX1VwbG9hZF9TaGVuVFpLIjogeyJGX0l0ZW1zIjogW1si5ZCmIiwgIjxzcGFuIHN0eWxlPSdjb2xvcjpncmVlbic+5peg5Lul5LiK55eH54q2KE5vKTwvc3Bhbj4iLCAxXSwgWyLmmK8iLCAiPHNwYW4gc3R5bGU9J2NvbG9yOnJlZCc+5pyJ5Lul5LiK55eH54q25LmL5LiAKFllcyk8L3NwYW4+IiwgMV1dLCAiU2VsZWN0ZWRWYWx1ZSI6ICLlkKYifSwgInAxX1BfVXBsb2FkX0ppYW5DTFgiOiB7IkZfSXRlbXMiOiBbWyLmipfljp8iLCAiPHNwYW4gc3R5bGU9J2ZvbnQtd2VpZ2h0OmJvbGRlcjsnPuaKl+WOnyhBbnRpZ2VuIFRlc3QpPC9zcGFuPiIsIDFdLCBbIuaguOmFuCIsICLmoLjphbgoTnVjbGVpYyBBY2lkIFRlc3QpIiwgMV1dLCAiU2VsZWN0ZWRWYWx1ZSI6ICLmipfljp8ifSwgInAxX1BfVXBsb2FkX0NhaVlGUyI6IHsiRl9JdGVtcyI6IFtbIum8u+iFlOaLreWtkCIsICLpvLvohZTmi63lrZAoTm9zZSkiLCAxXSwgWyLpvLvlkr3mi63lrZAiLCAi6by75ZK95out5a2QKE5vc2UrVGhyb2F0KSIsIDFdLCBbIuWPo+iFlOaLreWtkCIsICLlj6PohZTmi63lrZAoVGhyb2F0KSIsIDFdXSwgIlNlbGVjdGVkVmFsdWUiOiAi6by76IWU5out5a2QIn0sICJwMV9QX1VwbG9hZF9IZVNKQ1JRIjogeyJUZXh0IjogIiJ9LCAicDFfUF9VcGxvYWRfQ2lTaHUiOiB7IkZfSXRlbXMiOiBbWyIxIiwgIuesrDHmrKEoRmlyc3QpIiwgMV0sIFsiMiIsICLnrKwy5qyhKFNlY29uZCkiLCAxXSwgWyIzIiwgIuesrDPmrKEoVGhpcmQpIiwgMV1dLCAiU2VsZWN0ZWRWYWx1ZSI6ICIxIn0sICJwMV9QX1VwbG9hZF9KaWFuQ0pHIjogeyJGX0l0ZW1zIjogW1si6Zi05oCnIiwgIjxzcGFuIHN0eWxlPSdjb2xvcjpncmVlbic+6Zi05oCnKE5lZ2F0aXZlKTwvc3Bhbj4iLCAxXSwgWyLpmLPmgKciLCAiPHNwYW4gc3R5bGU9J2NvbG9yOnJlZCc+6Ziz5oCnKFBvc2l0aXZlKTwvc3Bhbj4iLCAxXSwgWyLml6DmlYgiLCAi5peg5pWIKEludmFsaWQpIiwgMV0sIFsi5pqC5peg57uT5p6cIiwgIuaaguaXoOe7k+aenChObyBSZXN1bHQpIiwgMV1dLCAiU2VsZWN0ZWRWYWx1ZSI6ICLpmLTmgKcifSwgInAxX1BfVXBsb2FkIjogeyJJRnJhbWVBdHRyaWJ1dGVzIjoge319LCAicDFfR3JpZERhdGEiOiB7IlJlY29yZENvdW50IjogMCwgIkZfUm93cyI6IFtdLCAiSUZyYW1lQXR0cmlidXRlcyI6IHt9fSwgInAxIjogeyJJRnJhbWVBdHRyaWJ1dGVzIjoge319LCAiV19TaG93UGljIjogeyJJRnJhbWVBdHRyaWJ1dGVzIjoge319fQ=='
-    ag_json = json.loads(base64.b64decode(ag_b64str).decode('utf-8'))
-    ag_json['p1_GongHao']['Text'] = id_num
-    ag_json['p1_XingMing']['Text'] = name
-    ag_json['p1_P_Upload_HeSJCRQ']['Text'] = test_date
-    ag_json['p1_P_Upload_CiShu']['SelectedValue'] = test_times
-    fstate = base64.b64encode(json.dumps(ag_json, ensure_ascii=False).encode("utf-8")).decode("utf-8")
-
-    report_form = {
-        '__EVENTTARGET': even_target,
-        '__EVENTARGUMENT': '',
-        '__VIEWSTATE': view_state,
-        '__VIEWSTATEGENERATOR': view_state_generator,
-        'p1$P_Upload$ChengNuo': 'p1_P_Upload_ChengNuo',
-        'p1$P_Upload$ShenTZK': b'\xe5\x90\xa6'.decode(),
-        'p1$P_Upload$JianCLX': b'\xe6\x8a\x97\xe5\x8e\x9f'.decode(),
-        'p1$P_Upload$CaiYFS': b'\xe9\xbc\xbb\xe8\x85\x94\xe6\x8b\xad\xe5\xad\x90'.decode(),
-        'p1$P_Upload$HeSJCRQ': test_date,
-        'p1$P_Upload$CiShu': test_times,
-        'p1$P_Upload$JianCJG': b'\xe9\x98\xb4\xe6\x80\xa7'.decode(),
-        'p1_P_Upload_ctl00_Collapsed': 'false',
-        'p1_P_Upload_Collapsed': 'false',
-        'p1_GridData_Collapsed': 'false',
-        'p1_GridData_HiddenColumns': '["p1_GridData_ctl00"]',
-        'p1_Collapsed': 'false',
-        'W_ShowPic_Collapsed': 'false',
-        'W_ShowPic_Hidden': 'true',
-        'F_STATE': fstate,
-        'F_TARGET': 'p1_P_Upload_btnUploadImage',
-        'X-FineUI-Ajax': 'true',
-    }
-    img_list = os.listdir(abs_path + '/ag_img/')
-    img_path = random.choice(img_list)
-    img_path = abs_path + '/ag_img/' + img_path
-    img_path = compress_img(img_path)
-    img = open(img_path, 'rb')
-    file = {
-        'p1$P_Upload$FileHeSJCBG': (archive_img_name, img, 'image/jpeg', {'Content-Type': 'image/jpeg'}),
-    }
-    ag_upload = 'https://selfreport.shu.edu.cn/HSJC/HeSJCSelfUploads.aspx'
-
-    upload_times = 0
-    while True:
-        sleep(5)
-        result = session.post(url=ag_upload, data=report_form, files=file).text
-        upload_times += 1
-        if '上传成功' in result or test_check in result or '更新失败' in result or upload_times >= 3:
-            break
-        elif '.aspx' in result.split('&#39;')[1]:
-            notice_url = 'https://selfreport.shu.edu.cn' + result.split('&#39;')[1]
-            read_notice(session, notice_url, view_state, view_state_generator)
-        logging.info(result)
-    img.close()
-
-    title = f'{id_num}的第{test_times}次结果'
-    now = t.strftime('%Y-%m-%d %H:%M:%S')
-    if '上传成功' in result or test_check in result:
-        title += '上传成功'
-        SUCCESS.append(f'{now}\n\n{title}')
-        archive_img(id_num, archive_img_name, img_path)
-    elif '更新失败' in result:
-        title += '已上传过'
-        UPLOADED.append(f'{now}\n\n{title}')
-    else:
-        title += '上传失败'
-        logging.info(result)
-        result = result.split('F.alert')[-1]
-        result = result.split('&#39;')[1]
-        FAIL.append(f'{now}\n\n{title}\n\n{result}')
-    logging.info(title)
-    os.remove(img_path)
+        self.img.close()
+    
+        title = f'{self.id_num}的第{self.test_times}次结果'
+        now = self.t.strftime('%Y-%m-%d %H:%M:%S')
+        if '上传成功' in result or self.test_check in result:
+            title += '上传成功'
+            SUCCESS.append(f'{now}\n\n{title}')
+            self.archive_img()
+        elif '更新失败' in result:
+            title += '已上传过'
+            UPLOADED.append(f'{now}\n\n{title}')
+        else:
+            title += '上传失败'
+            logging.info(result)
+            result = result.split('F.alert')[-1]
+            result = result.split('&#39;')[1]
+            FAIL.append(f'{now}\n\n{title}\n\n{result}')
+        logging.info(title)
+        os.remove(self.img_path)
 
 
 def main():
@@ -225,7 +262,7 @@ def main():
     random.shuffle(users)
     for i, j in enumerate(users):
         username, password = j
-        upload_Ag_img(username, password)
+        AgUpload(username, password).upload_Ag_img()
         if i < len(users) - 1:
             sleep_time = random.randint(5, 10)
             logging.info(f'休眠{sleep_time}分钟')
@@ -233,7 +270,7 @@ def main():
 
     send_api = getSendApi(config)
     title = f'{len(SUCCESS)}个成功，{len(UPLOADED)}个已上传过，{len(FAIL)}个失败'
-    desp = '\n\n'.join(SUCCESS) + '\n\n' + '\n\n'.join(UPLOADED) + '\n\n' + '\n\n'.join(FAIL)
+    desp = '\n\n'.join(SUCCESS + UPLOADED + FAIL)
     send_result = sendMsg(title, desp, send_api['api'], send_api['key'])
     logging.info('消息发送成功') if send_result else logging.info('消息发送失败')
 
