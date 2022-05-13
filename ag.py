@@ -50,8 +50,8 @@ def compress_img(img_path):
     cur_img = cur_img.crop((left, top, right, bottom))
 
     width, height = cur_img.size
-    crop_width = width * 0.90
-    crop_height = height * 0.90
+    crop_width = width * 0.96
+    crop_height = height * 0.96
     left = random.randint(0, int(width - crop_width))
     top = random.randint(0, int(height - crop_height))
     right = left + crop_width
@@ -122,8 +122,7 @@ class AgUpload:
             f.write(img_data)
     
     def read_notice(self, notice_url):
-        session = self.session
-        notice_html = session.get(url=notice_url).text
+        notice_html = self.session.get(url=notice_url).text
         notice_event_target = re.search(r'Submit\',name:\'(.*?)\',disabled:true', notice_html).group(1)
         notice_form = {
             '__EVENTTARGET': notice_event_target,
@@ -135,17 +134,15 @@ class AgUpload:
             'p1_Collapsed': 'false',
             'F_STATE': 'eyJwMV9jdGwwMCI6eyJJRnJhbWVBdHRyaWJ1dGVzIjp7fX0sInAxIjp7IklGcmFtZUF0dHJpYnV0ZXMiOnt9fX0=',
         }
-        notice_result = session.post(url=notice_url, data=notice_form)
+        notice_result = self.session.post(url=notice_url, data=notice_form)
         if 'HeSJCSelfUploads.aspx' in notice_result.url:
             return True
         else:
             return False
     
     def get_report_form(self):
-        session = self.session
         ag_url = 'https://selfreport.shu.edu.cn/HSJC/HeSJCSelfUploads.aspx'
-        ag_html = session.get(url=ag_url).text
-        logging.info('获取页面成功')
+        ag_html = self.session.get(url=ag_url).text
     
         self.report_even_target = 'p1$P_Upload$btnUploadImage'
         self.view_state = re.search(r'id="__VIEWSTATE" value="(.*?)" /', ag_html).group(1)
@@ -212,8 +209,6 @@ class AgUpload:
         global SUCCESS
         global FAIL
         global UPLOADED
-
-        session = self.session
     
         self.get_report_form()
         self.get_img_file()
@@ -222,7 +217,7 @@ class AgUpload:
         upload_times = 0
         while True:
             sleep(5)
-            result = session.post(url=ag_upload, data=self.report_form, files=self.file_form).text
+            result = self.session.post(url=ag_upload, data=self.report_form, files=self.file_form).text
             upload_times += 1
             if '上传成功' in result or self.test_check in result or '更新失败' in result or upload_times >= 3:
                 break
