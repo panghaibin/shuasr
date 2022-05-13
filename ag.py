@@ -220,6 +220,7 @@ class AgUpload:
             return 'uploaded', f'{now}\n\n{title}'
 
         upload_times = 0
+        result_list = []
         while True:
             sleep(5)
             result = self.session.post(url=ag_upload, data=self.report_form, files=self.file_form).text
@@ -230,6 +231,10 @@ class AgUpload:
                 notice_url = 'https://selfreport.shu.edu.cn' + result.split('&#39;')[1]
                 self._read_notice(notice_url)
             logging.info(result)
+            result_split = result.split('F.alert')
+            if len(result_split) > 1:
+                result_split = result_split[-1].split('&#39;')[1]
+                result_list.append(result_split)
             self._get_report_form()
             self.img.close()
             os.remove(self.img_path)
@@ -247,9 +252,12 @@ class AgUpload:
         else:
             title += '上传失败'
             logging.info(result)
-            result = result.split('F.alert')[-1]
-            result = result.split('&#39;')[1]
-            return_ = 'fail', f'{now}\n\n{title}\n\n{result}'
+            result = result.split('F.alert')
+            if len(result) > 1:
+                result = result[-1].split('&#39;')[1]
+                result_list.append(result)
+            result_str = '\n\n'.join(result_list)
+            return_ = 'fail', f'{now}\n\n{title}\n\n{result_str}'
         logging.info(title)
         os.remove(self.img_path)
         return return_
