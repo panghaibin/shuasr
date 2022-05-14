@@ -11,6 +11,10 @@ from time import sleep
 from PIL import Image, ImageOps, ImageEnhance
 from utils import abs_path, getUsers, login, html2JsLine, jsLine2Json, getTime, sendMsg, getSendApi
 
+AG_IMG_PATH = abs_path + '/ag_img'
+if not os.path.exists(AG_IMG_PATH) or len(os.listdir(AG_IMG_PATH)) == 0:
+    raise Exception('ag_img not exists')
+
 if os.path.exists(abs_path + '/ag.yaml'):
     config = abs_path + '/ag.yaml'
 else:
@@ -28,6 +32,29 @@ def _sleep():
     logging.info(f'休眠 {sleep_time}s，约{sleep_time // 60}分钟')
     sleep(sleep_time)
     logging.info("休眠结束")
+
+
+def get_random_ag_img(img_path):
+    json_path = f'{img_path}/ag_img_times.json'
+    if not os.path.exists(json_path):
+        times = {}
+    else:
+        with open(json_path, 'r') as f:
+            times = json.load(f)
+    new_times = {}
+    for img_name in os.listdir(img_path):
+        if 'compress' not in img_name:
+            if img_name not in times.keys():
+                new_times[img_name] = 0
+            else:
+                new_times.update({img_name: times[img_name]})
+    sorted_times = sorted(new_times.items(), key=lambda x: x[1], reverse=False)
+    min_times_imgs = [x[0] for x in sorted_times if x[1] == sorted_times[0][1]]
+    random_img = random.choice(min_times_imgs)
+    new_times[random_img] += 1
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(new_times, f)
+    return f'{img_path}/{random_img}'
 
 
 def compress_img(img_path):
@@ -191,9 +218,7 @@ class AgUpload:
         }
 
     def _get_img_file(self):
-        img_list = os.listdir(abs_path + '/ag_img/')
-        img_path = random.choice(img_list)
-        img_path = abs_path + '/ag_img/' + img_path
+        img_path = get_random_ag_img(AG_IMG_PATH)
         img_path = compress_img(img_path)
         self.img = open(img_path, 'rb')
         self.file_form = {
