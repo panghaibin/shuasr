@@ -241,6 +241,8 @@ class AgUpload:
         if self.test_check in ag_html:
             title += '已上传过'
             logging.info(title)
+            self.img.close()
+            os.remove(self.img_path)
             return 'uploaded', f'{now}\n\n{title}'
 
         upload_times = 0
