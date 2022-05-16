@@ -1,11 +1,5 @@
 # 更新日志
 
-## [5.6.1] - 2022-05-10
-### Added
-- [Experimental] Antigen image upload
-
-  See the `ag.py` file for more details.
-
 ## [5.6.0] - 2022-04-28
 ### Added
 - 增加核酸检测结果监控功能，详见 [核酸检测结果监控说明](PCR_Checker.md)
