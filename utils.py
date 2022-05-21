@@ -202,19 +202,21 @@ def fetchRiskArea():
     api_url = 'https://raw.githubusercontent.com/panghaibin/RiskLevelAPI/api/latest.json'
     mirrors = [
         '',
-        'https://gh.hbtech.workers.dev/',
         'https://ghproxy.com/',
         'https://gh.api.99988866.xyz/',
     ]
-    for i in range(3 * len(mirrors)):
-        for mirror in mirrors:
-            url = mirror + api_url
+    api_urls = [f'{mirror}{api_url}' for mirror in mirrors]
+    api_urls.insert(1, 'https://covid-api.caduo.ml/latest.json')
+    print(api_urls)
+    for i in range(3 * len(api_urls)):
+        for url in api_urls:
             try:
                 result = requests.get(url, timeout=10).json()
                 if result['code'] == 0:
                     return result['data']
             except Exception as e:
-                print(url, e)
+                print(url)
+                print(e)
     return False
 
 
