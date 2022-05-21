@@ -207,7 +207,6 @@ def fetchRiskArea():
     ]
     api_urls = [f'{mirror}{api_url}' for mirror in mirrors]
     api_urls.insert(1, 'https://covid-api.caduo.ml/latest.json')
-    print(api_urls)
     for i in range(3 * len(api_urls)):
         for url in api_urls:
             try:
@@ -229,13 +228,13 @@ def updateRiskArea():
         risk_list.append(high['area_name'].replace(' ', ''))
     for middle in result.get('middlelist', []):
         risk_list.append(middle['area_name'].replace(' ', ''))
-    with open('src/risk_area.json', 'w', encoding='utf-8') as f:
+    with open(os.path.join(abs_path, 'src/risk_area.json'), 'w', encoding='utf-8') as f:
         json.dump(risk_list, f)
 
 
 def checkRiskPosition(position):
     try:
-        with open('src/risk_area.json', 'r', encoding='utf-8') as f:
+        with open(os.path.join(abs_path, 'src/risk_area.json'), 'r', encoding='utf-8') as f:
             risk_list = json.load(f)
     except Exception as e:
         print(e)
@@ -281,15 +280,15 @@ def generateXingImage(ph_num, position):
     update = base64.b64decode('5pu05paw5LqO77ya').decode('utf-8') + t.strftime("%Y.%m.%d %H:%M:%S")
     tip = base64.b64decode('5oKo5LqO5YmNMTTlpKnlhoXliLDovr7miJbpgJTnu4/vvJo=').decode('utf-8')
 
-    image = Image.open("src/zxn_1.bin")
+    image = Image.open(os.path.join(abs_path, "src/zxn_1.bin"))
     draw = ImageDraw.Draw(image)
     full_width, full_height = image.size
 
-    clock_font = ImageFont.truetype('src/NotoSansSC-Regular.otf', 32)
-    phone_font = ImageFont.truetype('src/NotoSansSC-Bold.otf', 45)
-    update_font = ImageFont.truetype('src/NotoSansSC-Bold.otf', 48)
-    tip_font = ImageFont.truetype('src/NotoSansSC-Regular.otf', 47)
-    position_font = ImageFont.truetype('src/NotoSansSC-Bold.otf', 47)
+    clock_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Regular.otf'), 32)
+    phone_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Bold.otf'), 45)
+    update_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Bold.otf'), 48)
+    tip_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Regular.otf'), 47)
+    position_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Bold.otf'), 47)
 
     phone_width, _ = draw.textsize(phone, phone_font)
     update_width, _ = draw.textsize(update, update_font)
@@ -313,7 +312,7 @@ def generateXingImage(ph_num, position):
         draw_x += word_width
         position = position[1:]
 
-    provider_img = Image.open("src/zxn_2.bin")
+    provider_img = Image.open(os.path.join(abs_path, "src/zxn_2.bin"))
     _, provider_height = provider_img.size
     draw_y += word_height
     image.paste(provider_img, (0, draw_y))
@@ -321,11 +320,11 @@ def generateXingImage(ph_num, position):
     draw_y += provider_height
     draw.rectangle([(0, draw_y), (full_width, full_height)], fill=(43, 166, 103), outline=None)
 
-    footer_img = Image.open("src/zxn_3.bin")
+    footer_img = Image.open(os.path.join(abs_path, "src/zxn_3.bin"))
     _, footer_height = footer_img.size
     image.paste(footer_img, (0, full_height - footer_height))
 
-    icons_img = Image.open("src/zxn_4.bin")
+    icons_img = Image.open(os.path.join(abs_path, "src/zxn_4.bin"))
     icons_width, icons_height = icons_img.size
     icons_num = int(icons_width / icons_height)
     random_icon = random.randint(0, icons_num - 1)
@@ -333,7 +332,7 @@ def generateXingImage(ph_num, position):
     icon_img = icons_img.crop(icon_box)
     image.paste(icon_img, (int((full_width - icons_height) / 2), 885))
 
-    img_path = '%s_xing.jpg' % t.strftime("%Y%m%d%H%M%S%f")
+    img_path = os.path.join(abs_path, '%s_xing.jpg' % t.strftime("%Y%m%d%H%M%S%f"))
     image.save(img_path, 'jpeg')
     return img_path
 
@@ -346,14 +345,14 @@ def generateSuiImage(name):
     time1 = t.strftime("%Y-%m-%d %H:%M:")
     time2 = '%02d' % random.randint(1, 6)
 
-    image = Image.open("src/aan_1.bin")
+    image = Image.open(os.path.join(abs_path, "src/aan_1.bin"))
     draw = ImageDraw.Draw(image)
     full_width, full_height = image.size
 
-    clock_font = ImageFont.truetype('src/NotoSansSC-Regular.otf', 32)
-    name_font = ImageFont.truetype('src/NotoSansSC-Bold.otf', 56)
-    time1_font = ImageFont.truetype('src/NotoSansSC-Regular.otf', 40)
-    time2_font = ImageFont.truetype('src/NotoSansSC-Bold.otf', 48)
+    clock_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Regular.otf'), 32)
+    name_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Bold.otf'), 56)
+    time1_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Regular.otf'), 40)
+    time2_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Bold.otf'), 48)
 
     name_width, _ = draw.textsize(name, name_font)
     time1_width, time1_height = draw.textsize(time1, time1_font)
@@ -368,7 +367,7 @@ def generateSuiImage(name):
     draw.text((time1_x, time1_y), time1, (0, 0, 0), time1_font)
     draw.text((time2_x, time2_y), time2, (0, 0, 0), time2_font)
 
-    logo_img = Image.open("src/aan_2.bin")
+    logo_img = Image.open(os.path.join(abs_path, "src/aan_2.bin"))
     logo_width, logo_height = [int(s * 0.9) for s in logo_img.size]
     logo_img = logo_img.resize((logo_width, logo_height))
 

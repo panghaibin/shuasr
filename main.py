@@ -1,11 +1,11 @@
 # -*- coding: UTF-8 -*-
+import os
 import sys
-
 from utils import abs_path, main, test, addUser, setSendMsgApi, github
 
 if __name__ == '__main__':
-    config = abs_path + '/config.yaml'
-    logs = abs_path + '/logs.json'
+    config = os.path.join(abs_path, 'config.yaml')
+    logs = os.path.join(abs_path, 'logs.json')
 
     if len(sys.argv) == 1:
         main(config, logs)
