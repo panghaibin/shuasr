@@ -141,6 +141,35 @@
     ],
     "SelectedValue": "在上海（校内）"
   },
+  "p1_P_GuoNei_JinXXQ": {
+    "Required": true,
+    "Hidden": false,
+    "SelectedValueArray": [
+      "宝山"
+    ],
+    "F_Items": [
+      [
+        "宝山",
+        "宝山",
+        1
+      ],
+      [
+        "延长",
+        "延长",
+        1
+      ],
+      [
+        "嘉定",
+        "嘉定",
+        1
+      ],
+      [
+        "新闸路",
+        "新闸路",
+        1
+      ]
+    ]
+  },
   "p1_P_GuoNei_ShiFZX": {
     "F_Items": [
       [

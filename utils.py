@@ -165,6 +165,7 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
     json_data['p1_P_GuoNei_ShiFSH']['SelectedValue'] = in_shanghai
     json_data['p1_P_GuoNei_ShiFZX']['SelectedValue'] = in_school
     json_data['p1_P_GuoNei_XiaoQu']['SelectedValue'] = campus
+    json_data['p1_P_GuoNei_JinXXQ']['SelectedValueArray'][0] = campus
     json_data['p1_ShiFZJ']['SelectedValue'] = in_home
 
     json_data['p1_pImages_HFimgSuiSM']['Text'] = sui_code
@@ -589,6 +590,7 @@ def getReportForm(post_day, info):
         'p1$P_GuoNei$ShiFSH': in_shanghai,
         'p1$P_GuoNei$ShiFZX': in_school,
         'p1$P_GuoNei$XiaoQu': campus,
+        'p1$P_GuoNei$JinXXQ': campus,
         'p1$ddlSheng$Value': province,
         'p1$ddlSheng': province,
         'p1$ddlShi$Value': city,
