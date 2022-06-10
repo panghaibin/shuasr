@@ -142,7 +142,7 @@ def cleanIndex(session, html, target, target_url, index_url):
 
 def generateFState(json_file, post_day=None, province=None, city=None, county=None, address=None, in_shanghai=None,
                    in_school=None, in_home=None, sui_img=None, sui_code=None, xing_img=None, xing_code=None, ans=None,
-                   campus=None):
+                   campus=None, entry_campus=None):
     with open(json_file, 'r', encoding='utf-8') as f:
         json_data = json.load(f)
 
@@ -165,7 +165,7 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
     json_data['p1_P_GuoNei_ShiFSH']['SelectedValue'] = in_shanghai
     json_data['p1_P_GuoNei_ShiFZX']['SelectedValue'] = in_school
     json_data['p1_P_GuoNei_XiaoQu']['SelectedValue'] = campus
-    json_data['p1_P_GuoNei_JinXXQ']['SelectedValueArray'][0] = campus
+    json_data['p1_P_GuoNei_JinXXQ']['SelectedValueArray'] = entry_campus
     json_data['p1_ShiFZJ']['SelectedValue'] = in_home
 
     json_data['p1_pImages_HFimgSuiSM']['Text'] = sui_code
@@ -435,6 +435,7 @@ def getLatestInfo(session, force_upload=False):
     in_shanghai = '在上海（校内）'
     in_school = '是'
     campus = '宝山'
+    entry_campus = ['宝山']
     province = '上海'
     city = '上海'
     county = '宝山区'
@@ -468,6 +469,14 @@ def getLatestInfo(session, force_upload=False):
                         campus = '嘉定'
                     else:
                         campus = '宝山'
+                break
+
+        for i, h in enumerate(info_line):
+            if 'JinXXQ' in h:
+                try:
+                    entry_campus = jsLine2Json(info_line[i - 1])['Text'].split(';')
+                except (KeyError, json.JSONDecodeError):
+                    entry_campus = [campus]
                 break
 
     report_url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
@@ -533,7 +542,7 @@ def getLatestInfo(session, force_upload=False):
 
     info = dict(
         vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target,
-        in_shanghai=in_shanghai, in_school=in_school, campus=campus, in_home=in_home,
+        in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
         province=province, city=city, county=county, address=address,
         sui_code=sui_code, sui_img=sui_img, xing_code=xing_code, xing_img=xing_img, ans=ans
     )
@@ -549,6 +558,7 @@ def getReportForm(post_day, info):
     county = info['county']
     address = info['address']
     in_shanghai = info['in_shanghai']
+    entry_campus = info['entry_campus']
     in_school = info['in_school']
     campus = info['campus']
     in_home = info['in_home']
@@ -563,8 +573,9 @@ def getReportForm(post_day, info):
     # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
     f_state = generateFState(
-        json_file=abs_path + '/once.json', post_day=post_day, province=province, city=city, county=county,
-        address=address, in_shanghai=in_shanghai, in_school=in_school, campus=campus, in_home=in_home,
+        json_file=abs_path + '/once.json',
+        post_day=post_day, province=province, city=city, county=county, address=address,
+        in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
         sui_code=sui_code, sui_img=sui_img, xing_img=xing_img, xing_code=xing_code, ans=ans
     )
 
@@ -590,7 +601,7 @@ def getReportForm(post_day, info):
         'p1$P_GuoNei$ShiFSH': in_shanghai,
         'p1$P_GuoNei$ShiFZX': in_school,
         'p1$P_GuoNei$XiaoQu': campus,
-        'p1$P_GuoNei$JinXXQ': campus,
+        'p1$P_GuoNei$JinXXQ': entry_campus,
         'p1$ddlSheng$Value': province,
         'p1$ddlSheng': province,
         'p1$ddlShi$Value': city,
@@ -745,7 +756,7 @@ def reportSingleUser(session, form, try_times=None, sleep_time=None, ignore_main
         if report_times > try_times:
             debug_key = [
                 '__EVENTTARGET', 'p1$pnlDangSZS$DangSZS', 'p1$BaoSRQ', 'p1$P_GuoNei$ShiFSH', 'p1$P_GuoNei$ShiFZX',
-                'p1$ShiFZJ', 'F_TARGET', 'p1$P_GuoNei$XiaoQu'
+                'p1$ShiFZJ', 'F_TARGET', 'p1$P_GuoNei$XiaoQu', 'p1$P_GuoNei$JinXXQ'
             ]
             debug_privacy_key = [
                 'p1$ddlSheng$Value', 'p1$ddlSheng', 'p1$ddlShi$Value', 'p1$ddlShi', 'p1$ddlXian$Value', 'p1$ddlXian',
