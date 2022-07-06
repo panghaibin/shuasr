@@ -142,7 +142,7 @@ def cleanIndex(session, html, target, target_url, index_url):
 
 def generateFState(json_file, post_day=None, province=None, city=None, county=None, address=None, in_shanghai=None,
                    in_school=None, in_home=None, sui_img=None, sui_code=None, xing_img=None, xing_code=None, ans=None,
-                   campus=None, entry_campus=None):
+                   campus=None, entry_campus=None, street=None):
     with open(json_file, 'r', encoding='utf-8') as f:
         json_data = json.load(f)
 
@@ -159,6 +159,9 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
     json_data['p1_ddlXian']['SelectedValueArray'][0] = county
     json_data['p1_ddlXian']['F_Items'][0][0] = county
     json_data['p1_ddlXian']['F_Items'][0][1] = county
+
+    json_data['p1_ddlJieDao']['F_Items'][0] = [street, street, 1, '', '']
+    json_data['p1_ddlJieDao']['SelectedValueArray'][0] = street
 
     json_data['p1_XiangXDZ']['Text'] = address
 
@@ -218,43 +221,6 @@ def fetchRiskArea():
                 print(url)
                 print(e)
     return False
-
-
-def updateRiskArea():
-    result = fetchRiskArea()
-    if result is False:
-        return False
-    risk_list = []
-    for high in result.get('highlist', []):
-        risk_list.append(high['area_name'].replace(' ', ''))
-    for middle in result.get('middlelist', []):
-        risk_list.append(middle['area_name'].replace(' ', ''))
-    with open(os.path.join(abs_path, 'src/risk_area.json'), 'w', encoding='utf-8') as f:
-        json.dump(risk_list, f)
-
-
-def checkRiskPosition(position):
-    try:
-        with open(os.path.join(abs_path, 'src/risk_area.json'), 'r', encoding='utf-8') as f:
-            risk_list = json.load(f)
-    except Exception as e:
-        print(e)
-        return position
-    risk_tip = '77yI5rOo77yaKuihqOekuuW9k+WJjeivpeWfjuW4guWtmOWcqOS4remjjumZqeaIlumrmOmjjumZqeWcsOWMuu' \
-               '+8jOW5tuS4jeihqOekuueUqOaIt+WunumZheWIsOiuv+i/h+i/meS6m+S4remrmOmjjumZqeWcsOWMuuOAgu+8iQ=='
-    risk_tip = base64.b64decode(risk_tip).decode('utf-8')
-    position_list = position.split(',')
-    asterisk = False
-    for i in range(len(position_list)):
-        for risk in risk_list:
-            if position_list[i] in risk:
-                position_list[i] += '*'
-                asterisk = True
-                break
-    position = ','.join(position_list)
-    if asterisk:
-        position += risk_tip
-    return position
 
 
 def segmentText(text):
@@ -439,6 +405,7 @@ def getLatestInfo(session, force_upload=False):
     province = '上海'
     city = '上海'
     county = '宝山区'
+    street = '大场镇'
     address = '上海大学宝山校区'
     in_home = '否'
     for i, h in enumerate(info_line):
@@ -452,6 +419,8 @@ def getLatestInfo(session, force_upload=False):
             city = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
         elif 'ddlXian' in h:
             county = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
+        elif 'ddlJieDao' in h:
+            street = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
         elif 'XiangXDZ' in h:
             address = jsLine2Json(info_line[i - 1])['Text']
         elif 'ShiFZJ' in h:
@@ -478,6 +447,14 @@ def getLatestInfo(session, force_upload=False):
                 except (KeyError, json.JSONDecodeError):
                     entry_campus = [campus]
                 break
+
+    if province == '上海' and street == '-1':
+        if county == '静安区':
+            street = '大宁路街道'
+        elif county == '嘉定区':
+            street = '嘉定镇街道'
+        elif county == '宝山区':
+            street = '大场镇'
 
     report_url = 'https://selfreport.shu.edu.cn/DayReport.aspx'
     report_html = session.get(url=report_url).text
@@ -530,7 +507,6 @@ def getLatestInfo(session, force_upload=False):
             os.remove(sui_img_path)
 
             position = convertAddress(province, city)
-            position = checkRiskPosition(position)
             xing_img_path = generateXingImage(phone_number, position)
             xing_code, xing_img = getImgCodeByUpload(session, 'xing', view_state, report_url, xing_img_path)
             os.remove(xing_img_path)
@@ -543,7 +519,7 @@ def getLatestInfo(session, force_upload=False):
     info = dict(
         vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target,
         in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
-        province=province, city=city, county=county, address=address,
+        province=province, city=city, county=county, address=address, street=street,
         sui_code=sui_code, sui_img=sui_img, xing_code=xing_code, xing_img=xing_img, ans=ans
     )
 
@@ -556,6 +532,7 @@ def getReportForm(post_day, info):
     province = info['province']
     city = info['city']
     county = info['county']
+    street = info['street']
     address = info['address']
     in_shanghai = info['in_shanghai']
     entry_campus = info['entry_campus']
@@ -574,7 +551,7 @@ def getReportForm(post_day, info):
 
     f_state = generateFState(
         json_file=abs_path + '/once.json',
-        post_day=post_day, province=province, city=city, county=county, address=address,
+        post_day=post_day, province=province, city=city, county=county, address=address, street=street,
         in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
         sui_code=sui_code, sui_img=sui_img, xing_img=xing_img, xing_code=xing_code, ans=ans
     )
@@ -608,6 +585,8 @@ def getReportForm(post_day, info):
         'p1$ddlShi': city,
         'p1$ddlXian$Value': county,
         'p1$ddlXian': county,
+        'p1$ddlJieDao$Value': street,
+        'p1$ddlJieDao': street,
         'p1$XiangXDZ': address,
         'p1$ShiFZJ': in_home,
         'p1$P_GuoNei$pImages$HFimgSuiSM': sui_code,
@@ -1106,7 +1085,6 @@ def test(config_path, logs_path):
         print("运行 python3 main.py add 添加用户，运行 python3 main.py send 配置消息发送API")
         return False
 
-    updateRiskArea()
     post_day = getTime().strftime("%Y-%m-%d")
     report_result = reportAllUsers(config_path, logs_path, post_day=post_day)
     if not report_result:
@@ -1169,7 +1147,6 @@ def github():
         print('确保使用的是英文逗号和分号，且用户密码中也不包含英文逗号或分号')
         raise
     logPrint("GitHub Actions 填报开始\n若为第一次使用，耗时可能较长，请耐心等待......")
-    updateRiskArea()
     ovpn_connected = showIP()
     logPrint('已接入校内VPN') if ovpn_connected else logPrint('未接入校内VPN')
     if not ovpn_connected:
@@ -1420,12 +1397,10 @@ def main(config_path, logs_path):
             is_time = isTimeToReport()
             if (is_time == 0 or is_time == 3) and grab_mode and len(getUsers(config_path)) > 0:
                 post_day = getTime().strftime("%Y-%m-%d")
-                updateRiskArea()
                 report_result = grabRankUsers(config_path, logs_path, post_day)
                 is_reported = True
             elif is_time == 1 and len(getUsers(config_path)) > 0 and not grab_mode:
                 post_day = getTime().strftime("%Y-%m-%d")
-                updateRiskArea()
                 report_result = reportAllUsers(config_path, logs_path, post_day=post_day)
                 is_reported = True
 
