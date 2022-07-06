@@ -142,11 +142,13 @@ def cleanIndex(session, html, target, target_url, index_url):
 
 def generateFState(json_file, post_day=None, province=None, city=None, county=None, address=None, in_shanghai=None,
                    in_school=None, in_home=None, sui_img=None, sui_code=None, xing_img=None, xing_code=None, ans=None,
-                   campus=None, entry_campus=None, street=None):
+                   campus=None, entry_campus=None, street=None, in_out=None):
     with open(json_file, 'r', encoding='utf-8') as f:
         json_data = json.load(f)
 
     json_data['p1_BaoSRQ']['Text'] = post_day
+
+    json_data['p1_JinChuSQ']['SelectedValue'] = in_out
 
     json_data['p1_ddlSheng']['SelectedValueArray'][0] = province
     json_data['p1_ddlSheng']['F_Items'][0][0] = province
@@ -200,27 +202,6 @@ def convertAddress(province, city):
     else:
         province += "省"
     return province + city
-
-
-def fetchRiskArea():
-    api_url = 'https://raw.githubusercontent.com/panghaibin/RiskLevelAPI/api/latest.json'
-    mirrors = [
-        '',
-        'https://ghproxy.com/',
-        'https://gh.api.99988866.xyz/',
-    ]
-    api_urls = [f'{mirror}{api_url}' for mirror in mirrors]
-    api_urls.insert(1, 'https://covid-api.caduo.ml/latest.json')
-    for i in range(3 * len(api_urls)):
-        for url in api_urls:
-            try:
-                result = requests.get(url, timeout=10).json()
-                if result['code'] == 0:
-                    return result['data']
-            except Exception as e:
-                print(url)
-                print(e)
-    return False
 
 
 def segmentText(text):
@@ -408,6 +389,8 @@ def getLatestInfo(session, force_upload=False):
     street = '大场镇'
     address = '上海大学宝山校区'
     in_home = '否'
+    # 假期期间默认设置为不需要申请
+    in_out = "0"
     for i, h in enumerate(info_line):
         if 'ShiFSH' in h:
             in_shanghai = jsLine2Json(info_line[i - 1])['Text']
@@ -521,7 +504,7 @@ def getLatestInfo(session, force_upload=False):
         xing_img = _img if xing_img is None else xing_img
 
     info = dict(
-        vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target,
+        vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target, in_out=in_out,
         in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
         province=province, city=city, county=county, address=address, street=street,
         sui_code=sui_code, sui_img=sui_img, xing_code=xing_code, xing_img=xing_img, ans=ans
@@ -533,6 +516,7 @@ def getLatestInfo(session, force_upload=False):
 def getReportForm(post_day, info):
     view_state = info['vs']
     view_state_generator = info['vsg']
+    in_out = info['in_out']
     province = info['province']
     city = info['city']
     county = info['county']
@@ -554,7 +538,7 @@ def getReportForm(post_day, info):
     # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
     f_state = generateFState(
-        json_file=abs_path + '/once.json',
+        json_file=abs_path + '/once.json', in_out=in_out,
         post_day=post_day, province=province, city=city, county=county, address=address, street=street,
         in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
         sui_code=sui_code, sui_img=sui_img, xing_img=xing_img, xing_code=xing_code, ans=ans
@@ -579,6 +563,7 @@ def getReportForm(post_day, info):
         'p1$GuoNei': '国内',
         'p1$ddlGuoJia$Value': '-1',
         'p1$ddlGuoJia': '选择国家',
+        'p1$JinChuSQ': in_out,
         'p1$P_GuoNei$ShiFSH': in_shanghai,
         'p1$P_GuoNei$ShiFZX': in_school,
         'p1$P_GuoNei$XiaoQu': campus,
@@ -739,7 +724,7 @@ def reportSingleUser(session, form, try_times=None, sleep_time=None, ignore_main
         if report_times > try_times:
             debug_key = [
                 '__EVENTTARGET', 'p1$pnlDangSZS$DangSZS', 'p1$BaoSRQ', 'p1$P_GuoNei$ShiFSH', 'p1$P_GuoNei$ShiFZX',
-                'p1$ShiFZJ', 'F_TARGET', 'p1$P_GuoNei$XiaoQu', 'p1$P_GuoNei$JinXXQ'
+                'p1$ShiFZJ', 'F_TARGET', 'p1$P_GuoNei$XiaoQu', 'p1$P_GuoNei$JinXXQ', 'p1$ddlJieDao', 'p1$JinChuSQ'
             ]
             debug_privacy_key = [
                 'p1$ddlSheng$Value', 'p1$ddlSheng', 'p1$ddlShi$Value', 'p1$ddlShi', 'p1$ddlXian$Value', 'p1$ddlXian',
