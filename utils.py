@@ -578,6 +578,7 @@ def getReportForm(post_day, info):
         'p1$ddlJieDao': street,
         'p1$XiangXDZ': address,
         'p1$ShiFZJ': in_home,
+        'p1$GaoZDFXLJS': '无',
         'p1$P_GuoNei$pImages$HFimgSuiSM': sui_code,
         'p1$P_GuoNei$pImages$HFimgXingCM': xing_code,
         'p1$FengXDQDL': '否',
