@@ -142,13 +142,14 @@ def cleanIndex(session, html, target, target_url, index_url):
 
 def generateFState(json_file, post_day=None, province=None, city=None, county=None, address=None, in_shanghai=None,
                    in_school=None, in_home=None, sui_img=None, sui_code=None, xing_img=None, xing_code=None, ans=None,
-                   campus=None, entry_campus=None, street=None, in_out=None):
+                   campus=None, entry_campus=None, street=None, in_out=None, risk=None):
     with open(json_file, 'r', encoding='utf-8') as f:
         json_data = json.load(f)
 
     json_data['p1_BaoSRQ']['Text'] = post_day
 
     json_data['p1_JinChuSQ']['SelectedValue'] = in_out
+    json_data['p1_GaoZDFXLJS']['SelectedValue'] = risk
 
     json_data['p1_ddlSheng']['SelectedValueArray'][0] = province
     json_data['p1_ddlSheng']['F_Items'][0][0] = province
@@ -391,6 +392,8 @@ def getLatestInfo(session, force_upload=False):
     in_home = '否'
     # 假期期间默认设置为不需要申请
     in_out = "0"
+    # 高中低风险
+    risk = '无'
     for i, h in enumerate(info_line):
         if 'ShiFSH' in h:
             in_shanghai = jsLine2Json(info_line[i - 1])['Text']
@@ -412,6 +415,19 @@ def getLatestInfo(session, force_upload=False):
             address = jsLine2Json(info_line[i - 1])['Text']
         elif 'ShiFZJ' in h:
             in_home = jsLine2Json(info_line[i - 1])['SelectedValue']
+        elif 'GaoZDFXLJS' in h:
+            try:
+                risk = jsLine2Json(info_line[i - 1])['Text']
+            except (json.JSONDecodeError, KeyError):
+                continue
+            if '低' in risk:
+                risk = '低'
+            elif '中' in risk:
+                risk = '中'
+            elif '高' in risk:
+                risk = '高'
+            else:
+                risk = '无'
 
     if '（校内）' in in_shanghai and in_school == '是':
         for i, h in enumerate(info_line):
@@ -506,7 +522,7 @@ def getLatestInfo(session, force_upload=False):
     info = dict(
         vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target, in_out=in_out,
         in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
-        province=province, city=city, county=county, address=address, street=street,
+        province=province, city=city, county=county, address=address, street=street, risk=risk,
         sui_code=sui_code, sui_img=sui_img, xing_code=xing_code, xing_img=xing_img, ans=ans
     )
 
@@ -527,6 +543,7 @@ def getReportForm(post_day, info):
     in_school = info['in_school']
     campus = info['campus']
     in_home = info['in_home']
+    risk = info['risk']
     f_target = info['f_target']
     even_target = info['even_target']
     sui_code = info['sui_code']
@@ -538,7 +555,7 @@ def getReportForm(post_day, info):
     # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
     f_state = generateFState(
-        json_file=abs_path + '/once.json', in_out=in_out,
+        json_file=abs_path + '/once.json', in_out=in_out, risk=risk,
         post_day=post_day, province=province, city=city, county=county, address=address, street=street,
         in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
         sui_code=sui_code, sui_img=sui_img, xing_img=xing_img, xing_code=xing_code, ans=ans
@@ -578,7 +595,7 @@ def getReportForm(post_day, info):
         'p1$ddlJieDao': street,
         'p1$XiangXDZ': address,
         'p1$ShiFZJ': in_home,
-        'p1$GaoZDFXLJS': '无',
+        'p1$GaoZDFXLJS': risk,
         'p1$P_GuoNei$pImages$HFimgSuiSM': sui_code,
         'p1$P_GuoNei$pImages$HFimgXingCM': xing_code,
         'p1$FengXDQDL': '否',
