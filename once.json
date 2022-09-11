@@ -304,6 +304,21 @@
     ],
     "SelectedValue": "是"
   },
+  "p1_CengFWSS": {
+    "F_Items": [
+      [
+        "是",
+        "是",
+        1
+      ],
+      [
+        "否",
+        "否",
+        1
+      ]
+    ],
+    "SelectedValue": "否"
+  },
   "p1_GaoZDFXLJS": {
     "F_Items": [
       [

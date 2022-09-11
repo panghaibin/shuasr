@@ -58,7 +58,7 @@ def login(username, password, try_once=False):
                                             'KHTML, like Gecko) Chrome/34.0.1847.131 Safari/537.36'
             session.trust_env = False
             session.keep_alive = False
-            retry = Retry(connect=5, backoff_factor=60)
+            retry = Retry(connect=5, backoff_factor=10)
             adapter = HTTPAdapter(max_retries=retry)
             session.mount('http://', adapter)
             session.mount('https://', adapter)
@@ -101,10 +101,10 @@ def login(username, password, try_once=False):
 
         if try_once:
             return False
-        if login_times > 10:
+        if login_times > 3:
             print('尝试登录次数过多')
             return False
-        time.sleep(60)
+        time.sleep(20)
 
 
 def cleanIndex(session, html, target, target_url, index_url):
@@ -142,7 +142,7 @@ def cleanIndex(session, html, target, target_url, index_url):
 
 def generateFState(json_file, post_day=None, province=None, city=None, county=None, address=None, in_shanghai=None,
                    in_school=None, in_home=None, sui_img=None, sui_code=None, xing_img=None, xing_code=None, ans=None,
-                   campus=None, entry_campus=None, street=None, in_out=None, risk=None):
+                   campus=None, entry_campus=None, street=None, in_out=None, risk=None, out_province=None):
     with open(json_file, 'r', encoding='utf-8') as f:
         json_data = json.load(f)
 
@@ -173,6 +173,7 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
     json_data['p1_P_GuoNei_XiaoQu']['SelectedValue'] = campus
     json_data['p1_P_GuoNei_JinXXQ']['SelectedValueArray'] = entry_campus
     json_data['p1_ShiFZJ']['SelectedValue'] = in_home
+    json_data['p1_CengFWSS']['SelectedValue'] = out_province
 
     json_data['p1_pImages_HFimgSuiSM']['Text'] = sui_code
     json_data['p1_pImages_imgSuiSM']['ImageUrl'] = sui_img
@@ -394,6 +395,8 @@ def getLatestInfo(session, force_upload=False):
     in_out = "0"
     # 高中低风险
     risk = '无'
+    # 曾赴外省市
+    out_province = '否'
     for i, h in enumerate(info_line):
         if 'ShiFSH' in h:
             in_shanghai = jsLine2Json(info_line[i - 1])['Text']
@@ -428,6 +431,12 @@ def getLatestInfo(session, force_upload=False):
                 risk = '高'
             else:
                 risk = '无'
+        elif 'CengFWSS' in h:
+            try:
+                out_province = jsLine2Json(info_line[i - 1])['Text']
+            except (json.JSONDecodeError, KeyError):
+                out_province = '否'
+                continue
 
     if '（校内）' in in_shanghai and in_school == '是':
         for i, h in enumerate(info_line):
@@ -523,7 +532,7 @@ def getLatestInfo(session, force_upload=False):
         vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target, in_out=in_out,
         in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
         province=province, city=city, county=county, address=address, street=street, risk=risk,
-        sui_code=sui_code, sui_img=sui_img, xing_code=xing_code, xing_img=xing_img, ans=ans
+        sui_code=sui_code, sui_img=sui_img, xing_code=xing_code, xing_img=xing_img, ans=ans, out_province=out_province,
     )
 
     return info
@@ -544,6 +553,7 @@ def getReportForm(post_day, info):
     campus = info['campus']
     in_home = info['in_home']
     risk = info['risk']
+    out_province = info['out_province']
     f_target = info['f_target']
     even_target = info['even_target']
     sui_code = info['sui_code']
@@ -555,7 +565,7 @@ def getReportForm(post_day, info):
     # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
     f_state = generateFState(
-        json_file=abs_path + '/once.json', in_out=in_out, risk=risk,
+        json_file=abs_path + '/once.json', in_out=in_out, risk=risk, out_province=out_province,
         post_day=post_day, province=province, city=city, county=county, address=address, street=street,
         in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
         sui_code=sui_code, sui_img=sui_img, xing_img=xing_img, xing_code=xing_code, ans=ans
@@ -595,6 +605,7 @@ def getReportForm(post_day, info):
         'p1$ddlJieDao': street,
         'p1$XiangXDZ': address,
         'p1$ShiFZJ': in_home,
+        'p1$CengFWSS': out_province,
         'p1$GaoZDFXLJS': risk,
         'p1$P_GuoNei$pImages$HFimgSuiSM': sui_code,
         'p1$P_GuoNei$pImages$HFimgXingCM': xing_code,
@@ -1225,8 +1236,8 @@ def github():
             print('***填报失败')
             err_log.append(username)
         if i < len(users) - 1:
-            print("该用户填报结束，开始休眠90s......")
-            sleepCountdown(90)
+            print("该用户填报结束，开始休眠60s......")
+            sleepCountdown(60)
         else:
             logPrint("所有用户填报结束")
 
