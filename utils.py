@@ -228,7 +228,7 @@ def generateXingImage(ph_num, position):
     clock = "%s:%s" % (t.hour, t.strftime("%M"))
     phone = ph_num[:3] + '****' + ph_num[-4:] + base64.b64decode('55qE5Yqo5oCB6KGM56iL5Y2h').decode('utf-8')
     update = base64.b64decode('5pu05paw5LqO77ya').decode('utf-8') + t.strftime("%Y.%m.%d %H:%M:%S")
-    tip = base64.b64decode('5oKo5LqO5YmNMTTlpKnlhoXliLDovr7miJbpgJTnu4/vvJo=').decode('utf-8')
+    tip = base64.b64decode('5oKo5LqO5YmNN+WkqeWGheWIsOi+vuaIlumAlOe7j++8mg==').decode('utf-8')
 
     image = Image.open(os.path.join(abs_path, "src/zxn_1.bin"))
     draw = ImageDraw.Draw(image)
@@ -288,6 +288,11 @@ def generateXingImage(ph_num, position):
 
 
 def generateSuiImage(name):
+    """
+    将在未来弃用
+    :param name:
+    :return:
+    """
     t = getTime()
     t -= datetime.timedelta(seconds=random.randint(10, 30))
     clock = "%s:%s" % (t.hour, t.strftime("%M"))
@@ -507,16 +512,16 @@ def getLatestInfo(session, force_upload=False):
             p_info_line = html2JsLine(p_info_html)
 
             phone_number = '18888888888'
-            name = '***'
+            # name = '***'
             for i, h in enumerate(p_info_line):
                 if 'ShouJHM' in h:
                     phone_number = jsLine2Json(p_info_line[i - 1])['Text']
-                elif 'XingMing' in h:
-                    name = jsLine2Json(p_info_line[i - 1])['Text']
+                # elif 'XingMing' in h:
+                #     name = jsLine2Json(p_info_line[i - 1])['Text']
 
-            sui_img_path = generateSuiImage(name)
-            sui_code, sui_img = getImgCodeByUpload(session, 'sui', view_state, report_url, sui_img_path)
-            os.remove(sui_img_path)
+            # sui_img_path = generateSuiImage(name)
+            # sui_code, sui_img = getImgCodeByUpload(session, 'sui', view_state, report_url, sui_img_path)
+            # os.remove(sui_img_path)
 
             position = convertAddress(province, city)
             xing_img_path = generateXingImage(phone_number, position)
