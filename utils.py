@@ -583,6 +583,7 @@ def getReportForm(post_day, info):
         '__VIEWSTATEGENERATOR': view_state_generator,
         'p1$ChengNuo': 'p1_ChengNuo',
         'p1$pnlDangSZS$DangSZS': ans,
+        'p1$P_QueZXX$CengQZ': '否',
         'p1$BaoSRQ': post_day,
         'p1$DangQSTZK': '良好',
         'p1$TiWen': '',
