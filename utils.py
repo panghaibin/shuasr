@@ -142,7 +142,8 @@ def cleanIndex(session, html, target, target_url, index_url):
 
 def generateFState(json_file, post_day=None, province=None, city=None, county=None, address=None, in_shanghai=None,
                    in_school=None, in_home=None, sui_img=None, sui_code=None, xing_img=None, xing_code=None, ans=None,
-                   campus=None, entry_campus=None, street=None, in_out=None, risk=None, out_province=None):
+                   campus=None, entry_campus=None, street=None, in_out=None, risk=None, out_province=None,
+                   back_sh=None):
     with open(json_file, 'r', encoding='utf-8') as f:
         json_data = json.load(f)
 
@@ -173,7 +174,10 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
     json_data['p1_P_GuoNei_XiaoQu']['SelectedValue'] = campus
     json_data['p1_P_GuoNei_JinXXQ']['SelectedValueArray'] = entry_campus
     json_data['p1_ShiFZJ']['SelectedValue'] = in_home
+
     json_data['p1_CengFWSS']['SelectedValue'] = out_province
+    json_data['p1_DiHRQ']['Text'] = back_sh
+    json_data['p1_DiHRQ']['Required'] = True if not not back_sh else False
 
     json_data['p1_pImages_HFimgSuiSM']['Text'] = sui_code
     json_data['p1_pImages_imgSuiSM']['ImageUrl'] = sui_img
@@ -402,6 +406,8 @@ def getLatestInfo(session, force_upload=False):
     risk = '无'
     # 曾赴外省市
     out_province = '否'
+    # 抵沪日期
+    back_sh = ''
     for i, h in enumerate(info_line):
         if 'ShiFSH' in h:
             in_shanghai = jsLine2Json(info_line[i - 1])['Text']
@@ -441,6 +447,12 @@ def getLatestInfo(session, force_upload=False):
                 out_province = jsLine2Json(info_line[i - 1])['Text']
             except (json.JSONDecodeError, KeyError):
                 out_province = '否'
+                continue
+        elif 'DiHRQ' in h:
+            try:
+                back_sh = jsLine2Json(info_line[i - 1])['Text']
+            except (json.JSONDecodeError, KeyError):
+                back_sh = ''
                 continue
 
     if '（校内）' in in_shanghai and in_school == '是':
@@ -536,7 +548,7 @@ def getLatestInfo(session, force_upload=False):
     info = dict(
         vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target, in_out=in_out,
         in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
-        province=province, city=city, county=county, address=address, street=street, risk=risk,
+        province=province, city=city, county=county, address=address, street=street, risk=risk, back_sh=back_sh,
         sui_code=sui_code, sui_img=sui_img, xing_code=xing_code, xing_img=xing_img, ans=ans, out_province=out_province,
     )
 
@@ -559,6 +571,7 @@ def getReportForm(post_day, info):
     in_home = info['in_home']
     risk = info['risk']
     out_province = info['out_province']
+    back_sh = info['back_sh']
     f_target = info['f_target']
     even_target = info['even_target']
     sui_code = info['sui_code']
@@ -570,7 +583,7 @@ def getReportForm(post_day, info):
     # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
     f_state = generateFState(
-        json_file=abs_path + '/once.json', in_out=in_out, risk=risk, out_province=out_province,
+        json_file=abs_path + '/once.json', in_out=in_out, risk=risk, out_province=out_province, back_sh=back_sh,
         post_day=post_day, province=province, city=city, county=county, address=address, street=street,
         in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
         sui_code=sui_code, sui_img=sui_img, xing_img=xing_img, xing_code=xing_code, ans=ans
@@ -612,6 +625,7 @@ def getReportForm(post_day, info):
         'p1$XiangXDZ': address,
         'p1$ShiFZJ': in_home,
         'p1$CengFWSS': out_province,
+        'p1$DiHRQ': back_sh,
         'p1$GaoZDFXLJS': risk,
         'p1$P_GuoNei$pImages$HFimgSuiSM': sui_code,
         'p1$P_GuoNei$pImages$HFimgXingCM': xing_code,

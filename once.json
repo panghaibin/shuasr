@@ -319,6 +319,13 @@
     ],
     "SelectedValue": "否"
   },
+  "p1_DiHRQ": {
+    "Hidden": false,
+    "Required": false,
+    "MaxDate": "2000-01-01T00:00:00+00:00",
+    "MinDate": "2100-01-01T00:00:00+00:00",
+    "Text": ""
+  },
   "p1_GaoZDFXLJS": {
     "F_Items": [
       [
