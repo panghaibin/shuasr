@@ -1350,7 +1350,7 @@ def grabRank(username, password, post_day):
 
     try_times = 0
     while True:
-        _info = getLatestInfo(session, force_upload=False)
+        _info = getLatestInfo(session, force_upload=True)
         form = getReportForm(post_day, _info)
         if form:
             break
