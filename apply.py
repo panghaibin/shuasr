@@ -225,7 +225,7 @@ class Main:
             if not USERS:
                 print('从环境变量获取用户出错，请尝试重新设置环境变量！')
                 print('确保使用的是英文逗号和分号，且用户密码中也不包含英文逗号或分号')
-                raise
+                return False
             for user in USERS:
                 _ = user.split(',')
                 if len(_) == 2:
@@ -261,7 +261,8 @@ class Main:
     def run(self):
         users = self.users
         if not users:
-            raise Exception('未配置用户信息')
+            print('未配置用户信息')
+            return False
 
         for i, j in enumerate(users.keys()):
             username = j
@@ -304,6 +305,4 @@ class Main:
 
 
 if __name__ == '__main__':
-    if Main().run():
-        exit(0)
-    exit(1)
+    Main().run()

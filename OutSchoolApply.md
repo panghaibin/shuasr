@@ -14,7 +14,9 @@
    []内的参数可选，若配置可为单个用户推送消息
 2. （可选）设置 Secrets `APPLY_SEND` ，格式为 `API_TYPE,API_KEY_HERE`。设置后全部用户的申请结果将会推送到指定的推送接口。
 
-然后记得到 Actions 页面启用 Workflow
+然后记得到 Actions 页面启用 Workflow。
+
+申请失败时不会使Actions失败，建议为每一个用户都配置消息推送，或者配置 `APPLY_SEND` 。
 
 ## 在自己的服务器使用
 1. 将示例配置文件 `apply.bak.yaml` 重命名为 `apply.yaml`，根据其中的提示编写

@@ -24,4 +24,9 @@ jobs:
         env:
           APPLY_USERS: ${{ secrets.APPLY_USERS }}
           APPLY_SEND: ${{ secrets.APPLY_SEND }}
-        run: "python -u apply.py"
+        run: |
+          if python -u main.py gh; then
+            echo "success";
+          else
+            echo "fail";
+          fi
