@@ -25,7 +25,7 @@ jobs:
           APPLY_USERS: ${{ secrets.APPLY_USERS }}
           APPLY_SEND: ${{ secrets.APPLY_SEND }}
         run: |
-          if python -u main.py gh; then
+          if python -u apply.py; then
             echo "success";
           else
             echo "fail";
