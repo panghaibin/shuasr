@@ -1,0 +1,21 @@
+# 全局消息发送，选填 所有上报的结果都会发送到此接受者
+global_send:
+# 消息发送 api type 设置
+# 0: 未设置
+# 1: Server酱 https://sct.ftqq.com/
+# 2: 该接口已弃用 推送加（hxtrip域名下） https://pushplus.hxtrip.com/
+# 3: Telegram Bot 介绍见 ./Telegram_bot.md
+# 4: PushDear https://github.com/easychen/pushdeer
+# 5: 推送加PushPlus http://www.pushplus.plus/
+  api_type: 0
+#  消息发送的 key
+  api_key: ""
+
+users:
+#  用户名（作为键值），必填 为8位学号
+  "19126666":
+#    密码，必填
+    password: "password_here"
+#    消息发送设置，选填 参数同上，此为个人推送
+    api_type: 0
+    api_key: ""
