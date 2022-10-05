@@ -1,7 +1,7 @@
 # 自动申请明日离校
 
 ## 在 GitHub Actions 使用
-目前设置北京北京时间 8:20 执行，以 GitHub Actions 实际执行时间为准
+目前设置北京时间 9:20 执行，以 GitHub Actions 实际执行时间为准
 
 1. 设置 Secrets `APPLY_USERS` ，格式如下
     ```

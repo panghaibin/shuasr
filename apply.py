@@ -310,12 +310,12 @@ class Main:
             desp = f'{username} {desp}'
             self.status_map[status].append(desp)
 
-            title = '成功申请' if status == 'success' else ''
-            title = '申请失败' if status == 'fail' else title
-            title = '已申请过' if status == 'applied' else title
-            title += '明日出校'
-            desp = f'用户：{username}\n\n状态：{desp}'
             if api_type and api_type != 0 and api_key:
+                title = '成功申请' if status == 'success' else ''
+                title = '申请失败' if status == 'fail' else title
+                title = '已申请过' if status == 'applied' else title
+                title += '明日出校'
+                desp = f'用户：{username}\n\n状态：{desp}'
                 send_result = sendMsg(title, f'{desp}\n\n{random.randint(1000, 9999)}', api_type, api_key)
                 logging.info(f'No.{i + 1}用户消息发送成功') if send_result else logging.info(f'No.{i + 1}用户消息发送失败')
 
@@ -328,7 +328,7 @@ class Main:
         title += f'{len(self.UPLOADED)}个已申过' if self.UPLOADED else ''
         title += f'{len(self.FAIL)}个失败' if self.FAIL else ''
         desp = '\n\n'.join(self.SUCCESS + self.UPLOADED + self.FAIL)
-        sleepCountdown(10)
+        sleep(10)
         send_result = sendMsg(title, f'{desp}\n\n{random.randint(1000, 9999)}', self.global_send['api_type'],
                               self.global_send['api_key'])
         logging.info('全局消息发送成功') if send_result else logging.info('全局消息发送失败')
