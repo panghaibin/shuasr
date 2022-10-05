@@ -1,15 +1,15 @@
-import base64
-import datetime
-import logging
 import os
-import random
-import yaml
 import re
+import yaml
 import json
-
+import base64
+import random
+import logging
+import datetime
+from time import sleep
 from utils import abs_path, login, html2JsLine, jsLine2Json, sendMsg, getTime, sleepCountdown
 
-CONFIG_PATH = abs_path + '/apply.yaml'
+CONFIG_PATH = os.path.join(abs_path, 'apply.yaml')
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
@@ -122,16 +122,15 @@ class OutSchoolApply:
             fstate = json.load(f)
 
         fstate['persinfo_XueGH']['Text'] = self.username
-        fstate['/persinfo_SuoZXQ/SelectedValue'] = self.last_apply_info['campus']
+        fstate['persinfo_SuoZXQ']['SelectedValue'] = self.last_apply_info['campus']
         fstate['persinfo_ChuXRQ']['Text'] = self.tomorrow_day_str
-        fstate['/persinfo_YuanYin/SelectedValue'] = self.last_apply_info['reason']
-        fstate['/persinfo_ddlSheng/SelectedValueArray'] = self.last_apply_info['province']
-        fstate['/persinfo_ddlShi/SelectedValueArray'] = self.last_apply_info['city']
-        fstate['/persinfo_ddlXian/SelectedValueArray'] = self.last_apply_info['county']
-        fstate['/persinfo_DangTHX/SelectedValue'] = self.last_apply_info['back_today']
+        fstate['persinfo_YuanYin']['SelectedValue'] = self.last_apply_info['reason']
+        fstate['persinfo_ddlSheng']['SelectedValueArray'][0] = self.last_apply_info['province']
+        fstate['persinfo_ddlShi']['SelectedValueArray'][0] = self.last_apply_info['city']
+        fstate['persinfo_ddlXian']['SelectedValueArray'][0] = self.last_apply_info['county']
+        fstate['persinfo_DangTHX']['SelectedValue'] = self.last_apply_info['back_today']
 
         b64_fstate = base64.b64encode(json.dumps(fstate).encode('utf-8')).decode('utf-8')
-        self.to_post_form['F_STATE'] = b64_fstate
         return b64_fstate
 
     def _generate_form(self):
@@ -192,9 +191,15 @@ class OutSchoolApply:
             logging.error(f'{self.id_masked}提交申请失败，状态码{resp.status_code}')
             return f'状态码 {resp.status_code}'
         if '申请已提交' not in resp.text:
-            msg = re.search(r'message:\'(.*?)\'', resp.text).group(1)
-            logging.error(f'{self.id_masked}提交申请失败，返回信息：{msg}')
-            return msg
+            try:
+                msg = re.search(r'message:\'(.*?)\'', resp.text).group(1)
+                logging.error(f'{self.id_masked}提交申请失败，返回信息：{msg}')
+                return msg
+            except Exception as e:
+                logging.exception(e)
+                logging.error(f'{self.id_masked}提交申请失败，返回未知信息\n'
+                              f'{base64.b64encode(resp.text.encode("utf-8")).decode("utf-8")}')
+                return resp.text
         return True
 
     def run(self):
@@ -208,9 +213,16 @@ class OutSchoolApply:
             return -4, 'fail', '获取上次申请信息失败'
         if not self._generate_form():
             return -5, 'fail', '生成表单失败'
+
         post_result = self._post_form()
         if type(post_result) == str:
             return -6, 'fail', f'提交申请失败，返回报错：{post_result}'
+
+        sleep(5)
+        apply_list = self._get_apply_list()
+        if self.tomorrow_day_str != apply_list[0][0]:
+            return -7, 'fail', '出校申请失败，提交后未在申请列表中找到明日出校'
+
         return 1, 'success', '提交成功'
 
 
@@ -298,8 +310,7 @@ class Main:
             desp = f'{username} {desp}'
             self.status_map[status].append(desp)
 
-            title = ''
-            title = '成功申请' if status == 'success' else title
+            title = '成功申请' if status == 'success' else ''
             title = '申请失败' if status == 'fail' else title
             title = '已申请过' if status == 'applied' else title
             title += '明日出校'
@@ -309,8 +320,7 @@ class Main:
                 logging.info(f'No.{i + 1}用户消息发送成功') if send_result else logging.info(f'No.{i + 1}用户消息发送失败')
 
             if i < len(users) - 1:
-                sleep_time = random.randint(40, 70)
-                logging.info(f'休眠{sleep_time}秒')
+                sleep_time = random.randint(60, 90)
                 sleepCountdown(sleep_time)
 
         title = '离校申请'
