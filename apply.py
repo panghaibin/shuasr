@@ -1,3 +1,4 @@
+import base64
 import datetime
 import logging
 import os
@@ -115,6 +116,24 @@ class OutSchoolApply:
         )
         return self.last_apply_info
 
+    def _generate_fstate(self):
+        fstate_path = os.path.join(abs_path, 'apply.json')
+        with open(fstate_path, 'r', encoding='utf-8') as f:
+            fstate = json.load(f)
+
+        fstate['persinfo_XueGH']['Text'] = self.username
+        fstate['/persinfo_SuoZXQ/SelectedValue'] = self.last_apply_info['campus']
+        fstate['persinfo_ChuXRQ']['Text'] = self.tomorrow_day_str
+        fstate['/persinfo_YuanYin/SelectedValue'] = self.last_apply_info['reason']
+        fstate['/persinfo_ddlSheng/SelectedValueArray'] = self.last_apply_info['province']
+        fstate['/persinfo_ddlShi/SelectedValueArray'] = self.last_apply_info['city']
+        fstate['/persinfo_ddlXian/SelectedValueArray'] = self.last_apply_info['county']
+        fstate['/persinfo_DangTHX/SelectedValue'] = self.last_apply_info['back_today']
+
+        b64_fstate = base64.b64encode(json.dumps(fstate).encode('utf-8')).decode('utf-8')
+        self.to_post_form['F_STATE'] = b64_fstate
+        return b64_fstate
+
     def _generate_form(self):
         url = 'https://selfreport.shu.edu.cn/XiaoYJC202207/XueSLXSQ.aspx'
         resp = self.session.get(url)
@@ -147,7 +166,7 @@ class OutSchoolApply:
             'persinfo_P_HeSJC_Collapsed': 'false',
             'persinfo_HuanCQTip_Collapsed': 'false',
             'persinfo_Collapsed': 'false',
-            'F_STATE': None,
+            'F_STATE': self._generate_fstate(),
             'F_TARGET': 'persinfo_ctl01_btnSubmit',
         }
         return self.to_post_form
@@ -171,7 +190,11 @@ class OutSchoolApply:
         resp = self.session.post(url, headers=headers, data=self.to_post_form)
         if resp.status_code != 200:
             logging.error(f'{self.id_masked}提交申请失败，状态码{resp.status_code}')
-            return False
+            return f'状态码 {resp.status_code}'
+        if '申请已提交' not in resp.text:
+            msg = re.search(r'message:\'(.*?)\'', resp.text).group(1)
+            logging.error(f'{self.id_masked}提交申请失败，返回信息：{msg}')
+            return msg
         return True
 
     def run(self):
@@ -185,8 +208,9 @@ class OutSchoolApply:
             return -4, 'fail', '获取上次申请信息失败'
         if not self._generate_form():
             return -5, 'fail', '生成表单失败'
-        if not self._post_form():
-            return -6, 'fail', '提交申请失败'
+        post_result = self._post_form()
+        if type(post_result) == str:
+            return -6, 'fail', f'提交申请失败，返回报错：{post_result}'
         return 1, 'success', '提交成功'
 
 
