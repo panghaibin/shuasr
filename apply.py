@@ -323,15 +323,16 @@ class Main:
                 sleep_time = random.randint(60, 90)
                 sleepCountdown(sleep_time)
 
-        title = '离校申请'
-        title += f'{len(self.SUCCESS)}个成功' if self.SUCCESS else ''
-        title += f'{len(self.UPLOADED)}个已申过' if self.UPLOADED else ''
-        title += f'{len(self.FAIL)}个失败' if self.FAIL else ''
-        desp = '\n\n'.join(self.SUCCESS + self.UPLOADED + self.FAIL)
-        sleep(10)
-        send_result = sendMsg(title, f'{desp}\n\n{random.randint(1000, 9999)}', self.global_send['api_type'],
-                              self.global_send['api_key'])
-        logging.info('全局消息发送成功') if send_result else logging.info('全局消息发送失败')
+        if self.global_send.get('api_type', 0) != 0 and self.global_send.get('api_key'):
+            title = '离校申请'
+            title += f'{len(self.SUCCESS)}个成功' if self.SUCCESS else ''
+            title += f'{len(self.UPLOADED)}个已申过' if self.UPLOADED else ''
+            title += f'{len(self.FAIL)}个失败' if self.FAIL else ''
+            desp = '\n\n'.join(self.SUCCESS + self.UPLOADED + self.FAIL)
+            sleep(10)
+            send_result = sendMsg(title, f'{desp}\n\n{random.randint(1000, 9999)}', self.global_send['api_type'],
+                                  self.global_send['api_key'])
+            logging.info('全局消息发送成功') if send_result else logging.info('全局消息发送失败')
 
         if len(self.FAIL):
             return False
