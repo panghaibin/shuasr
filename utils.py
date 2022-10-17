@@ -1056,7 +1056,7 @@ def setSendMsgApi(config_path):
         '方糖气球 https://sct.ftqq.com/',
         '（该接口已弃用）推送加 https://pushplus.hxtrip.com/',
         'Telegram Bot (Key 的格式为 `BOT_TOKEN@CHAT_ID` )',
-        'PushDeer https://github.com/easychen/pushdeer'
+        'PushDeer https://github.com/easychen/pushdeer',
         '推送加PushPlus http://www.pushplus.plus/',
     ]
     send_api = config.get('send_api', 0)
