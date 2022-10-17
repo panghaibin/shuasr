@@ -350,6 +350,7 @@ def getImgCodeByUpload(session, img_type, view_state, report_url, img_path):
     img_type_dict = {'sui': 'p1$P_GuoNei$pImages$fileSuiSM', 'xing': 'p1$P_GuoNei$pImages$fileXingCM'}
     img_upload = open(img_path, 'rb')
     data = {
+        'p1$BaoSRQ': getTime().strftime("%Y-%m-%d"),
         '__EVENTTARGET': img_type_dict[img_type],
         '__VIEWSTATE': view_state,
         'X-FineUI-Ajax': 'true',
@@ -363,6 +364,8 @@ def getImgCodeByUpload(session, img_type, view_state, report_url, img_path):
     _code = None if _ is None else _.group(1)
     _ = re.search(r'ImageUrl&quot;:&quot;(.*?)&quot;}\)', upload_result)
     _img = None if _ is None else _.group(1)
+    if _code is None or _img is None:
+        print('Upload %s image failed' % img_type)
     return _code, _img
 
 
