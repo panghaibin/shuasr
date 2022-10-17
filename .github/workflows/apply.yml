@@ -1,8 +1,8 @@
 name: Out School Auto Apply
 
 on:
-  schedule:
-    - cron: "20 1 * * *"
+  #schedule:
+    #- cron: "20 1 * * *"
   workflow_dispatch:
 
 jobs:
