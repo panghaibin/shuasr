@@ -16,6 +16,17 @@ users:
   "19126666":
 #    密码，必填
     password: "password_here"
+#    进校申请，不需要则改为false
+    apply_in: true
+#    离校申请，不需要则改为false
+    apply_out: true
 #    消息发送设置，选填 参数同上，此为个人推送
+    api_type: 0
+    api_key: ""
+#  第二为用户名（作为键值）下面以此类推
+  "19128888":
+    password: "password_here"
+    apply_in: true
+    apply_out: true
     api_type: 0
     api_key: ""
