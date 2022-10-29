@@ -9,7 +9,7 @@
     ```
     - `UsernameXX` 为学工号
     - `PasswordXX` 为密码
-    - `InOr/AndOut` 可以为 `in` , `out` 或 `all` ，分别表示申请仅入校、仅申请离校、同时申请入校和离校。均为小写。
+    - `InOr/AndOut` 可以为 `in` , `out` 或 `all` ，分别表示仅申请进校、仅申请离校、同时申请进校和离校。均为小写。
     - `API_TYPE` 和 `API_KEY` 为接收消息推送的 API 类型和 API Key，可选，详见 [多种消息推送接口](README.md#提醒结果消息推送介绍) ，不填则不推送消息
     
     例如：
