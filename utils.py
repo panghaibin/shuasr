@@ -1313,7 +1313,7 @@ def github():
 
 def isTimeToReport():
     now = getTime()
-    if now.hour == 0 and now.minute >= 30:
+    if now.hour == 0 and now.minute >= 10:
         return 0
     elif now.hour == 1:
         return 3
@@ -1366,14 +1366,14 @@ def grabRank(username, password, post_day):
             return False
 
     now = getTime()
-    sleep_time = 60 * (58 - now.minute)
+    sleep_time = 60 * (28 - now.minute)
     sleep_time = sleep_time if sleep_time > 0 and now.hour == 0 else 0
     time.sleep(sleep_time)
 
     while True:
         now = getTime()
-        if (now.hour == 0 and now.minute == 59 and now.second >= 56) or now.hour != 0:
-            report_result = reportSingleUser(session, form, try_times=800, sleep_time=0, ignore_maintain=True)
+        if (now.hour == 0 and now.minute == 29 and now.second >= 50) or now.hour != 0:
+            report_result = reportSingleUser(session, form, try_times=900, sleep_time=0, ignore_maintain=True)
             if report_result == 1:
                 GRAB_LOGS['success'].append(username)
                 return True
