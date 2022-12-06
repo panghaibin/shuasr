@@ -421,7 +421,11 @@ def getLatestInfo(session, force_upload=False):
         elif 'ddlShi' in h:
             city = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
         elif 'ddlXian' in h:
-            county = jsLine2Json(info_line[i - 1])['SelectedValueArray'][0]
+            county = jsLine2Json(info_line[i - 1])['SelectedValueArray']
+            if not county:
+                county = ''
+            else:
+                county = county[0]
         elif 'ddlJieDao' in h:
             street = jsLine2Json(info_line[i - 1])['SelectedValueArray']
             if not street:
