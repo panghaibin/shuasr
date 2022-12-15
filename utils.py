@@ -5,20 +5,16 @@ import re
 import threading
 import time
 import traceback
-import qrcode
 import requests
 import rsa
 import yaml
 import datetime
 import os
 import random
-from PIL import Image, ImageFont, ImageDraw
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
 abs_path = os.path.split(os.path.realpath(__file__))[0]
-
-XCM = base64.b64decode('6KGM56iL56CB').decode('utf-8')
 
 GRAB_LOGS = {'success': [], 'fail': []}
 READ_MSG_RESULTS = []
@@ -141,9 +137,8 @@ def cleanIndex(session, html, target, target_url, index_url):
 
 
 def generateFState(json_file, post_day=None, province=None, city=None, county=None, address=None, in_shanghai=None,
-                   in_school=None, in_home=None, sui_img=None, sui_code=None, xing_img=None, xing_code=None, ans=None,
-                   campus=None, entry_campus=None, street=None, in_out=None, risk=None, out_province=None,
-                   back_sh=None):
+                   in_school=None, in_home=None, ans=None, campus=None, entry_campus=None, street=None, in_out=None,
+                   risk=None, out_province=None, back_sh=None):
     with open(json_file, 'r', encoding='utf-8') as f:
         json_data = json.load(f)
 
@@ -179,194 +174,10 @@ def generateFState(json_file, post_day=None, province=None, city=None, county=No
     json_data['p1_DiHRQ']['Text'] = back_sh
     json_data['p1_DiHRQ']['Required'] = True if not not back_sh else False
 
-    json_data['p1_pImages_HFimgSuiSM']['Text'] = sui_code
-    json_data['p1_pImages_imgSuiSM']['ImageUrl'] = sui_img
-    json_data['p1_pImages_HFimgXingCM']['Text'] = xing_code
-    json_data['p1_pImages_imgXingCM']['ImageUrl'] = xing_img
-
     json_data['p1_pnlDangSZS_DangSZS']['SelectedValueArray'] = ans
 
     fstate = base64.b64encode(json.dumps(json_data).encode("utf-8")).decode("utf-8")
     return fstate
-
-
-def convertAddress(province, city):
-    if province in ["北京", "上海", "天津", "重庆"]:
-        province += "市"
-        city = ''
-    elif province in ["香港", "澳门"]:
-        province += "特别行政区"
-        city = ''
-    elif province == "广西":
-        province += "壮族自治区"
-    elif province == "宁夏":
-        province += "回族自治区"
-    elif province == "新疆":
-        province += "维吾尔自治区"
-    elif province in ["西藏", "内蒙古"]:
-        province += "自治区"
-    else:
-        province += "省"
-    return province + city
-
-
-def segmentText(text):
-    words = list(text)
-    left_mark = list("（")
-    right_mark = list("）。，：,*")
-    while any(mark in words for mark in left_mark + right_mark):
-        for i in range(len(words)):
-            if len(words) > 1 and i > 0 and words[i - 1] in left_mark:
-                words[i] = words[i - 1] + words[i]
-                del words[i - 1]
-                break
-            elif len(words) > 1 and i < len(words) and words[i + 1] in right_mark:
-                words[i] = words[i] + words[i + 1]
-                del words[i + 1]
-                break
-    return words
-
-
-def generateXingImage(ph_num, position):
-    t = getTime()
-    clock = "%s:%s" % (t.hour, t.strftime("%M"))
-    phone = ph_num[:3] + '****' + ph_num[-4:] + base64.b64decode('55qE5Yqo5oCB6KGM56iL5Y2h').decode('utf-8')
-    update = base64.b64decode('5pu05paw5LqO77ya').decode('utf-8') + t.strftime("%Y.%m.%d %H:%M:%S")
-    tip = base64.b64decode('5oKo5LqO5YmNN+WkqeWGheWIsOi+vuaIlumAlOe7j++8mg==').decode('utf-8')
-
-    image = Image.open(os.path.join(abs_path, "src/zxn_1.bin"))
-    draw = ImageDraw.Draw(image)
-    full_width, full_height = image.size
-
-    clock_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Regular.otf'), 32)
-    phone_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Bold.otf'), 45)
-    update_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Bold.otf'), 48)
-    tip_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Regular.otf'), 47)
-    position_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Bold.otf'), 47)
-
-    phone_width, _ = draw.textsize(phone, phone_font)
-    update_width, _ = draw.textsize(update, update_font)
-    tip_width, _ = draw.textsize(tip, tip_font)
-    draw_x_0 = 125
-    draw_y = 1457
-
-    draw.text((52, 23), clock, (59, 59, 59), clock_font)
-    draw.text(((full_width - phone_width) / 2, 677), phone, (70, 70, 76), phone_font)
-    draw.text(((full_width - update_width) / 2, 779), update, (148, 148, 158), update_font)
-    draw.text((draw_x_0, draw_y), tip, (148, 148, 158), tip_font)
-    draw_x = draw_x_0 + tip_width
-    _, word_height = draw.textsize('一', tip_font)
-    position = segmentText(position)
-    while len(position) > 0:
-        word_width, word_height = draw.textsize(position[0], position_font)
-        if draw_x + word_width > full_width - draw_x_0:
-            draw_x = draw_x_0
-            draw_y += word_height + 3
-        draw.text((draw_x, draw_y), position[0], (71, 70, 76), position_font)
-        draw_x += word_width
-        position = position[1:]
-
-    provider_img = Image.open(os.path.join(abs_path, "src/zxn_2.bin"))
-    _, provider_height = provider_img.size
-    draw_y += word_height
-    image.paste(provider_img, (0, draw_y))
-
-    draw_y += provider_height
-    draw.rectangle([(0, draw_y), (full_width, full_height)], fill=(43, 166, 103), outline=None)
-
-    footer_img = Image.open(os.path.join(abs_path, "src/zxn_3.bin"))
-    _, footer_height = footer_img.size
-    image.paste(footer_img, (0, full_height - footer_height))
-
-    icons_img = Image.open(os.path.join(abs_path, "src/zxn_4.bin"))
-    icons_width, icons_height = icons_img.size
-    icons_num = int(icons_width / icons_height)
-    random_icon = random.randint(0, icons_num - 1)
-    icon_box = (random_icon * icons_height, 0, (random_icon + 1) * icons_height, icons_height)
-    icon_img = icons_img.crop(icon_box)
-    image.paste(icon_img, (int((full_width - icons_height) / 2), 885))
-
-    img_path = os.path.join(abs_path, '%s_xing.jpg' % t.strftime("%Y%m%d%H%M%S%f"))
-    image.save(img_path, 'jpeg')
-    return img_path
-
-
-def generateSuiImage(name):
-    """
-    将在未来弃用
-    :param name:
-    :return:
-    """
-    t = getTime()
-    t -= datetime.timedelta(seconds=random.randint(10, 30))
-    clock = "%s:%s" % (t.hour, t.strftime("%M"))
-    name = '*' * (len(name) - 1) + name[-1]
-    time1 = t.strftime("%Y-%m-%d %H:%M:")
-    time2 = '%02d' % random.randint(1, 6)
-
-    image = Image.open(os.path.join(abs_path, "src/aan_1.bin"))
-    draw = ImageDraw.Draw(image)
-    full_width, full_height = image.size
-
-    clock_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Regular.otf'), 32)
-    name_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Bold.otf'), 56)
-    time1_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Regular.otf'), 40)
-    time2_font = ImageFont.truetype(os.path.join(abs_path, 'src/NotoSansSC-Bold.otf'), 48)
-
-    name_width, _ = draw.textsize(name, name_font)
-    time1_width, time1_height = draw.textsize(time1, time1_font)
-    time2_width, time2_height = draw.textsize(time2, time2_font)
-
-    draw.text((52, 23), clock, (59, 59, 59), clock_font)
-    draw.text((558 - name_width, 572), name, (0, 0, 0), name_font)
-    time1_x = (full_width - time1_width - time2_width) / 2
-    time1_y = 828
-    time2_x = time1_x + time1_width
-    time2_y = time1_y - (time2_height - time1_height)
-    draw.text((time1_x, time1_y), time1, (0, 0, 0), time1_font)
-    draw.text((time2_x, time2_y), time2, (0, 0, 0), time2_font)
-
-    logo_img = Image.open(os.path.join(abs_path, "src/aan_2.bin"))
-    logo_width, logo_height = [int(s * 0.9) for s in logo_img.size]
-    logo_img = logo_img.resize((logo_width, logo_height))
-
-    qr = qrcode.QRCode(version=5, box_size=15, error_correction=qrcode.constants.ERROR_CORRECT_M, border=0)
-    random_url = base64.b64decode('aHR0cHM6Ly9zLnNoLmdvdi5jbi8=').decode('utf-8')
-    random_url += ''.join(random.sample('0123456789abcdef' * 10, 30)) + str(int(t.timestamp() * 1000))
-    qr.add_data(random_url)
-    qr.make(fit=True)
-    qr_img = qr.make_image(fill_color=(9, 189, 100), back_color=(255, 255, 255))
-    qr_width, qr_height = qr_img.size
-
-    qr_img.paste(logo_img, (int((qr_width - logo_width) / 2), int((qr_height - logo_height) / 2)), logo_img)
-    image.paste(qr_img, (270, 938))
-
-    img_path = '%s_sui.jpg' % t.strftime("%Y%m%d%H%M%S%f")
-    image.save(img_path, 'jpeg')
-    return img_path
-
-
-def getImgCodeByUpload(session, img_type, view_state, report_url, img_path):
-    img_type_dict = {'sui': 'p1$P_GuoNei$pImages$fileSuiSM', 'xing': 'p1$P_GuoNei$pImages$fileXingCM'}
-    img_upload = open(img_path, 'rb')
-    data = {
-        'p1$BaoSRQ': getTime().strftime("%Y-%m-%d"),
-        '__EVENTTARGET': img_type_dict[img_type],
-        '__VIEWSTATE': view_state,
-        'X-FineUI-Ajax': 'true',
-    }
-    file = {
-        img_type_dict[img_type]: img_upload,
-    }
-    upload_result = session.post(url=report_url, data=data, files=file).text
-    img_upload.close()
-    _ = re.search(r'Text&quot;:&quot;(.*?)&quot;}\)', upload_result)
-    _code = None if _ is None else _.group(1)
-    _ = re.search(r'ImageUrl&quot;:&quot;(.*?)&quot;}\)', upload_result)
-    _img = None if _ is None else _.group(1)
-    if _code is None or _img is None:
-        print('Upload %s image failed' % img_type)
-    return _code, _img
 
 
 def html2JsLine(html):
@@ -379,7 +190,7 @@ def jsLine2Json(js):
     return json.loads(js[js.find('=') + 1:])
 
 
-def getLatestInfo(session, force_upload=False):
+def getLatestInfo(session):
     history_url = 'https://selfreport.shu.edu.cn/ReportHistory.aspx'
     index = session.get(url=history_url).text
     js_str = re.search('f2_state=(.*?);', index).group(1)
@@ -502,61 +313,12 @@ def getLatestInfo(session, force_upload=False):
     view_state_generator = re.search(r'id="__VIEWSTATEGENERATOR" value="(.*?)" /', report_html).group(1)
 
     ans = ['A']
-    sui_code = xing_code = None
-    sui_img = xing_img = None
-
-    if force_upload:
-        _code = 'odrp1Za3DEU='
-        _img = '/ShowImage.ashx?squrl=oyhA3XzMDCTMwyYAn6kyLt3hxsAoCfpvYGMSocfVfx2RRyKXq9QDVV5cVuq9mN8Mt%2bxyoS93C' \
-               '%2b9qawY41vXjo7H18V%2b08RW%2fWDwSfK2TQ8Qc7ob' \
-               '%2fnXpyYlgzh5aNOE9tpHWs9n7P7dTaa6iBSTv3Yt40C9UuPY0edMplSSzgA4DQn0HMJY3R5GihYy5Hr9PeiSbwSeJ3GOY%3d'
-        report_line = html2JsLine(report_html)
-        require_upload = False
-        for i, h in enumerate(report_line):
-            if 'pImages_HFimgSuiSM' in h:
-                try:
-                    sui_code = jsLine2Json(report_line[i - 1])['Text']
-                    sui_img = jsLine2Json(report_line[i + 1])['ImageUrl']
-                except (KeyError, json.JSONDecodeError):
-                    require_upload = True
-            elif 'pImages_HFimgXingCM' in h:
-                try:
-                    xing_code = jsLine2Json(report_line[i - 1])['Text']
-                    xing_img = jsLine2Json(report_line[i + 1])['ImageUrl']
-                except (KeyError, json.JSONDecodeError):
-                    require_upload = True
-        if require_upload:
-            p_info_url = 'https://selfreport.shu.edu.cn/PersonInfo.aspx'
-            p_info_html = session.get(url=p_info_url).text
-            p_info_line = html2JsLine(p_info_html)
-
-            phone_number = '18888888888'
-            # name = '***'
-            for i, h in enumerate(p_info_line):
-                if 'ShouJHM' in h:
-                    phone_number = jsLine2Json(p_info_line[i - 1])['Text']
-                # elif 'XingMing' in h:
-                #     name = jsLine2Json(p_info_line[i - 1])['Text']
-
-            # sui_img_path = generateSuiImage(name)
-            # sui_code, sui_img = getImgCodeByUpload(session, 'sui', view_state, report_url, sui_img_path)
-            # os.remove(sui_img_path)
-
-            position = convertAddress(province, city)
-            xing_img_path = generateXingImage(phone_number, position)
-            xing_code, xing_img = getImgCodeByUpload(session, 'xing', view_state, report_url, xing_img_path)
-            os.remove(xing_img_path)
-
-        sui_code = _code if sui_code is None else sui_code
-        sui_img = _img if sui_img is None else sui_img
-        xing_code = _code if xing_code is None else xing_code
-        xing_img = _img if xing_img is None else xing_img
 
     info = dict(
         vs=view_state, vsg=view_state_generator, f_target=f_target, even_target=even_target, in_out=in_out,
         in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
         province=province, city=city, county=county, address=address, street=street, risk=risk, back_sh=back_sh,
-        sui_code=sui_code, sui_img=sui_img, xing_code=xing_code, xing_img=xing_img, ans=ans, out_province=out_province,
+        ans=ans, out_province=out_province,
     )
 
     return info
@@ -581,20 +343,14 @@ def getReportForm(post_day, info):
     back_sh = info['back_sh']
     f_target = info['f_target']
     even_target = info['even_target']
-    sui_code = info['sui_code']
-    sui_img = info['sui_img']
-    xing_code = info['xing_code']
-    xing_img = info['xing_img']
     ans = info['ans']
 
     # temperature = str(round(random.uniform(36.3, 36.7), 1))
 
-    f_state = generateFState(
-        json_file=abs_path + '/once.json', in_out=in_out, risk=risk, out_province=out_province, back_sh=back_sh,
-        post_day=post_day, province=province, city=city, county=county, address=address, street=street,
-        in_shanghai=in_shanghai, entry_campus=entry_campus, in_school=in_school, campus=campus, in_home=in_home,
-        sui_code=sui_code, sui_img=sui_img, xing_img=xing_img, xing_code=xing_code, ans=ans
-    )
+    f_state = generateFState(json_file=abs_path + '/once.json', post_day=post_day, province=province, city=city,
+                             county=county, address=address, in_shanghai=in_shanghai, in_school=in_school,
+                             in_home=in_home, ans=ans, campus=campus, entry_campus=entry_campus, street=street,
+                             in_out=in_out, risk=risk, out_province=out_province, back_sh=back_sh)
 
     report_form = {
         '__EVENTTARGET': even_target,
@@ -634,8 +390,6 @@ def getReportForm(post_day, info):
         'p1$CengFWSS': out_province,
         'p1$DiHRQ': back_sh,
         'p1$GaoZDFXLJS': risk,
-        'p1$P_GuoNei$pImages$HFimgSuiSM': sui_code,
-        'p1$P_GuoNei$pImages$HFimgXingCM': xing_code,
         'p1$FengXDQDL': '否',
         'p1$TongZWDLH': '否',
         'p1$CengFWH': '否',
@@ -784,7 +538,7 @@ def reportSingleUser(session, form, try_times=None, sleep_time=None, ignore_main
             ]
             debug_privacy_key = [
                 'p1$ddlSheng$Value', 'p1$ddlSheng', 'p1$ddlShi$Value', 'p1$ddlShi', 'p1$ddlXian$Value', 'p1$ddlXian',
-                'p1$XiangXDZ', 'p1$P_GuoNei$pImages$HFimgSuiSM', 'p1$P_GuoNei$pImages$HFimgXingCM'
+                'p1$XiangXDZ'
             ]
             debug_value = dict([(key, form.get(key, None)) for key in debug_key])
             debug_privacy_value = dict(
@@ -833,14 +587,10 @@ def reportAllUsers(config_path, logs_path, post_day):
             unreported_day = getUnreportedDay(session)
             if len(unreported_day) > 0:
                 print('%s有%s天未填报，开始补报' % (username, len(unreported_day)))
-                _info = getLatestInfo(session, force_upload=True)
+                _info = getLatestInfo(session)
                 reportUnreported(session, _info, unreported_day)
             _form = getReportForm(post_day, _info)
             report_result = reportSingleUser(session, _form)
-            if report_result != 1:
-                _info = getLatestInfo(session, force_upload=True)
-                _form = getReportForm(post_day, _info)
-                report_result = reportSingleUser(session, _form)
         else:
             report_result = -1
         logs = updateLogs(logs, logs_time, username, report_result)
@@ -949,23 +699,17 @@ def updateLogs(logs, logs_time, username, status):
             logs[logs_time].update({'success': []})
         if 'fail' not in logs.get(logs_time, {}):
             logs[logs_time].update({'fail': []})
-        if 'xing_code' not in logs.get(logs_time, {}):
-            logs[logs_time].update({'xing_code': []})
 
     success = logs[logs_time]['success']
     fail = logs[logs_time]['fail']
-    xing_code = logs[logs_time]['xing_code']
 
     if status == 1 and username not in success:
         success.append(username)
-    elif status == -3 and username not in xing_code:
-        xing_code.append(username)
     elif username not in fail:
         fail.append(username)
 
     logs[logs_time]['success'] = success
     logs[logs_time]['fail'] = fail
-    logs[logs_time]['xing_code'] = xing_code
 
     return logs
 
@@ -988,20 +732,12 @@ def sendLogs(logs_path, config_path):
     desp = '时间：%s\n\n' % report_time
     success = logs[report_time].get('success')
     fail = logs[report_time].get('fail')
-    xing_code = logs[report_time].get('xing_code')
 
     if len(success):
         for username in success:
             title += username[4:] + '.'
             desp += '用户%s填报成功\n\n' % username
         title += '成功'
-
-    if len(xing_code):
-        for username in xing_code:
-            title += username[4:] + '.'
-            desp += '用户%s需要上传%s\n\n' % (username, XCM)
-        title += '需要' + XCM
-        desp += '请尽快上传%s\n\n' % XCM
 
     if len(fail):
         for username in fail:
@@ -1232,14 +968,10 @@ def github():
             unreported_day = getUnreportedDay(session)
             if len(unreported_day) > 0:
                 print('该用户有%s天未填报，开始补报' % len(unreported_day))
-                _info = getLatestInfo(session, force_upload=True)
+                _info = getLatestInfo(session)
                 reportUnreported(session, _info, unreported_day)
             _form = getReportForm(post_day, _info)
             report_result = reportSingleUser(session, _form)
-            if report_result != 1:
-                _info = getLatestInfo(session, force_upload=True)
-                _form = getReportForm(post_day, _info)
-                report_result = reportSingleUser(session, _form)
         else:
             report_result = 0
 
@@ -1274,11 +1006,6 @@ def github():
         for username in suc_log:
             desp += '用户%s填报成功\n\n' % username
         title += '%s位成功，' % len(suc_log)
-    if len(xc_log):
-        for username in xc_log:
-            desp += '用户%s需要上传%s\n\n' % (username, XCM)
-        title += '%s位需要%s，' % (len(xc_log), XCM)
-        desp += '请尽快上传%s\n\n' % XCM
     if len(err_log):
         for username in err_log:
             desp += '用户%s填报失败\n\n' % username
@@ -1357,7 +1084,7 @@ def grabRank(username, password, post_day):
 
     try_times = 0
     while True:
-        _info = getLatestInfo(session, force_upload=True)
+        _info = getLatestInfo(session)
         form = getReportForm(post_day, _info)
         if form:
             break
@@ -1382,7 +1109,7 @@ def grabRank(username, password, post_day):
                 GRAB_LOGS['success'].append(username)
                 return True
             else:
-                _info = getLatestInfo(session, force_upload=True)
+                _info = getLatestInfo(session)
                 form = getReportForm(post_day, _info)
                 reportSingleUser(session, form)
                 GRAB_LOGS['fail'].append(username)

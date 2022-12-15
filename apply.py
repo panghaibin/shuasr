@@ -8,8 +8,7 @@ import logging
 import requests
 import datetime
 from time import sleep
-from utils import abs_path, login, html2JsLine, jsLine2Json, sendMsg, getTime, sleepCountdown, generateXingImage, \
-    convertAddress
+from utils import abs_path, login, html2JsLine, jsLine2Json, sendMsg, getTime, sleepCountdown
 
 CONFIG_PATH = os.path.join(abs_path, 'apply.yaml')
 
@@ -343,59 +342,6 @@ class InSchoolApply:
             'district_list': district_list
         })
 
-    def _upload_xing_img(self):
-        p_info_url = 'https://selfreport.shu.edu.cn/PersonInfo.aspx'
-        p_info_html = self.session.get(url=p_info_url).text
-        p_info_line = html2JsLine(p_info_html)
-
-        phone_number = '13888885174'
-        for i, h in enumerate(p_info_line):
-            if 'ShouJHM' in h:
-                phone_number = jsLine2Json(p_info_line[i - 1])['Text']
-                break
-
-        view_state, view_state_generator = self.update_view_state()
-        url = 'https://selfreport.shu.edu.cn/XiaoYJC202207/XueSJXSQ.aspx'
-
-        position = convertAddress(self.last_apply_info['province'], self.last_apply_info['city'])
-        xing_img_path = generateXingImage(phone_number, position)
-        img_upload = open(xing_img_path, 'rb')
-        data = {
-            'p1$BaoSRQ': getTime().strftime("%Y-%m-%d"),
-            "__EVENTTARGET": "persinfo$Panel2$fileXingCM",
-            '__VIEWSTATE': view_state,
-            "__VIEWSTATEGENERATOR": view_state_generator,
-            "persinfo$Panel1$HFimgHeSJC1_BG": "",
-            "persinfo$Panel2$HFimgXingCM": "",
-            "persinfo_ctl00_Collapsed": "false",
-            "persinfo_ctl01_Collapsed": "false",
-            "persinfo_P_HeSJC_Collapsed": "false",
-            "persinfo_P_ChuFD_Collapsed": "false",
-            "persinfo_Panel1_Collapsed": "false",
-            "persinfo_Panel2_Collapsed": "false",
-            "persinfo_Collapsed": "false",
-            'X-FineUI-Ajax': 'true',
-        }
-        file = {
-            'persinfo$Panel2$fileXingCM': img_upload,
-        }
-        upload_result = self.session.post(url=url, data=data, files=file).text
-        img_upload.close()
-
-        _ = re.search(r'Text&quot;:&quot;(.*?)&quot;}\)', upload_result)
-        xing_code = None if _ is None else _.group(1)
-        _ = re.search(r'ImageUrl&quot;:&quot;(.*?)&quot;}\)', upload_result)
-        xing_img = None if _ is None else _.group(1)
-        if xing_code is None or xing_img is None:
-            logging.error('上传XC码失败')
-
-        os.remove(xing_img_path)
-        self.last_apply_info.update({
-            'xing_code': xing_code,
-            'xing_img': xing_img
-        })
-        return self.last_apply_info
-
     def _generate_fstate(self):
         fstate_path = os.path.join(abs_path, 'in_apply.json')
         with open(fstate_path, 'r', encoding='utf-8') as f:
@@ -419,9 +365,6 @@ class InSchoolApply:
         fstate['persinfo_P_ChuFD_DangQSZD_JieDao']['F_Items'][1][1] = self.last_apply_info['street']
         fstate['persinfo_P_ChuFD_DangQSZD_JieDao']['F_Items'][1][3] = self.last_apply_info['street']
         fstate['persinfo_P_ChuFD_DangQSZD_XiangXDZ']['Text'] = self.last_apply_info['address']
-
-        fstate['persinfo_Panel2_HFimgXingCM']['Text'] = self.last_apply_info['xing_code']
-        fstate['persinfo_Panel2_imgXingCM']['ImageUrl'] = self.last_apply_info['xing_img']
 
         b64_fstate = base64.b64encode(json.dumps(fstate).encode('utf-8')).decode('utf-8')
         return b64_fstate
@@ -455,7 +398,6 @@ class InSchoolApply:
             "persinfo$P_ChuFD$DangQSZD_JieDao": self.last_apply_info['street'],
             "persinfo$P_ChuFD$DangQSZD_XiangXDZ": self.last_apply_info['address'],
             "persinfo$Panel1$HFimgHeSJC1_BG": "",
-            "persinfo$Panel2$HFimgXingCM": self.last_apply_info['xing_code'],
             "persinfo_ctl00_Collapsed": "false",
             "persinfo_ctl01_Collapsed": "false",
             "persinfo_P_HeSJC_Collapsed": "false",
@@ -527,8 +469,6 @@ class InSchoolApply:
             return -3, 'applied', '已申请明日进校'
         if not self._get_last_apply_info():
             return -4, 'fail', '获取上次进校申请信息失败'
-        if not self._upload_xing_img():
-            return -5, 'fail', '上传XC码失败'
         if not self._generate_form():
             return -6, 'fail', '生成表单失败'
 
