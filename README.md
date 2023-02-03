@@ -11,8 +11,6 @@
 [查看更新日志](./CHANGELOG.md)
 
 ## 特色
-- 支持 **自动申请次日进校及离校** 功能，详见 [该说明](InOutSchoolApply.md)
-
 - 支持在 GitHub Actions 或自建服务器上使用
 
   - 在 GitHub Actions 上使用时将模拟随机IP，以此暂时绕过IP屏蔽
