@@ -1,5 +1,9 @@
 # 更新日志
 
+## [TheEnd] - 2023-04-11
+### Removed
+- Remove Everything
+
 ## [6.2.2] - 2023-02-03
 ### Removed
 - 移除进出校申请

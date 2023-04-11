@@ -50,4 +50,6 @@ def config_ovpn():
 
 
 if __name__ == '__main__':
+    print('This Project is No Longer Maintained. ')
+    exit(0)
     config_ovpn()
